@@ -1,0 +1,3 @@
+# This file is for documentation purposes only
+# Frontend dependencies are managed through package.json
+# See package.json for the actual dependencies

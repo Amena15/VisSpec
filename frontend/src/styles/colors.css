@@ -1,0 +1,146 @@
+/* ============================================ */
+/*       PROFESSIONAL COLOR PSYCHOLOGY PALETTE */
+/* ============================================ */
+:root {
+  /* Professional Blue - Trust, reliability, intelligence */
+  --primary-main: #2563EB;      /* Professional Blue - Main brand */
+  --primary-hover: #1D4ED8;     /* Hover states */
+  --primary-dark: #1E40AF;      /* Pressed states, darker borders */
+  --primary-50: #EFF6FF;        /* Very light backgrounds */
+
+  /* Deep Purple - Accent only (charts, occasional use) */
+  --accent-main: #7C3AED;       /* Purple - Accent only */
+  --accent-light: #8B5CF6;
+  --accent-dark: #6D28D9;
+
+  /* ============================================ */
+  /*       NEUTRAL COLORS (Grays)                */
+  /* ============================================ */
+  --neutral-50: #F9FAFB;        /* Lightest (main background) */
+  --neutral-100: #F3F4F6;       /* Card backgrounds */
+  --neutral-200: #E5E7EB;       /* Borders, dividers */
+  --neutral-300: #D1D5DB;       /* Subtle borders */
+  --neutral-400: #9CA3AF;       /* Placeholder text */
+  --neutral-500: #6B7280;       /* Icons, disabled */
+  --neutral-600: #4B5563;       /* Secondary text */
+  --neutral-700: #374151;       /* Body text */
+  --neutral-800: #1F2937;       /* Headings */
+  --neutral-900: #111827;       /* Darkest (primary headings) */
+
+  /* ============================================ */
+  /*       SEMANTIC COLORS (COLOR PSYCHOLOGY)    */
+  /* ============================================ */
+  --success-main: #10B981;      /* Emerald Green - Success, validation, correctness */
+  --success-light: #D1FAE5;     /* Success backgrounds */
+  --success-hover: #059669;     /* Hover states for success */
+  --success-dark: #059669;      /* Success borders/text */
+
+  --warning-main: #F59E0B;      /* Amber Yellow - Attention, medium priority */
+  --warning-light: #FEF3C7;     /* Warning backgrounds */
+  --warning-hover: #D97706;     /* Hover states for warning */
+  --warning-dark: #D97706;      /* Warning borders/text */
+
+  --error-main: #EF4444;        /* Red - Critical, error, urgency */
+  --error-light: #FEE2E2;       /* Error backgrounds */
+  --error-hover: #DC2626;       /* Hover states for error */
+  --error-dark: #DC2626;        /* Error borders/text */
+
+  --info-main: #3B82F6;         /* Blue - General info */
+  --info-light: #DBEAFE;        /* Info backgrounds */
+  --info-dark: #2563EB;         /* Info borders/text */
+
+  /* ============================================ */
+  /*  ✅ NAVIGATION COLORS (PROFESSIONAL)        */
+  /* ============================================ */
+  --sidebar-bg: #FFFFFF;                /* White sidebar */
+  --sidebar-border: #E5E7EB;            /* Subtle right border */
+
+  --sidebar-item-text: #6B7280;         /* Unselected item text (neutral-500) */
+  --sidebar-item-icon: #9CA3AF;         /* Unselected icons (neutral-400) */
+
+  --sidebar-item-hover-bg: #F3F4F6;     /* Hover background (neutral-100) */
+  --sidebar-item-hover-text: #374151;   /* Hover text (neutral-700) */
+
+  --sidebar-item-active-bg: #EFF6FF;    /* Selected background (primary-50) */
+  --sidebar-item-active-text: #2563EB;  /* Selected text (primary-main) */
+  --sidebar-item-active-icon: #2563EB;  /* Selected icon (primary-main) */
+  --sidebar-item-active-border: #2563EB; /* Left border accent (3px) */
+
+  /* ============================================ */
+  /*       DATA VISUALIZATION (PROFESSIONAL)     */
+  /* ============================================ */
+  --chart-ambiguity: #F59E0B;      /* Amber - Ambiguity defects */
+  --chart-incomplete: #F59E0B;     /* Amber - Incomplete defects */
+  --chart-inconsistent: #EF4444;   /* Red - Inconsistency defects */
+  --chart-unverifiable: #7C3AED;   /* Purple - Unverifiable defects (accent only) */
+
+  /* ============================================ */
+  /*  ✅ METRIC CARD ICONS (CONSISTENT)          */
+  /* ============================================ */
+  --metric-effort-icon: #2563EB;       /* Blue - Estimation/time */
+  --metric-quality-icon: #10B981;      /* Green - Quality score */
+  --metric-defects-icon: #F59E0B;      /* Amber - Active defects */
+  --metric-validation-icon: #10B981;   /* Green - Validation success */
+
+  /* ============================================ */
+  /*       QUALITY SCORE GRADIENTS (PSYCHOLOGY)  */
+  /* ============================================ */
+  --quality-high: #10B981;      /* 85-100% (Green - Success) */
+  --quality-medium: #F59E0B;    /* 60-84% (Amber - Attention) */
+  --quality-low: #EF4444;       /* 0-59% (Red - Critical) */
+
+  /* ============================================ */
+  /*       INTERFACE ZONES                       */
+  /* ============================================ */
+  --content-bg: #F9FAFB;        /* Main content area (neutral-50) */
+  --card-bg: #FFFFFF;           /* Card/panel background */
+  --card-border: #E5E7EB;       /* Card borders (neutral-200) */
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); /* Subtle shadow */
+
+  --header-bg: #FFFFFF;         /* Top bar background */
+  --header-border: #E5E7EB;     /* Bottom border */
+
+  /* ============================================ */
+  /*       BUTTONS                               */
+  /* ============================================ */
+  --btn-primary-bg: #2563EB;           /* Main CTA buttons (Professional Blue) */
+  --btn-primary-hover: #1D4ED8;        /* Hover state for primary */
+  --btn-primary-text: #FFFFFF;
+
+  --btn-secondary-bg: #F3F4F6;         /* Secondary buttons */
+  --btn-secondary-hover: #E5E7EB;
+  --btn-secondary-text: #374151;
+
+  --btn-success-bg: #10B981;           /* Success buttons (Emerald Green) */
+  --btn-success-hover: #059669;
+  --btn-success-text: #FFFFFF;
+
+  --btn-warning-bg: #F59E0B;           /* Warning buttons (Amber Yellow) */
+  --btn-warning-hover: #D97706;
+  --btn-warning-text: #FFFFFF;
+
+  --btn-error-bg: #EF4444;             /* Error buttons (Red) */
+  --btn-error-hover: #DC2626;
+  --btn-error-text: #FFFFFF;
+
+  --btn-destructive-bg: #EF4444;       /* Delete/reject buttons */
+  --btn-destructive-hover: #DC2626;
+  --btn-destructive-text: #FFFFFF;
+
+  /* ============================================ */
+  /*       DARK MODE (PROFESSIONAL)              */
+  /* ============================================ */
+  --dark-bg-primary: #111827;          /* Main dark background */
+  --dark-bg-secondary: #1F2937;        /* Cards/panels */
+  --dark-bg-tertiary: #374151;         /* Elevated surfaces */
+
+  --dark-text-primary: #F9FAFB;        /* Headings */
+  --dark-text-secondary: #D1D5DB;      /* Body text */
+  --dark-text-tertiary: #9CA3AF;       /* Metadata */
+
+  --dark-border: #374151;              /* Borders in dark mode */
+  
+  --dark-card-bg: #1F2937;             /* Dark card background */
+  --dark-header-bg: #1F2937;           /* Dark header background */
+  --dark-sidebar-bg: #1F2937;          /* Dark sidebar background */
+}

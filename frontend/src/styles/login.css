@@ -1,0 +1,110 @@
+/* Professional Blue Color Scheme for Login Page */
+.login-container {
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-50) 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.login-card {
+  background: var(--card-bg);
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--card-border);
+}
+
+/* Sign in button with professional blue */
+.sign-in-button {
+  background-color: var(--btn-primary-bg) !important;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.sign-in-button:hover {
+  background-color: var(--btn-primary-hover) !important;
+}
+
+.sign-in-button:disabled {
+  background-color: #93C5FD !important;
+  cursor: not-allowed;
+}
+
+/* Input focus with blue border */
+.login-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--card-border);
+  background-color: var(--surface-bg);
+  transition: all 0.2s;
+}
+
+.login-input:focus {
+  border-color: var(--primary-main) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  background-color: var(--card-bg);
+  outline: none;
+}
+
+/* Links with blue color */
+.login-link {
+  color: var(--primary-main);
+  font-weight: 500;
+}
+
+.login-link:hover {
+  color: var(--primary-hover);
+}
+
+/* Segmented control with blue active state */
+.segmented-control {
+  display: flex;
+  background-color: var(--surface-bg);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.segment-button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.segment-button.active {
+  background-color: var(--card-bg);
+  color: var(--primary-main);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.segment-button.inactive {
+  color: var(--neutral-500);
+}
+
+.segment-button.inactive:hover {
+  color: var(--primary-main);
+}
+
+/* Error messages */
+.error-message {
+  background-color: var(--error-light);
+  border: 1px solid #FECACA;
+  color: var(--error-hover);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}

@@ -1,0 +1,12 @@
+/* Dark mode variables - Consistent with professional color palette */
+.dark {
+  --content-bg: #121212;        /* Main content area (dark) */
+  --card-bg: #1E1E26;           /* Card/panel background (dark) */
+  --card-border: #374151;       /* Card borders (dark) */
+  --surface-bg: #18181B;        /* Surface backgrounds (dark) */
+  --text-primary: #F9FAFB;      /* Primary text (dark) */
+  --text-secondary: #D1D5DB;    /* Secondary text (dark) */
+  --text-disabled: #9CA3AF;     /* Disabled text (dark) */
+  --primary-main: #3B82F6;      /* Primary blue accent (dark) */
+  --primary-light: #60A5FA;     /* Primary light accent (dark) */
+}

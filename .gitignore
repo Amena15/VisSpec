@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────
+# VisSpec .gitignore
+# ─────────────────────────────────────────────────────
+
+# ── Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE / AI Tools
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.qwen/
+
+# ── Database / Runtime ──────────────────────────────
+backend/vispec.db
+backend/vispec.db-shm
+backend/vispec.db-wal
+backend/*.db
+backend/*.sqlite3
+
+# ── Environment / Secrets ───────────────────────────
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# ── Logs ─────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Node / Frontend ──────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.next/
+frontend/out/
+
+# ── Testing ──────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ── Reports / Exports ───────────────────────────────
+*.pdf
+*.docx
+reports/
+exports/

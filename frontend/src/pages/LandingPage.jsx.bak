@@ -1,0 +1,400 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, Upload, Search, Eye, CheckCircle, ArrowRight, AlertTriangle, RefreshCw, TrendingUp, Brain, FileText, BarChart3, Sun, Moon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const LandingPage = () => {
+  const [isVisible, setIsVisible] = useState({});
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          setIsVisible(prev => ({
+            ...prev,
+            [entry.target.id]: entry.isIntersecting
+          }));
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll('[id]').forEach(el => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  const capabilities = [
+    {
+      title: "Semantic Ambiguity Detection",
+      description: "Automatically identifies unclear or inconsistent requirements"
+    },
+    {
+      title: "Automated UML Generation",
+      description: "Creates visual diagrams from textual specifications"
+    },
+    {
+      title: "Complexity & Risk Analysis",
+      description: "Estimates development effort and identifies risk factors"
+    },
+    {
+      title: "AI-Assisted Refinement",
+      description: "Suggests improvements to requirement quality"
+    },
+    {
+      title: "Visual Traceability",
+      description: "Links requirements to generated diagrams"
+    },
+    {
+      title: "Role-Based Validation",
+      description: "Different interfaces for analysts and supervisors"
+    }
+  ];
+
+  const steps = [
+    { icon: Upload, title: "Upload", desc: "Submit requirements document or paste text" },
+    { icon: Search, title: "Analyze", desc: "AI processes text for semantics and structure" },
+    { icon: Eye, title: "Visualize", desc: "Generate UML diagrams and visual models" },
+    { icon: CheckCircle, title: "Validate", desc: "Review insights and metrics" }
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section
+        id="hero"
+        className={`py-20 relative overflow-hidden transition-all duration-1000 ${darkMode ? 'bg-gradient-to-b from-background-dark to-slate-800' : 'bg-gradient-to-b from-background to-blue-100'}`}
+        style={{ opacity: isVisible.hero ? 1 : 0, transform: isVisible.hero ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        {/* Gradient overlay for futuristic touch */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center">
+            <div className="lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0">
+              <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>
+                AI-Powered Requirements
+              </h1>
+              <h2 className={`text-2xl md:text-3xl lg:text-4xl font-bold ${darkMode ? 'text-primary/80' : 'text-primary'} mb-6`}>
+                Analysis for Software Engineering
+              </h2>
+              <p className={`text-xl ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-8 max-w-2xl`}>
+                Transform ambiguous requirements into clear visual specifications with automated analysis and diagram generation
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link
+                  to="/analysis"
+                  className="btn-primary px-8 py-4 rounded-xl font-medium flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                >
+                  Analyze Requirements
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+                <Link
+                  to="/visualization"
+                  className="border-2 border-primary text-primary px-8 py-4 rounded-xl font-medium hover:bg-primary hover:text-white transition-colors"
+                >
+                  View Architecture
+                </Link>
+              </div>
+            </div>
+            <div className="lg:w-1/2 flex justify-center">
+              {/* Abstract AI-themed illustration */}
+              <div className="relative w-80 h-80">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-primary to-accent-secondary rounded-full opacity-20 blur-xl animate-pulse"></div>
+                <div className={`relative rounded-2xl shadow-xl p-6 w-full h-full flex items-center justify-center ${darkMode ? 'bg-surface-dark' : 'bg-card'}`}>
+                  <div className="text-center">
+                    <Brain className={`h-16 w-16 ${darkMode ? 'text-accent-primary' : 'text-accent-primary'} mx-auto mb-4`} />
+                    <div className="space-y-2">
+                      <div className={`h-3 ${darkMode ? 'bg-surface-dark' : 'bg-surface'} rounded-full w-3/4 mx-auto`}></div>
+                      <div className={`h-3 ${darkMode ? 'bg-surface-dark' : 'bg-surface'} rounded-full w-1/2 mx-auto`}></div>
+                      <div className={`h-3 ${darkMode ? 'bg-surface-dark' : 'bg-surface'} rounded-full w-5/6 mx-auto`}></div>
+                      <div className={`h-3 ${darkMode ? 'bg-surface-dark' : 'bg-surface'} rounded-full w-2/3 mx-auto`}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dark mode toggle button */}
+          <div className="absolute top-6 right-6">
+            <button
+              onClick={toggleDarkMode}
+              className={`p-2 rounded-full ${darkMode ? 'bg-slate-700 text-text-primary-dark' : 'bg-surface text-primary'} shadow-md hover:shadow-lg transition-all`}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* The Challenge Section */}
+      <section
+        id="challenge"
+        className={`py-16 ${darkMode ? 'bg-background-dark' : 'bg-surface'}`}
+        style={{ opacity: isVisible.challenge ? 1 : 0, transform: isVisible.challenge ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-12`}>The Challenge in Requirements Engineering</h2>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className={`text-lg ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-6`}>
+                Traditional requirements documents often contain ambiguities, inconsistencies, and communication gaps that lead to project delays and cost overruns.
+              </p>
+              <p className={`text-lg ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>
+                Manual validation and visualization processes are time-consuming and error-prone.
+              </p>
+            </div>
+            <div className={`p-8 rounded-xl border ${darkMode ? 'bg-surface-dark border-slate-700' : 'bg-card border-slate-200'}`}>
+              <ul className="space-y-6">
+                <li className="flex items-start">
+                  <AlertTriangle className={`h-6 w-6 ${darkMode ? 'text-warning' : 'text-warning'} mt-1 mr-4 flex-shrink-0`} />
+                  <span className={`${darkMode ? 'text-text-primary-dark' : 'text-text-primary'}`}>Ambiguities that lead to misinterpretation</span>
+                </li>
+                <li className="flex items-start">
+                  <RefreshCw className={`h-6 w-6 ${darkMode ? 'text-error' : 'text-error'} mt-1 mr-4 flex-shrink-0`} />
+                  <span className={`${darkMode ? 'text-text-primary-dark' : 'text-text-primary'}`}>Inconsistencies that cause implementation errors</span>
+                </li>
+                <li className="flex items-start">
+                  <ChevronRight className={`h-6 w-6 ${darkMode ? 'text-primary' : 'text-primary'} mt-1 mr-4 flex-shrink-0`} />
+                  <span className={`${darkMode ? 'text-text-primary-dark' : 'text-text-primary'}`}>Communication gaps between stakeholders</span>
+                </li>
+                <li className="flex items-start">
+                  <TrendingUp className={`h-6 w-6 ${darkMode ? 'text-success' : 'text-success'} mt-1 mr-4 flex-shrink-0`} />
+                  <span className={`${darkMode ? 'text-text-primary-dark' : 'text-text-primary'}`}>Time-consuming manual validation processes</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section
+        id="how-it-works"
+        className={`py-16 ${darkMode ? 'bg-slate-800' : 'bg-card'}`}
+        style={{ opacity: isVisible['how-it-works'] ? 1 : 0, transform: isVisible['how-it-works'] ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>How It Works</h2>
+          <p className={`text-center ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-12 max-w-2xl mx-auto`}>
+            A seamless process from document upload to AI-powered analysis and visualization
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className={`text-center p-6 ${darkMode ? 'bg-surface-dark border border-slate-700' : 'bg-surface'} rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+              <div className={`${darkMode ? 'bg-slate-700' : 'bg-blue-100'} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <FileText className={`h-8 w-8 ${darkMode ? 'text-primary/80' : 'text-primary'}`} />
+              </div>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-2`}>Upload Document</h3>
+              <p className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>Submit your requirements document in PDF, DOCX, or plain text format</p>
+            </div>
+
+            <div className={`text-center p-6 ${darkMode ? 'bg-surface-dark border border-slate-700' : 'bg-surface'} rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+              <div className={`${darkMode ? 'bg-emerald-900/30' : 'bg-green-100'} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <Brain className={`h-8 w-8 ${darkMode ? 'text-success/80' : 'text-success'}`} />
+              </div>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-2`}>AI Validation</h3>
+              <p className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>Our AI analyzes the document for ambiguities and inconsistencies</p>
+            </div>
+
+            <div className={`text-center p-6 ${darkMode ? 'bg-surface-dark border border-slate-700' : 'bg-surface'} rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+              <div className={`${darkMode ? 'bg-amber-900/30' : 'bg-amber-100'} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <BarChart3 className={`h-8 w-8 ${darkMode ? 'text-warning/80' : 'text-warning'}`} />
+              </div>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-2`}>Effort Estimation</h3>
+              <p className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>Get detailed reports with complexity metrics and risk analysis</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Preview */}
+      <section
+        id="preview"
+        className={`py-16 ${darkMode ? 'bg-background-dark' : 'bg-surface'}`}
+        style={{ opacity: isVisible.preview ? 1 : 0, transform: isVisible.preview ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>Product Preview</h2>
+          <p className={`text-center ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-12 max-w-2xl mx-auto`}>
+            Instantly validate and visualize your software requirements
+          </p>
+
+          <div className="flex justify-center">
+            <div className={`border-2 ${darkMode ? 'border-slate-700' : 'border-slate-200'} rounded-xl overflow-hidden shadow-xl max-w-4xl w-full`}>
+              <div className={`${darkMode ? 'bg-slate-800' : 'bg-card'} px-4 py-2 flex items-center`}>
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-error rounded-full"></div>
+                  <div className="w-3 h-3 bg-warning rounded-full"></div>
+                  <div className="w-3 h-3 bg-success rounded-full"></div>
+                </div>
+              </div>
+              <div className={`${darkMode ? 'bg-slate-800' : 'bg-surface'} p-8`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className={`text-lg font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>Requirements Analysis</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-success rounded-full mr-2"></div>
+                        <span className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>No ambiguities detected</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-warning rounded-full mr-2"></div>
+                        <span className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>Potential inconsistencies flagged</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                        <span className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>Complexity score: Medium</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>Generated Diagram</h3>
+                    <div className={`border rounded-lg p-4 h-32 flex items-center justify-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-card border-slate-200'}`}>
+                      <div className="text-center">
+                        <div className="inline-block p-2 bg-accent-primary/10 rounded-lg">
+                          <BarChart3 className={`h-10 w-10 ${darkMode ? 'text-accent-primary' : 'text-accent-primary'}`} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Solution Overview */}
+      <section
+        id="solution"
+        className={`py-16 ${darkMode ? 'bg-slate-800' : 'bg-card'}`}
+        style={{ opacity: isVisible.solution ? 1 : 0, transform: isVisible.solution ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-12`}>Automated Requirements Analysis</h2>
+          <div className="text-center max-w-3xl mx-auto">
+            <p className={`text-lg ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-8`}>
+              VisSpec leverages AI-powered semantic analysis to identify ambiguities, generate visual models, and provide complexity metrics that accelerate the requirements validation process.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Key Capabilities */}
+      <section
+        id="capabilities"
+        className={`py-16 ${darkMode ? 'bg-background-dark' : 'bg-surface'}`}
+        style={{ opacity: isVisible.capabilities ? 1 : 0, transform: isVisible.capabilities ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-12`}>Key Capabilities</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {capabilities.map((capability, index) => (
+              <div key={index} className={`p-6 rounded-xl hover:shadow-md transition-shadow border ${darkMode ? 'bg-surface-dark border-slate-700' : 'bg-card border-slate-200'}`}>
+                <h3 className={`text-lg font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-2`}>{capability.title}</h3>
+                <p className={`${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>{capability.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Intended Users */}
+      <section
+        id="users"
+        className={`py-16 ${darkMode ? 'bg-slate-800' : 'bg-card'}`}
+        style={{ opacity: isVisible.users ? 1 : 0, transform: isVisible.users ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-3xl font-bold text-center ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-12`}>For Students & Professionals</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className={`p-8 rounded-xl border shadow-sm ${darkMode ? 'bg-surface-dark border-slate-700' : 'bg-surface border-slate-200'}`}>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>Students/Analysts</h3>
+              <ul className={`space-y-2 ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>
+                <li>• Learn requirements engineering with AI assistance</li>
+                <li>• Practice with automated analysis tools</li>
+                <li>• Understand ambiguity detection</li>
+              </ul>
+            </div>
+            <div className={`p-8 rounded-xl border shadow-sm ${darkMode ? 'bg-surface-dark border-slate-700' : 'bg-surface border-slate-200'}`}>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-4`}>Professionals/Supervisors</h3>
+              <ul className={`space-y-2 ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'}`}>
+                <li>• Validate requirement quality</li>
+                <li>• Oversee requirement processes</li>
+                <li>• Ensure consistency across teams</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Technology Snapshot */}
+      <section
+        id="tech"
+        className={`py-16 ${darkMode ? 'bg-background-dark' : 'bg-surface'}`}
+        style={{ opacity: isVisible.tech ? 1 : 0, transform: isVisible.tech ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className={`text-2xl font-bold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-8`}>Built with Modern Technology</h2>
+          <div className="flex flex-wrap justify-center gap-4">
+            <span className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700 text-text-secondary-dark' : 'bg-card border-slate-200 text-text-secondary'}`}>React + FastAPI</span>
+            <span className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700 text-text-secondary-dark' : 'bg-card border-slate-200 text-text-secondary'}`}>Python + spaCy</span>
+            <span className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700 text-text-secondary-dark' : 'bg-card border-slate-200 text-text-secondary'}`}>Mermaid.js + SQLite</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section
+        id="cta"
+        className={`py-20 ${darkMode ? 'bg-gradient-to-b from-background-dark to-slate-800' : 'bg-gradient-to-b from-background to-blue-100'}`}
+        style={{ opacity: isVisible.cta ? 1 : 0, transform: isVisible.cta ? 'translateY(0)' : 'translateY(20px)' }}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className={`text-3xl font-bold ${darkMode ? 'text-text-primary-dark' : 'text-text-primary'} mb-6`}>Experience Automated Requirements Analysis</h2>
+          <p className={`text-lg ${darkMode ? 'text-text-secondary-dark' : 'text-text-secondary'} mb-8`}>
+            Transform your requirements engineering workflow today
+          </p>
+          <Link
+            to="/analysis"
+            className="btn-primary px-8 py-4 rounded-xl font-medium flex items-center justify-center w-fit mx-auto shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform"
+          >
+            Analyze Requirements Now
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className={`${darkMode ? 'bg-slate-900' : 'bg-slate-800'} text-white py-12`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <h3 className="text-xl font-bold">VisSpec</h3>
+              <p className="text-text-secondary-dark mt-2">AI-Powered Requirements Analysis</p>
+            </div>
+            <div className="flex space-x-6">
+              <Link to="/" className="text-text-secondary-dark hover:text-white transition-colors">Home</Link>
+              <Link to="/analysis" className="text-text-secondary-dark hover:text-white transition-colors">Analysis</Link>
+              <Link to="/visualization" className="text-text-secondary-dark hover:text-white transition-colors">Visualization</Link>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-slate-700 text-center text-neutral-light text-sm">
+            <p>&copy; {new Date().getFullYear()} VisSpec</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default LandingPage;
