@@ -66,7 +66,9 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
          Entity/Actor      Ambiguity/
          Extraction        Inconsistency Detection
                 ↓              ↓
-         Confidence Scoring → Validation Report
+         Confidence Scoring → BR-10 Check (≥0.70?)
+                ↓              ↓
+         Validation Report ←──┘ (if ≥0.70 → report, else manual review)
 
 Predictive Path:
 Raw Features → scikit-learn MinMaxScaler → Normalized Features
