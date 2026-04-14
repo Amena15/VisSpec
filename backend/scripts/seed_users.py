@@ -20,6 +20,7 @@ def seed():
     db = SessionLocal()
     try:
         defaults = [
+            # --- Analysts (4 users) ---
             {
                 "username": "analyst",
                 "email": "analyst@vispec.com",
@@ -27,9 +28,34 @@ def seed():
                 "role": UserRole.ANALYST.value,
             },
             {
+                "username": "john_doe",
+                "email": "john.doe@vispec.com",
+                "password": "Analyst@2026",
+                "role": UserRole.ANALYST.value,
+            },
+            {
+                "username": "jane_smith",
+                "email": "jane.smith@vispec.com",
+                "password": "Analyst@2026",
+                "role": UserRole.ANALYST.value,
+            },
+            {
+                "username": "ahmad_ali",
+                "email": "ahmad.ali@vispec.com",
+                "password": "Analyst@2026",
+                "role": UserRole.ANALYST.value,
+            },
+            # --- Supervisors (2 users) ---
+            {
                 "username": "supervisor",
                 "email": "supervisor@vispec.com",
                 "password": "VisSpec123",
+                "role": UserRole.SUPERVISOR.value,
+            },
+            {
+                "username": "dr_zarina",
+                "email": "zarina@vispec.com",
+                "password": "Supervisor@2026",
                 "role": UserRole.SUPERVISOR.value,
             },
         ]
