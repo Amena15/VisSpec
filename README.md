@@ -54,7 +54,7 @@ The system performs:
 | **Semantic Analysis** | Extract entities, actors, modal verbs, and ambiguities using LLaMA 3 | `/api/analysis/semantic` |
 | **Predictive Analysis** | Complexity scoring, effort estimation, risk assessment | `/api/analysis/predictive` |
 | **Full Analysis** | Combined semantic + predictive analysis | `/api/analysis/full` |
-| **UML Diagram Generation** | Create Use Case, Sequence, and Activity diagrams from requirements | `/api/visualization/*` |
+| **UML Diagram Generation** | Create Use Case, Sequence, and Activity diagrams from requirements | `/api/visualization/` (with `diagram_type` field) |
 | **Document Validation** | Single and batch validation of requirement texts | `/validate/*` |
 | **PDF Report Export** | Export validation reports as PDF with VisSpec watermark | `/export-report/{project_id}` |
 
@@ -270,6 +270,11 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 4. Click **Create API Key**
 5. Copy the generated key to `GROQ_API_KEY` in your `.env` file
 
+> ⚠️ **SECURITY WARNING:** The default `SECRET_KEY` in `config.py` is for **development only**.  
+> In any production-like environment, you **MUST** override it with a strong, random key in your `.env` file.
+
+> ℹ️ **Note:** If `GROQ_API_KEY` is not provided, the system automatically falls back to a **rule-based heuristic** for semantic analysis. The heuristic has lower accuracy but ensures the system remains functional without an internet connection or API key.
+
 ---
 
 ## 📖 Usage
@@ -319,11 +324,12 @@ curl -X POST 'http://localhost:8000/api/analysis/predictive' \
 #### Generate Use Case Diagram
 
 ```bash
-curl -X POST 'http://localhost:8000/api/visualization/usecase' \
+curl -X POST 'http://localhost:8000/api/visualization/' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -d '{
-    "text": "Customers can browse products and checkout. Admins can manage products and view orders."
+    "text": "Customers can browse products and checkout. Admins can manage products and view orders.",
+    "diagram_type": "usecase"
   }'
 ```
 
@@ -355,9 +361,7 @@ curl -X POST 'http://localhost:8000/api/visualization/usecase' \
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/visualization/` | Generate diagram (specify type in body) | Yes |
-| POST | `/api/visualization/usecase` | Generate Use Case diagram | Yes |
-| POST | `/api/visualization/sequence` | Generate Sequence diagram | Yes |
+| POST | `/api/visualization/` | Generate UML diagram (provide `diagram_type`: `usecase`/`sequence`/`activity` in JSON body) | Yes |
 
 ### Validation (`/validate`)
 
@@ -486,7 +490,7 @@ VisSpec/
 | **Modular Monolith** | Avoids microservice complexity while maintaining clear service boundaries | Section 4.1, 5.2 |
 | **LLaMA 3 (70B)** | State-of-the-art open LLM for semantic validation via Groq's fast inference | Section 4.8.1 |
 | **FastAPI** | Native async support for non-blocking LLM API calls, automatic OpenAPI docs | Section 5.4.2 |
-| **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | Section 4.5.1 |
+| **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | REQ_01 (Table 3.2) |
 | **0.70 Confidence Threshold** | Balances precision/recall for requirement validation (BR-10) | Section 2.3.3 |
 | **SQLite** | Zero-configuration, portable database ideal for FYP demonstration | Section 5.4.3 |
 | **Mermaid.js** | Text-to-diagram tool enabling dynamic UML generation from requirements | Section 4.8.2 |

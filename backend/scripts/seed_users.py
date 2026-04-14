@@ -21,21 +21,15 @@ def seed():
     try:
         defaults = [
             {
-                "username": "student",
-                "email": "student@vispec.com",
-                "password": "Student@001",
+                "username": "analyst",
+                "email": "analyst@vispec.com",
+                "password": "VisSpec123",
                 "role": UserRole.STUDENT.value,
-            },
-            {
-                "username": "developer",
-                "email": "developer@vispec.com",
-                "password": "Developer@001",
-                "role": UserRole.DEVELOPER.value,
             },
             {
                 "username": "supervisor",
                 "email": "supervisor@vispec.com",
-                "password": "Supervisor@001",
+                "password": "VisSpec123",
                 "role": UserRole.SUPERVISOR.value,
             },
         ]
