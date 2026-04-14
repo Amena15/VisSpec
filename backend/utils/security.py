@@ -10,7 +10,7 @@ from config.database import get_db
 from core.config import settings
 from models.user import User, UserRole
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 def verify_password(plain_password, hashed_password):

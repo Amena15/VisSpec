@@ -79,7 +79,7 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
 ### Security
 
 - 🔐 **JWT Authentication** - HS256 algorithm with configurable expiration
-- 🔑 **Argon2 Password Hashing** - Winner of Password Hashing Competition (2015)
+- 🔑 **bcrypt Password Hashing** - Industry-standard adaptive hash function with work factor
 - 🛡️ **Rate Limiting** - 5 failed login attempts → 15-minute lockout
 - 🔒 **Input Validation** - Pydantic schemas for request/response validation
 - 🚫 **SQL Injection Prevention** - SQLAlchemy ORM with parameterized queries
@@ -134,7 +134,7 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
 
 | Service | Responsibility | Files |
 |---------|----------------|-------|
-| **Authentication Service** | JWT tokens, Argon2 hashing, rate limiting, password reset | `api/auth.py`, `utils/security.py` |
+| **Authentication Service** | JWT tokens, bcrypt hashing, rate limiting, password reset | `api/auth.py`, `utils/security.py` |
 | **Semantic Analysis Service** | Entity extraction, ambiguity detection, relationship mapping | `services/ai/semantic_analyzer.py` |
 | **Predictive Analysis Service** | Complexity scoring, effort estimation, risk assessment | `services/ai/predictive_analyzer.py` |
 | **Validation Service** | Completeness, consistency, ambiguity checks | `services/validation/*` |
@@ -155,7 +155,7 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
 | SQLite | 3 | Lightweight, portable database |
 | LLaMA 3 | 70B via Groq API | LLM for semantic analysis |
 | spaCy | 3.7+ | NLP preprocessing (en_core_web_sm) |
-| Passlib | 1.7.4 | Password hashing (Argon2 scheme) |
+| Passlib | 1.7.4 | Password hashing (bcrypt scheme) |
 | python-jose | 3.3+ | JWT token creation/verification |
 | Pydantic | 2.7+ | Request/response schema validation |
 | ReportLab | 4.0+ | PDF report generation |
@@ -434,7 +434,7 @@ VisSpec/
 │   ├── core/                         # Core configuration
 │   │   └── config.py                 # Singleton settings (env vars)
 │   ├── models/                       # SQLAlchemy ORM models (17 tables)
-│   │   ├── user.py                   # User model with Argon2 hashing
+│   │   ├── user.py                   # User model with bcrypt hashing
 │   │   ├── auxiliary.py              # Token, session, reset models
 │   │   └── ...                       # Project, requirement, defect models
 │   ├── schemas/                      # Pydantic request/response schemas
@@ -451,7 +451,7 @@ VisSpec/
 │   │   │   └── visualizer.py         # Mermaid.js generator
 │   │   └── report/                   # PDF export service
 │   ├── utils/                        # Utility functions
-│   │   └── security.py               # JWT, Argon2, rate limiting
+│   │   └── security.py               # JWT, bcrypt, rate limiting
 │   ├── scripts/                      # Database seeding & migration
 │   │   ├── seed_users.py             # Create test users
 │   │   └── populate_test_users.py    # Alternative seeding script
@@ -486,7 +486,7 @@ VisSpec/
 | **Modular Monolith** | Avoids microservice complexity while maintaining clear service boundaries | Section 4.1, 5.2 |
 | **LLaMA 3 (70B)** | State-of-the-art open LLM for semantic validation via Groq's fast inference | Section 4.8.1 |
 | **FastAPI** | Native async support for non-blocking LLM API calls, automatic OpenAPI docs | Section 5.4.2 |
-| **Argon2 Hashing** | Winner of Password Hashing Competition (2015), memory-hard against GPU attacks | Section 4.5.1 |
+| **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | Section 4.5.1 |
 | **0.70 Confidence Threshold** | Balances precision/recall for requirement validation (BR-10) | Section 2.3.3 |
 | **SQLite** | Zero-configuration, portable database ideal for FYP demonstration | Section 5.4.3 |
 | **Mermaid.js** | Text-to-diagram tool enabling dynamic UML generation from requirements | Section 4.8.2 |
