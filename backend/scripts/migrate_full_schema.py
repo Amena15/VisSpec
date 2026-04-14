@@ -438,7 +438,7 @@ def migrate():
 
     # Migrate old users to new schema
     role_map = {
-        'analyst': 'student',
+        'analyst': 'analyst',
         'supervisor': 'supervisor',
     }
     now_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -446,7 +446,7 @@ def migrate():
     for old_user in old_users:
         user_id = f"migrated_{old_user.get('id', old_user.get('user_id', ''))}"
         old_role = old_user.get('role', 'analyst')
-        new_role = role_map.get(old_role, 'student')
+        new_role = role_map.get(old_role, 'analyst')
         password_hash = old_user.get('hashed_password', old_user.get('password_hash', ''))
 
         created_at = old_user.get('created_at') or now_str

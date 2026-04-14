@@ -19,9 +19,8 @@ def _now():
 
 
 class UserRole(PyEnum):
-    STUDENT = "student"
-    DEVELOPER = "developer"
-    SUPERVISOR = "supervisor"
+    ANALYST = "analyst"        # Regular user
+    SUPERVISOR = "supervisor"  # Admin user
 
 
 class User(Base):

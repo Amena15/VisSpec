@@ -24,7 +24,7 @@ def seed():
                 "username": "analyst",
                 "email": "analyst@vispec.com",
                 "password": "VisSpec123",
-                "role": UserRole.STUDENT.value,
+                "role": UserRole.ANALYST.value,
             },
             {
                 "username": "supervisor",
