@@ -283,21 +283,12 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 
 After running the seed script (`python scripts/seed_users.py`):
 
-#### Analyst Accounts (4 users)
+| Role | Email | Password |
+|------|-------|----------|
+| Analyst | `analyst@vispec.com` | `VisSpec123` |
+| Supervisor | `supervisor@vispec.com` | `VisSpec123` |
 
-| Username | Email | Password |
-|----------|-------|----------|
-| analyst | `analyst@vispec.com` | `VisSpec123` |
-| john_doe | `john.doe@vispec.com` | `Analyst@2026` |
-| jane_smith | `jane.smith@vispec.com` | `Analyst@2026` |
-| ahmad_ali | `ahmad.ali@vispec.com` | `Analyst@2026` |
-
-#### Supervisor Accounts (2 users)
-
-| Username | Email | Password |
-|----------|-------|----------|
-| supervisor | `supervisor@vispec.com` | `VisSpec123` |
-| dr_zarina | `zarina@vispec.com` | `Supervisor@2026` |
+> ℹ️ **Note**: 4 additional test users are also seeded (see `scripts/seed_users.py`).
 
 > ⚠️ **Note**: Login uses **email** and **password**, not username.
 
