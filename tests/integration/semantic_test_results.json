@@ -1,0 +1,1059 @@
+[
+  {
+    "name": "Well-Written Security Requirement",
+    "input": "The system shall lock user accounts after 5 failed login attempts within 15 minutes. The system must notify users via email after account lockout. Passwords shall be hashed using Argon2.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103403",
+        "text": "The system shall lock user accounts after 5 failed login attempts within 15 minutes. The system must notify users via email after account lockout. Passwords shall be hashed using Argon2.",
+        "entities": [
+          {
+            "text": "user accounts",
+            "label": "Data Entity",
+            "start": 15,
+            "end": 27,
+            "description": "User account data"
+          },
+          {
+            "text": "system",
+            "label": "System Component",
+            "start": 4,
+            "end": 10,
+            "description": "The system being described"
+          },
+          {
+            "text": "email",
+            "label": "External System",
+            "start": 44,
+            "end": 49,
+            "description": "Email system used for notifications"
+          },
+          {
+            "text": "Argon2",
+            "label": "External System",
+            "start": 73,
+            "end": 78,
+            "description": "Password hashing algorithm"
+          },
+          {
+            "text": "5 failed login attempts",
+            "label": "Constraint",
+            "start": 24,
+            "end": 41,
+            "description": "Condition for account lockout"
+          },
+          {
+            "text": "within 15 minutes",
+            "label": "Temporal Requirement",
+            "start": 42,
+            "end": 56,
+            "description": "Timeframe for failed login attempts"
+          },
+          {
+            "text": "passwords",
+            "label": "Data Entity",
+            "start": 64,
+            "end": 72,
+            "description": "User passwords"
+          },
+          {
+            "text": "confidentiality",
+            "label": "Quality Attribute",
+            "start": -1,
+            "end": -1,
+            "description": "Implicit requirement for password hashing"
+          }
+        ],
+        "relations": [
+          {
+            "from": "system",
+            "to": "user accounts",
+            "type": "association",
+            "description": "System locks user accounts"
+          },
+          {
+            "from": "system",
+            "to": "email",
+            "type": "association",
+            "description": "System notifies users via email"
+          },
+          {
+            "from": "system",
+            "to": "passwords",
+            "type": "association",
+            "description": "System hashes passwords"
+          },
+          {
+            "from": "system",
+            "to": "Argon2",
+            "type": "complies_with",
+            "description": "System complies with Argon2 password hashing algorithm"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "shall",
+            "position": 0,
+            "description": "Implies a requirement, but does not specify consequences for non-compliance",
+            "severity": "low",
+            "suggestion": "Consider adding specific consequences for non-compliance"
+          },
+          {
+            "term": "must",
+            "position": 30,
+            "description": "Implies a requirement, but does not specify consequences for non-compliance",
+            "severity": "low",
+            "suggestion": "Consider adding specific consequences for non-compliance"
+          }
+        ],
+        "confidence_score": 0.7,
+        "processed_at": "2026-04-14T10:34:03.655074"
+      }
+    }
+  },
+  {
+    "name": "Poorly-Written Requirement",
+    "input": "The system should be fast and user-friendly. It may have good security. Data retention should be appropriate. The system must comply with relevant regulations.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103405",
+        "text": "The system should be fast and user-friendly. It may have good security. Data retention should be appropriate. The system must comply with relevant regulations.",
+        "entities": [
+          {
+            "text": "system",
+            "label": "System Component",
+            "start": 0,
+            "end": 6,
+            "description": "The software system being described"
+          },
+          {
+            "text": "security",
+            "label": "Quality Attribute",
+            "start": 24,
+            "end": 32,
+            "description": "A quality attribute of the system"
+          },
+          {
+            "text": "data retention",
+            "label": "Temporal Requirement",
+            "start": 41,
+            "end": 53,
+            "description": "A time-based rule for data storage"
+          },
+          {
+            "text": "regulations",
+            "label": "External System",
+            "start": 73,
+            "end": 84,
+            "description": "External rules the system must follow"
+          }
+        ],
+        "relations": [
+          {
+            "from": "system",
+            "to": "regulations",
+            "type": "complies_with",
+            "description": "The system must follow external regulations"
+          },
+          {
+            "from": "system",
+            "to": "security",
+            "type": "association",
+            "description": "The system provides security"
+          },
+          {
+            "from": "system",
+            "to": "data retention",
+            "type": "association",
+            "description": "The system retains data"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "fast",
+            "position": 15,
+            "description": "Lack of specific performance metric",
+            "severity": "medium",
+            "suggestion": "Define a specific response time or throughput"
+          },
+          {
+            "term": "user-friendly",
+            "position": 20,
+            "description": "Vague usability requirement",
+            "severity": "medium",
+            "suggestion": "Define specific usability criteria or metrics"
+          },
+          {
+            "term": "good security",
+            "position": 28,
+            "description": "Unclear security requirement",
+            "severity": "high",
+            "suggestion": "Define specific security requirements or standards"
+          },
+          {
+            "term": "appropriate",
+            "position": 50,
+            "description": "Vague data retention requirement",
+            "severity": "high",
+            "suggestion": "Define a specific data retention period"
+          },
+          {
+            "term": "relevant regulations",
+            "position": 71,
+            "description": "Unclear regulatory requirement",
+            "severity": "high",
+            "suggestion": "Specify the relevant regulations or standards"
+          }
+        ],
+        "confidence_score": 0.23,
+        "processed_at": "2026-04-14T10:34:05.171022"
+      }
+    }
+  },
+  {
+    "name": "Healthcare Domain",
+    "input": "The electronic health record system shall maintain patient data confidentiality. Only authorized medical staff can access patient records. Data retention period should be appropriate. System must comply with relevant privacy regulations.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103406",
+        "text": "The electronic health record system shall maintain patient data confidentiality. Only authorized medical staff can access patient records. Data retention period should be appropriate. System must comply with relevant privacy regulations.",
+        "entities": [
+          {
+            "text": "electronic health record system",
+            "label": "System Component",
+            "start": 0,
+            "end": 24,
+            "description": "The system that stores and manages patient data"
+          },
+          {
+            "text": "patient data",
+            "label": "Data Entity",
+            "start": 25,
+            "end": 35,
+            "description": "The data related to patients"
+          },
+          {
+            "text": "confidentiality",
+            "label": "Quality Attribute",
+            "start": 36,
+            "end": 48,
+            "description": "The ability to keep patient data private"
+          },
+          {
+            "text": "medical staff",
+            "label": "Actor",
+            "start": 50,
+            "end": 62,
+            "description": "The people who are authorized to access patient records"
+          },
+          {
+            "text": "patient records",
+            "label": "Data Entity",
+            "start": 63,
+            "end": 76,
+            "description": "The records that contain patient data"
+          },
+          {
+            "text": "data retention period",
+            "label": "Temporal Requirement",
+            "start": 88,
+            "end": 105,
+            "description": "The amount of time that patient data is stored"
+          },
+          {
+            "text": "privacy regulations",
+            "label": "External System",
+            "start": 119,
+            "end": 135,
+            "description": "The rules that govern how patient data is handled"
+          },
+          {
+            "text": "authorized",
+            "label": "Constraint",
+            "start": 49,
+            "end": 58,
+            "description": "The rule that only certain people can access patient records"
+          }
+        ],
+        "relations": [
+          {
+            "from": "medical staff",
+            "to": "patient records",
+            "type": "association",
+            "description": "Medical staff access patient records"
+          },
+          {
+            "from": "electronic health record system",
+            "to": "privacy regulations",
+            "type": "complies_with",
+            "description": "The system must comply with privacy regulations"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "appropriate",
+            "position": 106,
+            "description": "The term 'appropriate' is vague and does not specify a clear time period",
+            "severity": "high",
+            "suggestion": "Specify a clear time period, such as 'at least 5 years'"
+          },
+          {
+            "term": "relevant",
+            "position": 120,
+            "description": "The term 'relevant' is vague and does not specify which regulations are applicable",
+            "severity": "medium",
+            "suggestion": "Specify the relevant regulations, such as 'HIPAA'"
+          }
+        ],
+        "confidence_score": 0.55,
+        "processed_at": "2026-04-14T10:34:06.985360"
+      }
+    }
+  },
+  {
+    "name": "Banking Domain",
+    "input": "The banking system must authenticate users using multi-factor authentication. Transaction amounts exceeding $10,000 require supervisor approval within 2 business days. All transactions must be logged with timestamps and user IP addresses.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103408",
+        "text": "The banking system must authenticate users using multi-factor authentication. Transaction amounts exceeding $10,000 require supervisor approval within 2 business days. All transactions must be logged with timestamps and user IP addresses.",
+        "entities": [
+          {
+            "text": "banking system",
+            "label": "System Component",
+            "start": 0,
+            "end": 13,
+            "description": "The system that manages banking operations"
+          },
+          {
+            "text": "users",
+            "label": "Actor",
+            "start": 24,
+            "end": 29,
+            "description": "Human users of the banking system"
+          },
+          {
+            "text": "multi-factor authentication",
+            "label": "Quality Attribute",
+            "start": 31,
+            "end": 52,
+            "description": "Security mechanism to verify user identities"
+          },
+          {
+            "text": "transactions",
+            "label": "Data Entity",
+            "start": 62,
+            "end": 73,
+            "description": "Financial transactions performed by users"
+          },
+          {
+            "text": "supervisor",
+            "label": "Actor",
+            "start": 84,
+            "end": 93,
+            "description": "Banking staff responsible for approving transactions"
+          },
+          {
+            "text": "2 business days",
+            "label": "Temporal Requirement",
+            "start": 105,
+            "end": 119,
+            "description": "Timeframe for supervisor approval"
+          },
+          {
+            "text": "timestamps",
+            "label": "Data Entity",
+            "start": 135,
+            "end": 145,
+            "description": "Record of transaction times"
+          },
+          {
+            "text": "user IP addresses",
+            "label": "Data Entity",
+            "start": 146,
+            "end": 162,
+            "description": "Record of user IP addresses"
+          },
+          {
+            "text": "transaction amounts exceeding $10,000",
+            "label": "Constraint",
+            "start": 74,
+            "end": 104,
+            "description": "Threshold for requiring supervisor approval"
+          }
+        ],
+        "relations": [
+          {
+            "from": "users",
+            "to": "banking system",
+            "type": "association",
+            "description": "Users interact with the banking system"
+          },
+          {
+            "from": "supervisor",
+            "to": "transactions",
+            "type": "association",
+            "description": "Supervisor approves transactions"
+          },
+          {
+            "from": "banking system",
+            "to": "multi-factor authentication",
+            "type": "complies_with",
+            "description": "Banking system must use multi-factor authentication"
+          },
+          {
+            "from": "transactions",
+            "to": "logging",
+            "type": "include",
+            "description": "Transactions must be logged"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "within 2 business days",
+            "position": 105,
+            "description": "Unclear definition of business days",
+            "severity": "medium",
+            "suggestion": "Define business days as weekdays, excluding holidays"
+          }
+        ],
+        "confidence_score": 0.7,
+        "processed_at": "2026-04-14T10:34:08.928947"
+      }
+    }
+  },
+  {
+    "name": "E-Commerce Domain",
+    "input": "Customers can add items to shopping cart. The system usually processes payments quickly. Orders may be cancelled before shipping. Refunds are sometimes issued for defective products.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103410",
+        "text": "Customers can add items to shopping cart. The system usually processes payments quickly. Orders may be cancelled before shipping. Refunds are sometimes issued for defective products.",
+        "entities": [
+          {
+            "text": "Customers",
+            "label": "Actor",
+            "start": 0,
+            "end": 9,
+            "description": "Human users who interact with the system"
+          },
+          {
+            "text": "shopping cart",
+            "label": "System Component",
+            "start": 15,
+            "end": 27,
+            "description": "Subsystem for managing items"
+          },
+          {
+            "text": "payments",
+            "label": "Data Entity",
+            "start": 34,
+            "end": 42,
+            "description": "Financial transactions"
+          },
+          {
+            "text": "orders",
+            "label": "Data Entity",
+            "start": 51,
+            "end": 57,
+            "description": "Customer requests"
+          },
+          {
+            "text": "refunds",
+            "label": "Data Entity",
+            "start": 83,
+            "end": 90,
+            "description": "Financial returns"
+          },
+          {
+            "text": "defective products",
+            "label": "Data Entity",
+            "start": 96,
+            "end": 112,
+            "description": "Faulty items"
+          },
+          {
+            "text": "quickly",
+            "label": "Quality Attribute",
+            "start": 45,
+            "end": 51,
+            "description": "Performance attribute"
+          }
+        ],
+        "relations": [
+          {
+            "from": "Customers",
+            "to": "shopping cart",
+            "type": "association",
+            "description": "Customers add items to cart"
+          },
+          {
+            "from": "system",
+            "to": "payments",
+            "type": "association",
+            "description": "System processes payments"
+          },
+          {
+            "from": "Customers",
+            "to": "orders",
+            "type": "association",
+            "description": "Customers place orders"
+          },
+          {
+            "from": "system",
+            "to": "orders",
+            "type": "include",
+            "description": "System must cancel orders before shipping if requested"
+          },
+          {
+            "from": "system",
+            "to": "refunds",
+            "type": "extend",
+            "description": "System may issue refunds for defective products"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "usually",
+            "position": 34,
+            "description": "Unclear timeframe for payment processing",
+            "severity": "medium",
+            "suggestion": "Specify average payment processing time"
+          },
+          {
+            "term": "sometimes",
+            "position": 83,
+            "description": "Unclear conditions for refund issuance",
+            "severity": "medium",
+            "suggestion": "Define specific conditions for refunds"
+          },
+          {
+            "term": "before shipping",
+            "position": 58,
+            "description": "Unclear timeframe for order cancellation",
+            "severity": "low",
+            "suggestion": "Specify exact cancellation deadline"
+          }
+        ],
+        "confidence_score": 0.45,
+        "processed_at": "2026-04-14T10:34:10.721970"
+      }
+    }
+  },
+  {
+    "name": "Safety-Critical System",
+    "input": "The braking system shall engage within 50 milliseconds when obstacle detected at 10 meters. The system must sound an alarm immediately. Brake pressure must reach 100% within 100 milliseconds.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103412",
+        "text": "The braking system shall engage within 50 milliseconds when obstacle detected at 10 meters. The system must sound an alarm immediately. Brake pressure must reach 100% within 100 milliseconds.",
+        "entities": [
+          {
+            "text": "braking system",
+            "label": "System Component",
+            "start": 0,
+            "end": 14,
+            "description": "The system responsible for stopping the vehicle"
+          },
+          {
+            "text": "obstacle",
+            "label": "Data Entity",
+            "start": 24,
+            "end": 32,
+            "description": "An object that the system detects"
+          },
+          {
+            "text": "alarm",
+            "label": "System Component",
+            "start": 44,
+            "end": 49,
+            "description": "A warning signal"
+          },
+          {
+            "text": "brake pressure",
+            "label": "Data Entity",
+            "start": 61,
+            "end": 74,
+            "description": "The force applied to the brakes"
+          },
+          {
+            "text": "50 milliseconds",
+            "label": "Temporal Requirement",
+            "start": 15,
+            "end": 27,
+            "description": "The time it takes for the braking system to engage"
+          },
+          {
+            "text": "100 milliseconds",
+            "label": "Temporal Requirement",
+            "start": 75,
+            "end": 90,
+            "description": "The time it takes for brake pressure to reach 100%"
+          },
+          {
+            "text": "10 meters",
+            "label": "Data Entity",
+            "start": 33,
+            "end": 41,
+            "description": "The distance at which the obstacle is detected"
+          }
+        ],
+        "relations": [
+          {
+            "from": "braking system",
+            "to": "obstacle",
+            "type": "association",
+            "description": "The braking system detects an obstacle"
+          },
+          {
+            "from": "system",
+            "to": "alarm",
+            "type": "association",
+            "description": "The system sounds an alarm"
+          },
+          {
+            "from": "braking system",
+            "to": "brake pressure",
+            "type": "association",
+            "description": "The braking system applies brake pressure"
+          },
+          {
+            "from": "braking system",
+            "to": "50 milliseconds",
+            "type": "complies_with",
+            "description": "The braking system must engage within 50 milliseconds"
+          },
+          {
+            "from": "braking system",
+            "to": "100 milliseconds",
+            "type": "complies_with",
+            "description": "The braking system must apply 100% brake pressure within 100 milliseconds"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "immediately",
+            "position": 50,
+            "description": "The term 'immediately' is vague and does not provide a specific time frame",
+            "severity": "medium",
+            "suggestion": "Define a specific time frame, e.g., 'within 10 milliseconds'"
+          }
+        ],
+        "confidence_score": 0.7,
+        "processed_at": "2026-04-14T10:34:12.358090"
+      }
+    }
+  },
+  {
+    "name": "API Requirements",
+    "input": "The REST API must support GET, POST, PUT, and DELETE methods. Endpoints shall return JSON responses. The system should handle many concurrent requests. Error messages must be descriptive.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103413",
+        "text": "The REST API must support GET, POST, PUT, and DELETE methods. Endpoints shall return JSON responses. The system should handle many concurrent requests. Error messages must be descriptive.",
+        "entities": [
+          {
+            "text": "REST API",
+            "label": "System Component",
+            "start": 0,
+            "end": 7,
+            "description": "The REST API subsystem"
+          },
+          {
+            "text": "GET, POST, PUT, and DELETE methods",
+            "label": "System Component",
+            "start": 20,
+            "end": 41,
+            "description": "HTTP request methods"
+          },
+          {
+            "text": "JSON responses",
+            "label": "Data Entity",
+            "start": 47,
+            "end": 59,
+            "description": "Response data format"
+          },
+          {
+            "text": "concurrent requests",
+            "label": "Quality Attribute",
+            "start": 71,
+            "end": 87,
+            "description": "System performance attribute"
+          },
+          {
+            "text": "descriptive error messages",
+            "label": "Quality Attribute",
+            "start": 105,
+            "end": 125,
+            "description": "Error handling attribute"
+          }
+        ],
+        "relations": [
+          {
+            "from": "REST API",
+            "to": "JSON responses",
+            "type": "association",
+            "description": "The REST API returns JSON responses"
+          },
+          {
+            "from": "REST API",
+            "to": "concurrent requests",
+            "type": "association",
+            "description": "The REST API handles concurrent requests"
+          },
+          {
+            "from": "REST API",
+            "to": "descriptive error messages",
+            "type": "association",
+            "description": "The REST API returns descriptive error messages"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "many",
+            "position": 71,
+            "description": "Unclear quantity of concurrent requests",
+            "severity": "medium",
+            "suggestion": "Specify a minimum number of concurrent requests"
+          },
+          {
+            "term": "descriptive",
+            "position": 105,
+            "description": "Unclear level of detail for error messages",
+            "severity": "low",
+            "suggestion": "Define the required level of detail for error messages"
+          }
+        ],
+        "confidence_score": 0.65,
+        "processed_at": "2026-04-14T10:34:13.897002"
+      }
+    }
+  },
+  {
+    "name": "Mixed Quality",
+    "input": "REQ-001: The system shall allow users to reset passwords via email. REQ-002: Password reset links must expire after a reasonable time. REQ-003: The system should log all password reset attempts.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103415",
+        "text": "REQ-001: The system shall allow users to reset passwords via email. REQ-002: Password reset links must expire after a reasonable time. REQ-003: The system should log all password reset attempts.",
+        "entities": [
+          {
+            "text": "users",
+            "label": "Actor",
+            "start": 15,
+            "end": 20,
+            "description": "Human users of the system"
+          },
+          {
+            "text": "system",
+            "label": "System Component",
+            "start": 5,
+            "end": 11,
+            "description": "The password reset system"
+          },
+          {
+            "text": "password reset links",
+            "label": "Data Entity",
+            "start": 24,
+            "end": 41,
+            "description": "Temporary links for password reset"
+          },
+          {
+            "text": "email",
+            "label": "External System",
+            "start": 30,
+            "end": 35,
+            "description": "Email service for sending password reset links"
+          },
+          {
+            "text": "password reset attempts",
+            "label": "Data Entity",
+            "start": 43,
+            "end": 62,
+            "description": "Records of password reset attempts"
+          },
+          {
+            "text": "reasonable time",
+            "label": "Temporal Requirement",
+            "start": 50,
+            "end": 63,
+            "description": "Time limit for password reset link expiration"
+          },
+          {
+            "text": "confidentiality",
+            "label": "Quality Attribute",
+            "start": -1,
+            "end": -1,
+            "description": "Protection of user password information"
+          }
+        ],
+        "relations": [
+          {
+            "from": "users",
+            "to": "password reset links",
+            "type": "association",
+            "description": "Users access password reset links via email"
+          },
+          {
+            "from": "system",
+            "to": "password reset attempts",
+            "type": "include",
+            "description": "System logs all password reset attempts"
+          },
+          {
+            "from": "password reset links",
+            "to": "reasonable time",
+            "type": "complies_with",
+            "description": "Password reset links expire after a reasonable time"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "reasonable time",
+            "position": 50,
+            "description": "Unclear time limit for password reset link expiration",
+            "severity": "medium",
+            "suggestion": "Specify a exact time limit, e.g., 30 minutes"
+          },
+          {
+            "term": "should",
+            "position": 69,
+            "description": "Unclear requirement for logging password reset attempts",
+            "severity": "low",
+            "suggestion": "Replace with 'shall' or 'must' for clarity"
+          }
+        ],
+        "confidence_score": 0.65,
+        "processed_at": "2026-04-14T10:34:15.638842"
+      }
+    }
+  },
+  {
+    "name": "Performance Requirements",
+    "input": "The web server must handle high traffic loads. Page load time should be fast. Database queries must be optimized. The system should scale to support future growth.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103417",
+        "text": "The web server must handle high traffic loads. Page load time should be fast. Database queries must be optimized. The system should scale to support future growth.",
+        "entities": [
+          {
+            "text": "web server",
+            "label": "System Component",
+            "start": 0,
+            "end": 10,
+            "description": "The component handling HTTP requests"
+          },
+          {
+            "text": "high traffic loads",
+            "label": "Quality Attribute",
+            "start": 15,
+            "end": 31,
+            "description": "The system's ability to handle a large number of requests"
+          },
+          {
+            "text": "page load time",
+            "label": "Quality Attribute",
+            "start": 36,
+            "end": 48,
+            "description": "The time it takes for a page to load"
+          },
+          {
+            "text": "fast",
+            "label": "Quality Attribute",
+            "start": 53,
+            "end": 56,
+            "description": "A desirable page load time"
+          },
+          {
+            "text": "database queries",
+            "label": "System Component",
+            "start": 61,
+            "end": 75,
+            "description": "The system's interactions with the database"
+          },
+          {
+            "text": "optimized",
+            "label": "Quality Attribute",
+            "start": 81,
+            "end": 89,
+            "description": "The state of the database queries for better performance"
+          },
+          {
+            "text": "future growth",
+            "label": "Temporal Requirement",
+            "start": 99,
+            "end": 111,
+            "description": "The system's ability to adapt to increasing demands over time"
+          }
+        ],
+        "relations": [
+          {
+            "from": "web server",
+            "to": "high traffic loads",
+            "type": "association",
+            "description": "The web server handles high traffic loads"
+          },
+          {
+            "from": "database queries",
+            "to": "optimized",
+            "type": "association",
+            "description": "The database queries are optimized"
+          },
+          {
+            "from": "system",
+            "to": "future growth",
+            "type": "complies_with",
+            "description": "The system must scale to support future growth"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "fast",
+            "position": 53,
+            "description": "The term 'fast' is subjective and does not provide a specific measurement",
+            "severity": "medium",
+            "suggestion": "Define a specific page load time threshold, e.g., 'less than 2 seconds'"
+          },
+          {
+            "term": "high traffic loads",
+            "position": 15,
+            "description": "The term 'high traffic loads' is vague and does not provide a specific measurement",
+            "severity": "medium",
+            "suggestion": "Define a specific traffic load threshold, e.g., '1000 concurrent requests per second'"
+          },
+          {
+            "term": "should",
+            "position": 35,
+            "description": "The term 'should' is ambiguous and does not provide a clear requirement",
+            "severity": "low",
+            "suggestion": "Replace with a more specific term, e.g., 'must' or 'will'"
+          }
+        ],
+        "confidence_score": 0.55,
+        "processed_at": "2026-04-14T10:34:17.378169"
+      }
+    }
+  },
+  {
+    "name": "IEEE 830 Style SRS Fragment",
+    "input": "3.1 Functional Requirements: The system shall provide user authentication via email and password. 3.2 Security: Passwords must be stored using Argon2 hashing. Accounts shall lock after 5 failed attempts. 3.3 Performance: System response time shall be less than 200ms for 95% of requests.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "semantic_20260414103419",
+        "text": "3.1 Functional Requirements: The system shall provide user authentication via email and password. 3.2 Security: Passwords must be stored using Argon2 hashing. Accounts shall lock after 5 failed attempts. 3.3 Performance: System response time shall be less than 200ms for 95% of requests.",
+        "entities": [
+          {
+            "text": "user authentication",
+            "label": "System Component",
+            "start": 24,
+            "end": 41,
+            "description": "System component responsible for user authentication"
+          },
+          {
+            "text": "email and password",
+            "label": "Data Entity",
+            "start": 42,
+            "end": 56,
+            "description": "Data entities used for user authentication"
+          },
+          {
+            "text": "Argon2 hashing",
+            "label": "External System",
+            "start": 83,
+            "end": 96,
+            "description": "External system used for password hashing"
+          },
+          {
+            "text": "passwords",
+            "label": "Data Entity",
+            "start": 74,
+            "end": 82,
+            "description": "Data entity representing user passwords"
+          },
+          {
+            "text": "accounts",
+            "label": "Data Entity",
+            "start": 104,
+            "end": 111,
+            "description": "Data entity representing user accounts"
+          },
+          {
+            "text": "system response time",
+            "label": "Quality Attribute",
+            "start": 143,
+            "end": 161,
+            "description": "Quality attribute measuring system performance"
+          },
+          {
+            "text": "5 failed attempts",
+            "label": "Constraint",
+            "start": 112,
+            "end": 126,
+            "description": "Constraint on the number of failed login attempts"
+          },
+          {
+            "text": "less than 200ms for 95% of requests",
+            "label": "Temporal Requirement",
+            "start": 162,
+            "end": 190,
+            "description": "Temporal requirement for system response time"
+          }
+        ],
+        "relations": [
+          {
+            "from": "user",
+            "to": "user authentication",
+            "type": "association",
+            "description": "The user interacts with the system to authenticate"
+          },
+          {
+            "from": "system",
+            "to": "Argon2 hashing",
+            "type": "complies_with",
+            "description": "The system uses Argon2 hashing to store passwords"
+          },
+          {
+            "from": "system",
+            "to": "accounts",
+            "type": "association",
+            "description": "The system locks accounts after 5 failed attempts"
+          },
+          {
+            "from": "system",
+            "to": "system response time",
+            "type": "complies_with",
+            "description": "The system must respond within 200ms for 95% of requests"
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "shall",
+            "position": 14,
+            "description": "The term 'shall' is used to indicate a requirement, but it is not clear what happens if this requirement is not met",
+            "severity": "low",
+            "suggestion": "Consider adding a specific consequence for non-compliance"
+          },
+          {
+            "term": "must",
+            "position": 63,
+            "description": "The term 'must' is used to indicate a requirement, but it is not clear what happens if this requirement is not met",
+            "severity": "low",
+            "suggestion": "Consider adding a specific consequence for non-compliance"
+          }
+        ],
+        "confidence_score": 0.7,
+        "processed_at": "2026-04-14T10:34:19.297255"
+      }
+    }
+  }
+]

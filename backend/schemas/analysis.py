@@ -22,12 +22,25 @@ class PredictiveAnalysisRequest(BaseModel):
 class PredictiveAnalysisResponse(BaseModel):
     id: str
     text: str
-    complexity_score: float
-    estimated_effort_hours: float
-    risk_level: str  # "low", "medium", "high"
+    complexity_score: int  # 0-100 scale - REQ_14
+    estimated_effort_weeks: float  # REQ_15: duration in weeks
+    cost_index: str  # "low", "medium", "high" - REQ_15
+    risk_level: str  # "low", "medium", "high", "very high" - REQ_10
     recommendations: List[str]
     confidence_score: float
+    complexity_breakdown: Optional[Dict] = None  # Transparency breakdown
     processed_at: datetime
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "complexity_score": 65,
+                "estimated_effort_weeks": 10.5,
+                "cost_index": "high",
+                "risk_level": "high",
+                "confidence_score": 0.85
+            }
+        }
 
 class AnalysisResult(BaseModel):
     semantic_analysis: Optional[SemanticAnalysisResponse] = None

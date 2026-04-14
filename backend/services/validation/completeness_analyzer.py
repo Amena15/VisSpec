@@ -29,9 +29,8 @@ class CompletenessAnalyzer:
 
         # Check for modal verb
         if not SHALL_PATTERN.search(text):
-            # Higher confidence if text looks like a requirement statement
-            has_actor = bool(ACTOR_PATTERN.search(text))
-            confidence = round(0.80 if has_actor else 0.90, 2)
+            # Per FYP Report: missing modal confidence = 0.80
+            confidence = 0.80
             defects.append({
                 "text": text,
                 "type": "incompleteness",
@@ -43,9 +42,8 @@ class CompletenessAnalyzer:
 
         # Check for actor/subject
         if not ACTOR_PATTERN.search(text):
-            # Higher confidence if there's a modal verb (expecting an actor)
-            has_modal = bool(SHALL_PATTERN.search(text))
-            confidence = round(0.70 if has_modal else 0.60, 2)
+            # Per FYP Report specification: missing_actor confidence = 0.75
+            confidence = 0.75
             defects.append({
                 "text": text,
                 "type": "incompleteness",

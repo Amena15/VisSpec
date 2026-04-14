@@ -59,7 +59,8 @@ def analyze_predictive(
     db: Session = Depends(get_db)
 ):
     """
-    Perform predictive analysis to estimate complexity and effort
+    Perform predictive analysis to estimate complexity and effort.
+    Implements REQ_14 and REQ_15 exactly as specified in FYP report.
     """
     try:
         result = predictive_analyzer.analyze_text(request.text)
@@ -67,11 +68,13 @@ def analyze_predictive(
         return PredictiveAnalysisResponse(
             id="predictive_" + datetime.utcnow().strftime("%Y%m%d%H%M%S"),
             text=request.text,
-            complexity_score=result.get("complexity_score", 0.0),
-            estimated_effort_hours=result.get("estimated_effort_hours", 0.0),
+            complexity_score=result.get("complexity_score", 0),
+            estimated_effort_weeks=result.get("estimated_effort_weeks", 0.0),
+            cost_index=result.get("cost_index", "low"),
             risk_level=result.get("risk_level", "unknown"),
             recommendations=result.get("recommendations", []),
             confidence_score=result.get("confidence_score", 0.0),
+            complexity_breakdown=result.get("complexity_breakdown"),
             processed_at=datetime.utcnow()
         )
     except Exception as e:
@@ -109,11 +112,13 @@ def analyze_full(
         predictive_response = PredictiveAnalysisResponse(
             id="temp_predictive",
             text=predictive_request.text,
-            complexity_score=predictive_result.get("complexity_score", 0.0),
-            estimated_effort_hours=predictive_result.get("estimated_effort_hours", 0.0),
+            complexity_score=predictive_result.get("complexity_score", 0),
+            estimated_effort_weeks=predictive_result.get("estimated_effort_weeks", 0.0),
+            cost_index=predictive_result.get("cost_index", "low"),
             risk_level=predictive_result.get("risk_level", "unknown"),
             recommendations=predictive_result.get("recommendations", []),
             confidence_score=predictive_result.get("confidence_score", 0.0),
+            complexity_breakdown=predictive_result.get("complexity_breakdown"),
             processed_at=datetime.utcnow()
         )
 

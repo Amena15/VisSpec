@@ -1,0 +1,379 @@
+[
+  {
+    "name": "Simple Feature",
+    "input": "The system shall display a welcome message to users after login.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The system shall display a welcome message to users after login.",
+        "complexity_score": 35,
+        "estimated_effort_weeks": 3.5,
+        "cost_index": "medium",
+        "risk_level": "medium",
+        "recommendations": [
+          "Identify and specify all actors (users, systems, external entities) that interact with this requirement",
+          "Add acceptance criteria to make the requirement testable",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.7,
+        "complexity_breakdown": {
+          "actor_count": 1,
+          "requirement_count": 1,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 2,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.381164"
+      }
+    }
+  },
+  {
+    "name": "CRUD Operations",
+    "input": "Users can create, read, update, and delete their personal profile information. The system shall validate email format before saving. Profile changes must be logged with timestamps.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "Users can create, read, update, and delete their personal profile information. The system shall validate email format before saving. Profile changes must be logged with timestamps.",
+        "complexity_score": 36,
+        "estimated_effort_weeks": 3.6,
+        "cost_index": "medium",
+        "risk_level": "medium",
+        "recommendations": [
+          "Identify and specify all actors (users, systems, external entities) that interact with this requirement",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 1,
+          "requirement_count": 3,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 2,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.384068"
+      }
+    }
+  },
+  {
+    "name": "E-Commerce Checkout",
+    "input": "The e-commerce system must calculate shipping costs based on user location, package weight, and selected shipping speed. The system shall apply discounts for orders over $50. Users can apply one promo code per order. Payment processing shall be handled by Stripe API.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The e-commerce system must calculate shipping costs based on user location, package weight, and selected shipping speed. The system shall apply discounts for orders over $50. Users can apply one promo code per order. Payment processing shall be handled by Stripe API.",
+        "complexity_score": 59,
+        "estimated_effort_weeks": 7.8,
+        "cost_index": "medium",
+        "risk_level": "high",
+        "recommendations": [
+          "Add acceptance criteria to make the requirement testable",
+          "Consider splitting this requirement into 2-3 smaller requirements",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 2,
+          "requirement_count": 5,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 1,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.386659"
+      }
+    }
+  },
+  {
+    "name": "Banking Transfer",
+    "input": "The banking system shall process international wire transfers. The system must validate recipient bank details against SWIFT database. If validation fails, the system shall notify the user and log the attempt. For transfers exceeding $10,000, the system requires two-factor authentication and supervisor approval.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The banking system shall process international wire transfers. The system must validate recipient bank details against SWIFT database. If validation fails, the system shall notify the user and log the attempt. For transfers exceeding $10,000, the system requires two-factor authentication and supervisor approval.",
+        "complexity_score": 71,
+        "estimated_effort_weeks": 12.4,
+        "cost_index": "high",
+        "risk_level": "high",
+        "recommendations": [
+          "Break down this complex requirement into smaller, manageable sub-requirements",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 2,
+          "requirement_count": 3,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 2,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.389177"
+      }
+    }
+  },
+  {
+    "name": "Healthcare Compliance",
+    "input": "The healthcare system must maintain patient records with full audit trail. The system shall support role-based access (doctor, nurse, admin, patient). Patient data must be encrypted at rest and in transit. The system must comply with HIPAA and GDPR regulations. Data retention period is 7 years. Real-time synchronization required across 3 regional data centers.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The healthcare system must maintain patient records with full audit trail. The system shall support role-based access (doctor, nurse, admin, patient). Patient data must be encrypted at rest and in transit. The system must comply with HIPAA and GDPR regulations. Data retention period is 7 years. Real-time synchronization required across 3 regional data centers.",
+        "complexity_score": 89,
+        "estimated_effort_weeks": 20.5,
+        "cost_index": "high",
+        "risk_level": "very high",
+        "recommendations": [
+          "Add acceptance criteria to make the requirement testable",
+          "Break down this complex requirement into smaller, manageable sub-requirements",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 2,
+          "requirement_count": 5,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 1,
+          "technical_complexity": 0.6,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.391688"
+      }
+    }
+  },
+  {
+    "name": "Vague Requirement",
+    "input": "The system should be fast and reliable. It may have a user-friendly interface. The software must handle many users. Security features must be adequate.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The system should be fast and reliable. It may have a user-friendly interface. The software must handle many users. Security features must be adequate.",
+        "complexity_score": 7,
+        "estimated_effort_weeks": 1.4,
+        "cost_index": "low",
+        "risk_level": "medium",
+        "recommendations": [
+          "Replace vague terms ('adequate, fast') with specific, measurable criteria",
+          "Replace weak modal verbs ('should', 'may') with strong modals ('shall', 'must') for compliance requirements",
+          "Add acceptance criteria to make the requirement testable",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.55,
+        "complexity_breakdown": {
+          "actor_count": 2,
+          "requirement_count": 4,
+          "modal_density": 0.7,
+          "vague_density": 1.0,
+          "interaction_depth": 1,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.393939"
+      }
+    }
+  },
+  {
+    "name": "Integration API",
+    "input": "The system shall integrate with external payment gateway (Stripe API). It must handle webhook callbacks for payment success/failure. The system shall retry failed callbacks up to 3 times with exponential backoff. Payment failures must be logged with timestamps and error codes.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The system shall integrate with external payment gateway (Stripe API). It must handle webhook callbacks for payment success/failure. The system shall retry failed callbacks up to 3 times with exponential backoff. Payment failures must be logged with timestamps and error codes.",
+        "complexity_score": 44,
+        "estimated_effort_weeks": 4.8,
+        "cost_index": "medium",
+        "risk_level": "high",
+        "recommendations": [
+          "Identify and specify all actors (users, systems, external entities) that interact with this requirement",
+          "Add acceptance criteria to make the requirement testable",
+          "Add specific metrics (response time, throughput, user count) where applicable"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 1,
+          "requirement_count": 4,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 1,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.396250"
+      }
+    }
+  },
+  {
+    "name": "Security Authentication",
+    "input": "The authentication system must implement multi-factor authentication using SMS or authenticator app. Passwords must be hashed using Argon2. Accounts lock after 5 failed attempts for 15 minutes. JWT tokens expire after 60 minutes. Session timeout after 30 minutes of inactivity.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The authentication system must implement multi-factor authentication using SMS or authenticator app. Passwords must be hashed using Argon2. Accounts lock after 5 failed attempts for 15 minutes. JWT tokens expire after 60 minutes. Session timeout after 30 minutes of inactivity.",
+        "complexity_score": 56,
+        "estimated_effort_weeks": 7.2,
+        "cost_index": "medium",
+        "risk_level": "medium",
+        "recommendations": [
+          "Identify and specify all actors (users, systems, external entities) that interact with this requirement",
+          "Add acceptance criteria to make the requirement testable",
+          "Consider splitting this requirement into 2-3 smaller requirements",
+          "Add specific metrics (response time, throughput, user count) where applicable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.75,
+        "complexity_breakdown": {
+          "actor_count": 1,
+          "requirement_count": 2,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 4,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.399168"
+      }
+    }
+  },
+  {
+    "name": "Real-Time Performance",
+    "input": "The system must respond to user requests within 200 milliseconds at 95th percentile under 1000 concurrent users. Real-time notifications must be delivered within 5 seconds. The system must handle 10,000 transactions per second during peak hours. Database queries must complete within 50ms.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The system must respond to user requests within 200 milliseconds at 95th percentile under 1000 concurrent users. Real-time notifications must be delivered within 5 seconds. The system must handle 10,000 transactions per second during peak hours. Database queries must complete within 50ms.",
+        "complexity_score": 27,
+        "estimated_effort_weeks": 2.7,
+        "cost_index": "low",
+        "risk_level": "high",
+        "recommendations": [
+          "Identify and specify all actors (users, systems, external entities) that interact with this requirement",
+          "Add acceptance criteria to make the requirement testable",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.9,
+        "complexity_breakdown": {
+          "actor_count": 1,
+          "requirement_count": 4,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 1,
+          "technical_complexity": 0.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.401756"
+      }
+    }
+  },
+  {
+    "name": "Enterprise-Grade",
+    "input": "The system must support multi-tenancy with complete data isolation between 500+ organizations. Real-time synchronization required across 5 regional data centers. 99.999% uptime required. Disaster recovery RPO = 15 minutes, RTO = 1 hour. Must support 1 million concurrent users. GDPR and CCPA compliance required.",
+    "result": {
+      "status_code": 200,
+      "response": {
+        "id": "predictive_20260414112902",
+        "text": "The system must support multi-tenancy with complete data isolation between 500+ organizations. Real-time synchronization required across 5 regional data centers. 99.999% uptime required. Disaster recovery RPO = 15 minutes, RTO = 1 hour. Must support 1 million concurrent users. GDPR and CCPA compliance required.",
+        "complexity_score": 94,
+        "estimated_effort_weeks": 23.0,
+        "cost_index": "high",
+        "risk_level": "high",
+        "recommendations": [
+          "Add acceptance criteria to make the requirement testable",
+          "Break down this complex requirement into smaller, manageable sub-requirements",
+          "Define error handling and edge cases for this requirement"
+        ],
+        "confidence_score": 0.9,
+        "complexity_breakdown": {
+          "actor_count": 2,
+          "requirement_count": 5,
+          "modal_density": 1.0,
+          "vague_density": 0.0,
+          "interaction_depth": 1,
+          "technical_complexity": 1.0,
+          "weights_applied": {
+            "actor": 5.0,
+            "requirement": 0.3,
+            "modal": 10.0,
+            "vague": 15.0,
+            "depth": 5.0
+          }
+        },
+        "processed_at": "2026-04-14T11:29:02.404149"
+      }
+    }
+  }
+]

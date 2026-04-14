@@ -35,10 +35,8 @@ class ConsistencyChecker:
 
         for term_a, term_b in CONTRADICTIONS:
             if term_a in lower_text and term_b in lower_text:
-                # Confidence based on how many times the contradictory pair appears
-                count_a = len(re.findall(re.escape(term_a), lower_text))
-                count_b = len(re.findall(re.escape(term_b), lower_text))
-                confidence = round(min(0.80 + (count_a + count_b) * 0.05, 1.0), 2)
+                # Per FYP Report specification: contradiction confidence = 0.90
+                confidence = 0.90
                 defects.append({
                     "text": text,
                     "type": "inconsistency",
@@ -77,7 +75,8 @@ class ConsistencyChecker:
                 for b2 in behavior_list[i + 1:]:
                     for term_a, term_b in CONTRADICTIONS:
                         if term_a in b1 and term_b in b2:
-                            confidence = round(min(0.75 + len(behaviors) * 0.03, 1.0), 2)
+                            # Per FYP Report specification: contradiction confidence = 0.90
+                            confidence = 0.90
                             defects.append({
                                 "text": f"Requirements about '{entity}'",
                                 "type": "inconsistency",

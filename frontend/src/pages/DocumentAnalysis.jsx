@@ -56,7 +56,7 @@ const DocumentAnalysis = () => {
           id: 'demo2',
           text: inputText,
           complexity_score: 65,
-          estimated_effort_hours: 12.5,
+          estimated_effort_weeks: 4.5,
           risk_level: 'medium',
           recommendations: [
             'Define specific authentication requirements',
@@ -272,7 +272,7 @@ const DocumentAnalysis = () => {
                       <div className="bg-[var(--card-bg)] p-4 rounded-lg shadow">
                         <div className="text-sm font-medium text-[var(--text-secondary)]">Estimated Effort</div>
                         <div className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">
-                          {(analysisResult.predictive_analysis.estimated_effort_hours || 0).toFixed(1)} hrs
+                          {(analysisResult.predictive_analysis.estimated_effort_weeks || 0).toFixed(1)} weeks
                         </div>
                         <div className="mt-1 text-sm text-[var(--text-secondary)]">Development time</div>
                       </div>
@@ -349,7 +349,7 @@ const DocumentAnalysis = () => {
                         <div className="mt-2">
                           <p className="text-sm text-[var(--text-secondary)]">
                             Complexity: {(analysisResult.predictive_analysis?.complexity_score?.toFixed(1) || 0)}/100,{' '}
-                            Effort: {(analysisResult.predictive_analysis?.estimated_effort_hours?.toFixed(1) || 0)} hours
+                            Effort: {(analysisResult.predictive_analysis?.estimated_effort_weeks?.toFixed(1) || 0)} weeks
                           </p>
                         </div>
                       </div>

@@ -48,12 +48,16 @@ class AmbiguityDetector:
     def analyze(self, text: str) -> List[Dict[str, Any]]:
         """
         Analyze text for ambiguities.
-        Returns list of defect findings with continuous confidence scores.
+        Returns list of defect findings with confidence scores.
+        Per-defect confidence (as per FYP Report):
+        - vague_term: 0.85
+        - ambiguous_pronoun: 0.60
+        - subjective_term: 0.55
         """
         defects = []
         sentences = re.split(r"[.!?]+", text)
 
-        # Check for vague terms
+        # Check for vague terms (confidence: 0.85 per FYP Report)
         for match in self.vague_pattern.finditer(text):
             severity, confidence = self._vague_confidence(match.group(0), sentences)
             defects.append({
@@ -65,7 +69,7 @@ class AmbiguityDetector:
                 "suggestion": f"Replace '{match.group(0)}' with a measurable, specific criterion.",
             })
 
-        # Check for ambiguous pronouns
+        # Check for ambiguous pronouns (confidence: 0.60)
         for match in self.pronoun_pattern.finditer(text):
             defects.append({
                 "text": match.group(0),
@@ -76,7 +80,7 @@ class AmbiguityDetector:
                 "suggestion": f"Replace '{match.group(0)}' with the specific noun it refers to.",
             })
 
-        # Check for subjective terms
+        # Check for subjective terms (confidence: 0.55)
         for match in self.subjective_pattern.finditer(text):
             defects.append({
                 "text": match.group(0),
@@ -91,25 +95,22 @@ class AmbiguityDetector:
 
     def _vague_confidence(self, term: str, sentences: list) -> tuple[str, float]:
         """
-        Compute continuous confidence for a vague term based on context.
-        Higher confidence when the term appears in critical positions (requirements keywords).
-        Returns (severity, confidence).
+        Compute confidence for a vague term.
+        Per FYP Report: vague_term confidence = 0.85
         """
         term_lower = term.lower()
-        # Words that indicate a critical requirement statement
         critical_markers = ["shall", "must", "should", "will", "required", "need"]
 
-        base_confidence = 0.70
+        # Per FYP Report specification: vague_term confidence = 0.85
+        base_confidence = 0.85
+        
+        # Keep severity logic but use fixed confidence
         for sent in sentences:
             if term_lower in sent.lower():
-                # If sentence contains requirement keywords, higher confidence
                 if any(m in sent.lower() for m in critical_markers):
-                    base_confidence = 0.85
-                    return "high", round(min(base_confidence, 1.0), 2)
-                # Longer sentences with multiple clauses → higher confidence
+                    return "high", base_confidence
                 clauses = len(re.split(r"\band\b|\bor\b|\b;\b", sent))
                 if clauses >= 3:
-                    base_confidence = 0.80
-                    return "medium", round(min(base_confidence, 1.0), 2)
+                    return "medium", base_confidence
 
-        return "low", round(base_confidence, 2)
+        return "low", base_confidence
