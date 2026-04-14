@@ -38,7 +38,7 @@
 
 The system performs:
 - 🔍 **Semantic Analysis** - Extracts entities, relationships, and detects ambiguities
-- ⚠️ **Predictive Analysis** - Estimates complexity, effort (hours), and risk levels
+- ⚠️ **Predictive Analysis** - Estimates complexity, effort (weeks), cost index, and risk levels
 - 📝 **Validation Pipeline** - Detects inconsistencies, incompleteness, and contradictions
 - 📊 **Diagram Generation** - Creates Use Case, Sequence, and Activity diagrams (Mermaid.js)
 - 📄 **PDF Report Export** - Generates professional validation reports with watermark
@@ -67,6 +67,13 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
          Extraction        Inconsistency Detection
                 ↓              ↓
          Confidence Scoring → Validation Report
+
+Predictive Path:
+Raw Features → scikit-learn MinMaxScaler → Normalized Features
+     ↓                                    ↓
+Actor/Req/Modal/Vague/Depth/Technical → Formula (Section 4.8.1)
+     ↓
+Complexity (0-100) → Weeks → Cost Index → Risk Level
 ```
 
 ### User Roles
@@ -121,7 +128,7 @@ Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
 | python-jose | 3.3+ | JWT token creation/verification |
 | Pydantic | 2.7+ | Request/response schema validation |
 | ReportLab | 4.0+ | PDF report generation |
-| scikit-learn | 1.4+ | Complexity and risk scoring |
+| scikit-learn | 1.4+ | Feature normalization (MinMaxScaler) for predictive analytics |
 
 ### Frontend
 
@@ -365,24 +372,36 @@ source venv/bin/activate
 python -m pytest tests/ -v
 ```
 
+### Integration Tests
+
+```bash
+# Run API endpoint tests
+python tests/integration/test_semantic_api.py
+python tests/integration/test_predictive_api.py
+
+# Run performance evaluation (Precision, Recall, F1, MAE)
+python tests/integration/evaluate_analyzers.py
+```
+
 ### Test Coverage
 
 | Test File | Coverage Area |
 |-----------|---------------|
-| `test_auth_fixed.py` | Authentication (register, login, token validation) |
-| `test_auth_integration.py` | End-to-end authentication flows |
-| `test_semantic_analyzer.py` | Entity extraction, ambiguity detection |
-| `test_predictive_analyzer.py` | Complexity scoring, effort estimation |
-| `test_visualizer.py` | Mermaid diagram syntax generation |
+| `tests/unit/test_semantic_analyzer.py` | Entity extraction, ambiguity detection |
+| `tests/unit/test_predictive_analyzer.py` | Complexity scoring, effort estimation |
+| `tests/unit/test_visualizer.py` | Mermaid diagram syntax generation |
+| `tests/integration/test_semantic_api.py` | Semantic analysis API endpoint tests |
+| `tests/integration/test_predictive_api.py` | Predictive analysis API endpoint tests |
+| `tests/integration/evaluate_analyzers.py` | Performance metrics: Precision/Recall/F1/MAE |
 
 ### Running Specific Tests
 
 ```bash
-# Run only auth tests
-python -m pytest tests/test_auth_fixed.py -v
+# Run only unit tests
+python -m pytest tests/unit/ -v
 
-# Run with coverage
-python -m pytest tests/ --cov=services --cov=api --cov-report=term-missing
+# Run evaluation metrics
+python tests/integration/evaluate_analyzers.py
 ```
 
 ---
@@ -437,8 +456,20 @@ VisSpec/
 │   │   └── utils/                    # Helper functions
 │   └── package.json                  # NPM dependencies
 ├── tests/                            # Root-level test directory
-│   └── unit/                         # Unit tests for services
+│   ├── unit/                         # Unit tests for services
+│   │   ├── test_semantic_analyzer.py
+│   │   ├── test_predictive_analyzer.py
+│   │   └── test_visualizer.py
+│   ├── integration/                  # API integration tests
+│   │   ├── test_semantic_api.py
+│   │   ├── test_predictive_api.py
+│   │   ├── evaluate_analyzers.py     # Performance evaluation script
+│   │   ├── semantic_test_results.json
+│   │   └── predictive_test_results.json
+│   └── e2e/                          # End-to-end tests
 ├── docs/                             # Project documentation
+├── backend/
+│   └── test_documents/               # Test document uploads
 ├── .gitignore                        # Git ignore rules
 └── README.md                         # This file
 ```
@@ -466,7 +497,7 @@ VisSpec/
 | Functional Requirements (REQ_01-20) | ✅ All implemented |
 | Non-Functional (NFR_PS1-3, SP1-3, AR1-3, U1-3) | ✅ All addressed |
 | Use Case Diagram (12 use cases) | ✅ All implemented |
-| AI Model Design (LLaMA 3 + spaCy + scikit-learn) | ✅ Hybrid pipeline |
+| AI Model Design (LLaMA 3 + spaCy + scikit-learn) | ✅ Hybrid pipeline with MinMaxScaler |
 | Technology Stack | ✅ As specified in report |
 
 ---
