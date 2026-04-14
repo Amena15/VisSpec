@@ -244,30 +244,32 @@ class SemanticAnalyzer:
 
         # HIGH severity: Vague terms that block implementation
         high_severity_terms = [
-            (r'\b(appropriate)\b', "Vague term – does not specify what constitutes this requirement", "Specify exact criteria (e.g., '7 years', '24 hours', 'encrypted at rest')"),
+            (r'\b(appropriate|appropriately)\b', "Vague term – does not specify what constitutes this requirement", "Specify exact criteria (e.g., '7 years', '24 hours', 'encrypted at rest')"),
             (r'\b(relevant\s+\w+ regulations?)\b', "Ambiguous reference – does not specify which regulations/laws", "List specific regulations (e.g., 'GDPR', 'HIPAA', 'Malaysia PDPA 2010')"),
             (r'\b(reasonable)\b', "Vague quantifier – no measurable threshold", "Define specific numeric or verifiable criteria"),
             (r'\b(timely)\b', "Vague timing – no specific deadline", "Specify exact timeframe (e.g., 'within 24 hours', 'real-time')"),
-            (r'\b(adequate)\b', "Vague quality measure", "Define minimum acceptable standard or metric"),
+            (r'\b(adequate|adequately)\b', "Vague quality measure", "Define minimum acceptable standard or metric"),
             (r'\b(suitable)\b', "Vague suitability criteria", "Specify exact requirements for suitability"),
         ]
 
         # MEDIUM severity: Uncertainty indicators that cause confusion
         medium_severity_terms = [
-            (r'\b(should|could|might|would)\b', "Weak modal verb – 'shall' or 'must' would be stronger", "Replace 'should' with 'shall' or 'must' for mandatory requirements"),
+            (r'\b(should|could|might|would|may)\b', "Weak modal verb – 'shall' or 'must' would be stronger", "Replace 'should' with 'shall' or 'must' for mandatory requirements"),
             (r'\b(authorized\s+\w+)', "Unclear authorization mechanism", "Specify how authorization is determined (e.g., 'role-based access control', 'RBAC with levels')"),
             (r'\b(as\s+needed)\b', "Unspecified trigger condition", "Define specific conditions that trigger this action"),
             (r'\b(etc\.|and\s+so\s+on|and\s+others)\b', "Incomplete specification – missing items", "List all required items explicitly"),
             (r'\b(depending\s+on|subject\s+to|if\s+applicable)\b', "Conditional uncertainty – conditions unspecified", "Define exact conditions and fallback behavior"),
             (r'\b(usually|often|typically|generally)\b', "Frequency uncertainty", "Specify exact frequency (e.g., 'daily', '99.9% of the time')"),
             (r'\b(user-friendly)\b', "Subjective quality measure", "Define measurable usability criteria (e.g., 'max 3 clicks', 'WCAG 2.1 AA compliant')"),
+            (r'\b(quickly|quick)\b', "Vague timing – no specific deadline", "Specify exact timeframe (e.g., 'within 200ms', 'under 1 second')"),
+            (r'\b(reliable|reliability)\b', "Vague quality measure – no specific reliability target", "Define reliability target (e.g., '99.9% uptime', 'MTBF > 1000 hours')"),
         ]
 
         # LOW severity: Minor vagueness
         low_severity_terms = [
             (r'\b(maybe|perhaps|possibly|sometimes|occasionally)\b', "Uncertainty indicator", "Remove or replace with definite conditions"),
             (r'\b(soon|later|eventually|when\s+possible)\b', "Vague timing", "Specify exact timing or deadline"),
-            (r'\b(large|small|fast|slow|many|few)\b', "Vague quantifier", "Replace with specific numeric values"),
+            (r'\b(large|small|fast|slow|many|few|good|bad)\b', "Vague quantifier", "Replace with specific numeric values"),
             (r'\b(tbd|to\s+be\s+determined|to\s+be\s+decided)\b', "Undetermined specification", "Provide the specification before implementation"),
         ]
 

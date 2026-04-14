@@ -1,0 +1,21 @@
+{
+  "semantic": {
+    "precision": 0.96,
+    "recall": 1.0,
+    "f1_score": 0.98,
+    "tp": 24,
+    "fp": 1,
+    "fn": 0,
+    "pass": true
+  },
+  "predictive": {
+    "mae": 11.4,
+    "max_error": 42,
+    "min_error": 0,
+    "risk_accuracy": 1.0,
+    "risk_correct": 8,
+    "risk_total": 8,
+    "pass": true
+  },
+  "overall_pass": true
+}
