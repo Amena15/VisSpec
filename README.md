@@ -1,4 +1,4 @@
-# 🔍 VisSpec - Visual LLM-Powered Requirements Validator
+# VisSpec - Visual LLM-Powered Requirements Validator
 
 <div align="center">
 
