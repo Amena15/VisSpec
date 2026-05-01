@@ -123,14 +123,21 @@ CREATE TABLE IF NOT EXISTS requirements (
     actors_json         TEXT,
     modal_verbs_json    TEXT,
     vague_terms_json    TEXT,
+    category            TEXT,
+    category_confidence REAL,
+    semantic_id         TEXT,
+    module_name         TEXT,
     validation_status   TEXT NOT NULL DEFAULT 'pending'
-                            CHECK (validation_status IN ('pending','valid','defective','skipped')),
+                            CHECK (validation_status IN ('pending','passed','warning','failed')),
     sequence_order      INTEGER NOT NULL DEFAULT 0,
     created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_reqs_doc ON requirements(doc_id);
 CREATE INDEX IF NOT EXISTS idx_reqs_project ON requirements(project_id);
 CREATE INDEX IF NOT EXISTS idx_reqs_status ON requirements(validation_status);
+CREATE INDEX IF NOT EXISTS idx_reqs_category ON requirements(category);
+CREATE INDEX IF NOT EXISTS idx_reqs_module ON requirements(module_name);
+CREATE INDEX IF NOT EXISTS idx_reqs_semantic ON requirements(semantic_id);
 
 -- ============================================================
 -- TABLE 7: validation_sessions

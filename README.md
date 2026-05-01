@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green.svg)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
 ![LLaMA 3](https://img.shields.io/badge/LLaMA-3-orange.svg)
-![SQLite](https://img.shields.io/badge/SQLite-3-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue.svg)
 ![License](https://img.shields.io/badge/License-Academic-red.svg)
 
 **FYP01-SE-T2530-393 | Multimedia University, Malaysia | 2026**
@@ -123,7 +123,7 @@ Complexity (0-100) → Weeks → Cost Index → Risk Level
 | Python | 3.10+ | Runtime |
 | FastAPI | 0.115.0 | Web framework with async support |
 | SQLAlchemy | 2.0.32 | ORM for database operations |
-| SQLite | 3 | Lightweight, portable database |
+| PostgreSQL | 17 | Production-grade relational database |
 | LLaMA 3 | 70B via Groq API | LLM for semantic analysis |
 | spaCy | 3.7+ | NLP preprocessing (en_core_web_sm) |
 | Passlib | 1.7.4 | Password hashing (bcrypt scheme) |
@@ -152,6 +152,7 @@ Complexity (0-100) → Weeks → Cost Index → Risk Level
 - Python 3.10 or higher
 - Node.js 18 or higher
 - npm or yarn
+- PostgreSQL 12+ (or SQLite for local development)
 - Git
 
 ### Backend Setup
@@ -174,8 +175,14 @@ python -m spacy download en_core_web_sm
 # Copy environment configuration
 cp .env.example .env
 
-# Edit .env with your Groq API key (see Configuration section)
+# Edit .env with your settings (see Configuration section)
 nano .env  # or use your preferred editor
+
+# Create PostgreSQL database (if using PostgreSQL)
+createdb vispec
+
+# Migrate data from SQLite (optional — see Database Migration section)
+# python scripts/migrate_sqlite_to_postgres.py
 
 # Start backend server
 python main.py
@@ -219,7 +226,7 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 | `DEBUG` | `True` | Enable debug mode (disable in production) |
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `8000` | Backend server port |
-| `DATABASE_URL` | `sqlite:///./vispec.db` | Database connection string |
+| `DATABASE_URL` | `sqlite:///./vispec.db` | Database connection string (SQLite for dev, PostgreSQL for production) |
 | `SECRET_KEY` | *(required)* | JWT signing key (min 32 chars) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT token expiration time |
 | `GROQ_API_KEY` | *(required)* | Groq API key for LLaMA 3 access |
@@ -245,6 +252,26 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 > In any production-like environment, you **MUST** override it with a strong, random key in your `.env` file.
 
 > ℹ️ **Note:** If `GROQ_API_KEY` is not provided, the system automatically falls back to a **rule-based heuristic** for semantic analysis. The heuristic has lower accuracy but ensures the system remains functional without an internet connection or API key.
+
+### PostgreSQL Migration
+
+To migrate from SQLite to PostgreSQL:
+
+```bash
+cd VisSpec/backend
+source venv/bin/activate
+
+# 1. Set DATABASE_URL to PostgreSQL in .env
+# DATABASE_URL=postgresql://user:password@localhost:5432/vispec
+
+# 2. Run the migration script (original SQLite DB is never modified)
+python scripts/migrate_sqlite_to_postgres.py
+
+# 3. Start the backend — it will use PostgreSQL automatically
+python main.py
+```
+
+**Rollback:** To revert to SQLite, simply comment out the PostgreSQL `DATABASE_URL` and uncomment the SQLite one. Original `vispec.db` is never modified or deleted.
 
 ---
 
@@ -443,7 +470,9 @@ VisSpec/
 │   │   └── security.py               # JWT, bcrypt, rate limiting
 │   ├── scripts/                      # Database seeding & migration
 │   │   ├── seed_users.py             # Create test users
-│   │   └── populate_test_users.py    # Alternative seeding script
+│   │   ├── populate_test_users.py    # Alternative seeding script
+│   │   ├── migrate_sqlite_to_postgres.py  # SQLite → PostgreSQL migration
+│   │   └── migrate_full_schema.py    # Schema upgrade script
 │   ├── tests/                        # Unit & integration tests
 │   ├── config/                       # Database & environment config
 │   ├── main.py                       # FastAPI application entry point
@@ -489,7 +518,7 @@ VisSpec/
 | **FastAPI** | Native async support for non-blocking LLM API calls, automatic OpenAPI docs | Section 5.4.2 |
 | **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | REQ_01 (Table 3.2) |
 | **0.70 Confidence Threshold** | Balances precision/recall for requirement validation (BR-10) | Section 2.3.3 |
-| **SQLite** | Zero-configuration, portable database ideal for FYP demonstration | Section 5.4.3 |
+| **PostgreSQL** | Production-grade database with ACID compliance, concurrent connections, and JSON support | Section 5.4.3 |
 | **Mermaid.js** | Text-to-diagram tool enabling dynamic UML generation from requirements | Section 4.8.2 |
 
 ### Requirements Implementation

@@ -1,5 +1,5 @@
 """Requirement model."""
-from sqlalchemy import Column, String, Integer, Text, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from config.database import Base
 from models.user import _uuid, _now
@@ -19,6 +19,10 @@ class Requirement(Base):
     actors_json = Column(Text, nullable=True)
     modal_verbs_json = Column(Text, nullable=True)
     vague_terms_json = Column(Text, nullable=True)
+    category = Column(String, nullable=True, index=True)
+    category_confidence = Column(Float, nullable=True)
+    semantic_id = Column(String, nullable=True)
+    module_name = Column(String, nullable=True, index=True)
     validation_status = Column(String, nullable=False, default="pending", index=True)
     sequence_order = Column(Integer, nullable=False, default=0)
     created_at = Column(String, nullable=False, default=_now)

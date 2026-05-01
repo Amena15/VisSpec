@@ -16,6 +16,7 @@ from services.ai.prompts import (
     ENTITY_EXTRACTION_PROMPT,
     COMPLEXITY_ESTIMATION_PROMPT,
     DIAGRAM_GENERATION_PROMPT,
+    REQUIREMENT_EXTRACTION_PROMPT,
 )
 from services.ai.response_parser import ResponseParser
 from services.ai.retry_handler import retry_handler
@@ -93,6 +94,23 @@ class GroqLLMService:
                 return parsed
 
         return {"classifications": []}
+
+    def extract_requirements(self, text: str) -> Dict[str, Any]:
+        """Extract clean, atomic requirements using professional prompt."""
+        # Limit text size to avoid token limits
+        if len(text) > 8000:
+            text = text[:8000]  # Truncate to avoid token limit
+            
+        prompt = REQUIREMENT_EXTRACTION_PROMPT.format(text=text)
+        response = self.call_with_retry(prompt, max_tokens=2048)  # Reduced token limit
+
+        if response:
+            parsed = ResponseParser.parse_json(response)
+            if parsed and "requirements" in parsed:
+                return parsed
+
+        # Fallback: return empty result
+        return {"requirements": []}
 
     def extract_entities(self, text: str) -> Dict[str, Any]:
         """Extract entities, actors, and relationships."""

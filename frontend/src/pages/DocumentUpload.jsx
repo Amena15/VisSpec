@@ -1,171 +1,126 @@
-import React, { useState } from 'react';
-import { UploadCloud, File as Document, CheckCircle, X, AlertCircle, ArrowRight, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { UploadCloud, File as Document, CheckCircle, X, AlertCircle, ArrowRight, AlertTriangle, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { projectAPI, documentAPI } from '../services/api';
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
 
-  // Function to validate file before upload according to BR-07 and BR-08
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await projectAPI.getAll();
+        setProjects(response.data || []);
+        if (response.data && response.data.length > 0) {
+          setSelectedProject(response.data[0].project_id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+        toast.error('Failed to load projects. Please try again.');
+      }
+    };
+    fetchProjects();
+  }, []);
+
   const validateFile = (file) => {
     const errors = [];
-
-    // BR-07: Only .pdf and .docx formats are accepted
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-      'application/msword' // .doc
-    ];
-
-    if (!validTypes.includes(file.type) &&
-        !file.name.toLowerCase().endsWith('.pdf') &&
-        !file.name.toLowerCase().endsWith('.docx') &&
-        !file.name.toLowerCase().endsWith('.doc')) {
-      errors.push(`${file.name} is not a supported file type. Only .pdf, .docx, and .doc files are accepted.`);
+    const validExtensions = ['pdf', 'docx', 'txt'];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!validExtensions.includes(ext)) {
+      errors.push(`${file.name} is not a supported file type. Only .pdf, .docx, and .txt files are accepted.`);
     }
-
-    // BR-08: Maximum file size is strictly 10MB to prevent server overload
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       errors.push(`${file.name} exceeds the maximum file size of 10MB.`);
     }
-
     return errors;
   };
 
-  // Function to add a mock file and navigate to analysis
-  const addMockFile = (name, size, type = 'application/pdf') => {
-    // Instead of simulating upload, directly navigate to analysis page
-    navigate('/analysis');
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    try {
+      const response = await projectAPI.create({ name: newProjectName.trim() });
+      const newProject = response.data;
+      setProjects(prev => [newProject, ...prev]);
+      setSelectedProject(newProject.project_id);
+      setNewProjectName('');
+      setIsCreatingProject(false);
+      toast.success('Project created successfully');
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      toast.error('Failed to create project');
+    }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  const handleDragOver = useCallback((e) => { e.preventDefault(); setIsDragging(true); }, []);
+  const handleDragLeave = useCallback((e) => { e.preventDefault(); setIsDragging(false); }, []);
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const droppedFiles = Array.from(e.dataTransfer.files);
+  const processFiles = (fileList) => {
     const processedFiles = [];
-
-    droppedFiles.forEach(file => {
+    fileList.forEach(file => {
       const errors = validateFile(file);
-
       if (errors.length > 0) {
-        // Add file with error status
-        const errorFile = {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'error',
-          errors: errors
-        };
-        processedFiles.push(errorFile);
+        processedFiles.push({ id: Date.now() + Math.random(), name: file.name, size: file.size, type: file.type, status: 'error', errors, file: null });
         setValidationErrors(prev => [...prev, ...errors]);
       } else {
-        // Add valid file
-        const validFile = {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'uploading',
-          progress: 0
-        };
-        processedFiles.push(validFile);
+        processedFiles.push({ id: Date.now() + Math.random(), name: file.name, size: file.size, type: file.type, status: 'pending', progress: 0, file });
       }
     });
-
     setFiles(prev => [...prev, ...processedFiles]);
-
-    // Simulate upload progress for valid files only
-    processedFiles
-      .filter(file => file.status !== 'error')
-      .forEach(fileObj => {
-        simulateUpload(fileObj.id);
-      });
   };
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFiles(Array.from(e.dataTransfer.files));
+  }, []);
 
   const handleFileInput = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    const processedFiles = [];
-
-    selectedFiles.forEach(file => {
-      const errors = validateFile(file);
-
-      if (errors.length > 0) {
-        // Add file with error status
-        const errorFile = {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'error',
-          errors: errors
-        };
-        processedFiles.push(errorFile);
-        setValidationErrors(prev => [...prev, ...errors]);
-      } else {
-        // Add valid file
-        const validFile = {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'uploading',
-          progress: 0
-        };
-        processedFiles.push(validFile);
-      }
-    });
-
-    setFiles(prev => [...prev, ...processedFiles]);
-
-    // Simulate upload progress for valid files only
-    processedFiles
-      .filter(file => file.status !== 'error')
-      .forEach(fileObj => {
-        simulateUpload(fileObj.id);
-      });
+    processFiles(Array.from(e.target.files));
   };
 
-  const simulateUpload = (fileId) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setFiles(prev => prev.map(file =>
-        file.id === fileId ? { ...file, progress } : file
-      ));
+  const handleUpload = async (fileObj) => {
+    if (!selectedProject) { toast.error('Please select or create a project first'); return; }
+    if (!fileObj.file) return;
+    setIsUploading(true);
+    setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'uploading', progress: 0 } : f));
 
-      if (progress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setFiles(prev => prev.map(file =>
-            file.id === fileId ? { ...file, status: 'complete', progress: 100 } : file
-          ));
-        }, 300);
-      }
-    }, 200);
+    try {
+      const onUploadProgress = (progressEvent) => {
+        const progress = progressEvent.total ? Math.round((progressEvent.loaded * 100) / progressEvent.total) : 0;
+        setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, progress } : f));
+      };
+      const response = await documentAPI.upload(selectedProject, fileObj.file, onUploadProgress);
+      const result = response.data;
+      setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'complete', progress: 100 } : f));
+      setUploadResult(result);
+      toast.success(`Document uploaded! Found ${result.requirements_found} requirements.`);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      const errorMsg = error.response?.data?.detail || 'Upload failed due to server error. Please retry.';
+      setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'error', errors: [errorMsg] } : f));
+      toast.error(errorMsg);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  // Function to handle document analysis after successful upload
   const handleStartAnalysis = () => {
-    const completedFiles = files.filter(file => file.status === 'complete');
-    if (completedFiles.length > 0) {
-      // In a real app, this would trigger the analysis process
-      // For now, we'll just navigate to the analysis page
-      window.location.href = '/analysis';
+    if (uploadResult?.doc_id) {
+      navigate(`/analysis-results/${uploadResult.doc_id}`);
     }
   };
 
@@ -189,41 +144,46 @@ const DocumentUpload = () => {
           <p className="text-[var(--neutral-600)] mt-2">Submit your SRS document for automated analysis</p>
         </div>
 
-        {/* Upload Drop Zone */}
-        <div
-          className={`h-64 bg-[var(--card-bg)] border-2 rounded-xl flex flex-col items-center justify-center text-center transition-colors ${
-            isDragging
-              ? 'border-[var(--primary-main)] bg-[var(--primary-main)]/5'
-              : 'border-dashed border-[var(--card-border)]'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-6 mb-6">
+          <h3 className="text-lg font-medium text-[var(--text-primary)] mb-4">Select Project</h3>
+          {isCreatingProject ? (
+            <div className="flex gap-2">
+              <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Enter project name..."
+                className="flex-1 px-4 py-2 border border-[var(--card-border)] rounded-lg bg-[var(--surface-bg)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-main)]"
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} />
+              <button onClick={handleCreateProject} className="bg-[var(--primary-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors">Create</button>
+              <button onClick={() => { setIsCreatingProject(false); setNewProjectName(''); }}
+                className="bg-[var(--surface-bg)] text-[var(--text-secondary)] px-4 py-2 rounded-lg hover:bg-[var(--card-border)] transition-colors">Cancel</button>
+            </div>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
+                className="flex-1 px-4 py-2 border border-[var(--card-border)] rounded-lg bg-[var(--surface-bg)] text-[var(--text-primary)]">
+                <option value="">Select a project...</option>
+                {projects.map(project => (
+                  <option key={project.project_id} value={project.project_id}>{project.name} ({project.document_count || 0} documents)</option>
+                ))}
+              </select>
+              <button onClick={() => setIsCreatingProject(true)}
+                className="flex items-center gap-2 bg-[var(--surface-bg)] text-[var(--primary-main)] px-4 py-2 rounded-lg hover:bg-[var(--primary-main)]/10 transition-colors border border-[var(--card-border)]">
+                <Plus className="h-4 w-4" /> New Project
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className={`h-64 bg-[var(--card-bg)] border-2 rounded-xl flex flex-col items-center justify-center text-center transition-colors ${isDragging ? 'border-[var(--primary-main)] bg-[var(--primary-main)]/5' : 'border-dashed border-[var(--card-border)]'}`}
+          onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           <div className="mb-4">
             <UploadCloud className={`h-12 w-12 ${isDragging ? 'text-[var(--primary-main)]' : 'text-[var(--text-secondary)]'}`} />
           </div>
           <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Drag & Drop your SRS Document</h3>
-          <p className="text-[var(--text-secondary)] mb-4">Supports .PDF, .DOCX, and .DOC files</p>
+          <p className="text-[var(--text-secondary)] mb-4">Supports .PDF, .DOCX, and .TXT files</p>
           <p className="text-sm text-[var(--text-secondary)]">Maximum file size: 10MB</p>
-
-          <input
-            type="file"
-            id="file-upload"
-            className="hidden"
-            accept=".pdf,.docx,.doc"
-            multiple
-            onChange={handleFileInput}
-          />
-          <label
-            htmlFor="file-upload"
-            className="mt-4 bg-[var(--primary-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors cursor-pointer"
-          >
-            Choose File
-          </label>
+          <input type="file" id="file-upload" className="hidden" accept=".pdf,.docx,.txt" multiple onChange={handleFileInput} />
+          <label htmlFor="file-upload" className="mt-4 bg-[var(--primary-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors cursor-pointer">Choose File</label>
         </div>
 
-        {/* Validation Errors Display */}
         {validationErrors.length > 0 && (
           <div className="mt-6">
             <div className="bg-[var(--error-light)]/10 border-l-4 border-[var(--error-main)] p-4 rounded">
@@ -242,7 +202,6 @@ const DocumentUpload = () => {
           </div>
         )}
 
-        {/* Uploaded Files List */}
         {files.length > 0 && (
           <div className="mt-8">
             <h3 className="text-lg font-medium text-primary mb-4">Uploaded Files</h3>
@@ -256,42 +215,34 @@ const DocumentUpload = () => {
                       <p className="text-xs text-[var(--text-secondary)]">{formatFileSize(file.size)}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3">
+                    {file.status === 'pending' && (
+                      <button onClick={() => handleUpload(file)} disabled={isUploading}
+                        className="bg-[var(--primary-main)] text-white px-3 py-1.5 rounded-lg text-sm hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50">Upload</button>
+                    )}
                     {file.status === 'uploading' && (
                       <div className="w-32 bg-[var(--surface-bg)] rounded-full h-2">
-                        <div
-                          className="bg-[var(--success-main)] h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${file.progress}%` }}
-                        ></div>
+                        <div className="bg-[var(--success-main)] h-2 rounded-full transition-all duration-300" style={{ width: `${file.progress}%` }}></div>
                       </div>
                     )}
-
                     {file.status === 'complete' && (
                       <div className="flex items-center">
                         <CheckCircle className="h-5 w-5 text-[var(--success-main)] mr-2" />
                         <span className="text-xs text-[var(--success-main)] font-medium">Complete</span>
                       </div>
                     )}
-
                     {file.status === 'error' && (
                       <div className="flex items-center">
                         <AlertCircle className="h-5 w-5 text-[var(--error-main)] mr-2" />
                         <div className="text-xs text-[var(--error-main)] font-medium">
                           <div>Error</div>
                           {file.errors && file.errors.length > 0 && (
-                            <div className="text-[10px] text-left mt-1 max-w-[150px]">
-                              {file.errors[0]}
-                            </div>
+                            <div className="text-[10px] text-left mt-1 max-w-[150px]">{file.errors[0]}</div>
                           )}
                         </div>
                       </div>
                     )}
-
-                    <button
-                      onClick={() => removeFile(file.id)}
-                      className="text-[var(--text-secondary)] hover:text-[var(--error-main)] transition-colors"
-                    >
+                    <button onClick={() => removeFile(file.id)} className="text-[var(--text-secondary)] hover:text-[var(--error-main)] transition-colors">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
@@ -301,61 +252,25 @@ const DocumentUpload = () => {
           </div>
         )}
 
-        {/* Sample Documents Section */}
-        <div className="mt-8">
-          <h3 className="text-lg font-medium text-[var(--neutral-900)] mb-4">Try Sample Documents</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => navigate('/analysis-results')}
-              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg p-4 text-left hover:shadow-md transition-shadow flex items-center"
-            >
-              <Document className="h-5 w-5 text-[var(--primary-main)] mr-3" />
-              <div>
-                <p className="font-medium text-[var(--text-primary)]">Student Registration System.pdf</p>
-                <p className="text-sm text-[var(--text-secondary)]">PDF • 2.4 MB</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/analysis-results')}
-              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg p-4 text-left hover:shadow-md transition-shadow flex items-center"
-            >
-              <Document className="h-5 w-5 text-[var(--primary-main)] mr-3" />
-              <div>
-                <p className="font-medium text-[var(--text-primary)]">E-Commerce Platform Requirements.docx</p>
-                <p className="text-sm text-[var(--text-secondary)]">DOCX • 1.8 MB</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/analysis-results')}
-              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg p-4 text-left hover:shadow-md transition-shadow flex items-center"
-            >
-              <Document className="h-5 w-5 text-[var(--primary-main)] mr-3" />
-              <div>
-                <p className="font-medium text-[var(--text-primary)]">Healthcare Management System.doc</p>
-                <p className="text-sm text-[var(--text-secondary)]">DOC • 1.2 MB</p>
-              </div>
-            </button>
+        {uploadResult && (
+          <div className="mt-6 bg-[var(--success-light)]/10 border border-[var(--success-main)] rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-[var(--success-main)] mb-2">Document Summary</h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div><span className="text-[var(--text-secondary)]">Word Count:</span> <span className="font-medium text-[var(--text-primary)]">{uploadResult.word_count}</span></div>
+              <div><span className="text-[var(--text-secondary)]">Requirements Found:</span> <span className="font-medium text-[var(--text-primary)]">{uploadResult.requirements_found}</span></div>
+              <div><span className="text-[var(--text-secondary)]">Sections:</span> <span className="font-medium text-[var(--text-primary)]">{uploadResult.sections_found?.length || 0}</span></div>
+            </div>
           </div>
+        )}
 
-        </div>
-
-        {/* Start Analysis Button */}
         <div className="mt-8 flex justify-end">
-          {files.some(file => file.status === 'complete') ? (
-            <Link
-              to="/analysis-results"
-              className="bg-[var(--primary-main)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center"
-            >
-              Run Validation
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+          {uploadResult ? (
+            <button onClick={handleStartAnalysis}
+              className="bg-[var(--primary-main)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center">
+              Run Validation <ArrowRight className="ml-2 h-5 w-5" />
+            </button>
           ) : (
-            <button
-              disabled={true}
-              className="bg-[var(--surface-bg)] text-[var(--text-secondary)] px-6 py-3 rounded-lg font-medium cursor-not-allowed"
-            >
+            <button disabled className="bg-[var(--surface-bg)] text-[var(--text-secondary)] px-6 py-3 rounded-lg font-medium cursor-not-allowed">
               Run Validation
             </button>
           )}
@@ -366,3 +281,4 @@ const DocumentUpload = () => {
 };
 
 export default DocumentUpload;
+

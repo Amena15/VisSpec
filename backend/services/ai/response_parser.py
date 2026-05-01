@@ -34,13 +34,24 @@ class ResponseParser:
     @staticmethod
     def parse_json(text: str) -> Optional[Dict[str, Any]]:
         """Parse JSON string into a dictionary."""
+        # Force debug logging for LLM response parsing
+        debug_logger = logging.getLogger("llm_debug")
+        debug_logger.setLevel(logging.DEBUG)
+        debug_logger.addHandler(logging.StreamHandler(sys.stdout))
+        
+        logger.debug(f"Attempting to parse JSON from text: {text[:100]}...")
+        logger.info(f"LLM Response (first 200 chars): {text[:100]}")
+        debug_logger.debug(f"LLM Response (first 200 chars): {text[:100]}")
+        
         json_str = ResponseParser.extract_json(text)
         if not json_str:
             logger.error(f"No JSON found in response: {text[:200]}")
             return None
-
+        
         try:
-            return json.loads(json_str)
+            parsed = json.loads(json_str)
+            logger.debug(f"Successfully parsed JSON with {len(parsed)} top-level keys")
+            return parsed
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON: {e}. Raw: {json_str[:200]}")
             return None

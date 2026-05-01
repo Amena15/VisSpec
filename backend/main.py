@@ -14,6 +14,9 @@ from api.users import router as users_router
 from api.auth import router as auth_router
 from api.validation import router as validation_router
 from api.reports import router as reports_router
+from api.projects import router as projects_router
+from api.documents import router as documents_router
+from api.processing import router as processing_router
 from utils.security import verify_token
 from models.user import User, UserRole
 # Import all models so SQLAlchemy registers them with Base.metadata
@@ -54,6 +57,9 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router)
 app.include_router(users_router, prefix="/api/users", tags=["users"])
+app.include_router(projects_router)
+app.include_router(documents_router)
+app.include_router(processing_router)
 app.include_router(analysis_router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(visualization_router, prefix="/api/visualization", tags=["visualization"])
 app.include_router(validation_router, tags=["validation"])

@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Bell, Monitor, Globe, Lock } from 'lucide-react';
+import { Sun, Moon, Bell, Monitor, Globe, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { authAPI } from '../services/api';
+import PasswordChangeForm from '../components/PasswordChangeForm';
 
 const Settings = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [language, setLanguage] = useState('en');
   const [timezone, setTimezone] = useState('UTC');
-  const [defaultSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    language: 'en',
-    timezone: 'UTC'
-  });
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Load user settings from backend on component mount
   useEffect(() => {
@@ -61,52 +56,22 @@ const Settings = () => {
       }
     };
 
+    const fetchUserProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const response = await authAPI.getProfile();
+        setUserProfile(response.data); // axios returns data in response.data
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        toast.error('Failed to load user profile');
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
     fetchUserSettings();
+    fetchUserProfile();
   }, []);
-
-  const handleSubmitPassword = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Validate passwords match
-      if (newPassword !== confirmPassword) {
-        toast.error('New passwords do not match');
-        setLoading(false);
-        return;
-      }
-
-      // Validate password strength
-      if (newPassword.length < 8) {
-        toast.error('Password must be at least 8 characters long');
-        setLoading(false);
-        return;
-      }
-
-      // Mock password change functionality
-      // In a real app, this would make an API call to change the password
-      console.log('Changing password...', {
-        currentPassword,
-        newPassword
-      });
-
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Show success message
-      toast.success('Password changed successfully');
-
-      // Reset form
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error) {
-      console.error('Error changing password:', error);
-      toast.error('An error occurred while changing password');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSaveSettings = async () => {
     setLoading(true);
@@ -182,6 +147,80 @@ const Settings = () => {
           </div>
 
           <div className="space-y-6">
+            {/* Account Details */}
+            <SectionCard
+              title="Account Details"
+              description="View your account information"
+            >
+              {profileLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-main)]"></div>
+                </div>
+              ) : userProfile ? (
+                <div className="space-y-6">
+                  {/* User Profile Header */}
+                  <div className="flex items-center space-x-4 pb-6 border-b border-[var(--card-border)]">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 bg-[var(--primary-main)] rounded-full flex items-center justify-center">
+                        <User className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-[var(--text-primary)]">{userProfile.username}</h3>
+                      <p className="text-sm text-[var(--text-secondary)]">{userProfile.email}</p>
+                      <p className="text-sm text-[var(--text-secondary)] capitalize">{userProfile.role}</p>
+                    </div>
+                  </div>
+
+                  {/* Detailed Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">User ID</label>
+                      <p className="text-sm text-[var(--text-primary)] font-mono">{userProfile.user_id}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Username</label>
+                      <p className="text-sm text-[var(--text-primary)]">{userProfile.username}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Email Address</label>
+                      <p className="text-sm text-[var(--text-primary)]">{userProfile.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Role</label>
+                      <p className="text-sm text-[var(--text-primary)] capitalize">{userProfile.role}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Account Status</label>
+                      <p className="text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          userProfile.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {userProfile.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Member Since</label>
+                      <p className="text-sm text-[var(--text-primary)]">
+                        {new Date(userProfile.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-[var(--text-secondary)]">Unable to load account details</p>
+                </div>
+              )}
+            </SectionCard>
+
             {/* Notification Preferences */}
             <SectionCard
               title="Notification Preferences"
@@ -240,49 +279,7 @@ const Settings = () => {
               title="Security"
               description="Change your password and manage account security"
             >
-              <form onSubmit={handleSubmitPassword} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Current Password</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full border border-[var(--card-border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary-main)] focus:border-transparent bg-[var(--card-bg)] text-[var(--text-primary)]"
-                    placeholder="Enter current password"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full border border-[var(--card-border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary-main)] focus:border-transparent bg-[var(--card-bg)] text-[var(--text-primary)]"
-                    placeholder="Enter new password"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full border border-[var(--card-border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary-main)] focus:border-transparent bg-[var(--card-bg)] text-[var(--text-primary)]"
-                    placeholder="Confirm new password"
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-[var(--primary-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary-main)] focus:ring-offset-2"
-                  >
-                    Change Password
-                  </button>
-                </div>
-              </form>
+              <PasswordChangeForm />
             </SectionCard>
           </div>
         </div>

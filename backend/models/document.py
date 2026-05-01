@@ -22,6 +22,7 @@ class RequirementDocument(Base):
     extracted_author = Column(String, nullable=True)
     extracted_version = Column(String, nullable=True)
     malware_scan_passed = Column(Integer, nullable=False, default=0)
+    content = Column(Text, nullable=True)  # Store full document content for professional extraction
     upload_date = Column(String, nullable=False, default=_now)
 
     project = relationship("Project", back_populates="documents")

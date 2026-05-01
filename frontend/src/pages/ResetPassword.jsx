@@ -14,12 +14,14 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const { token } = useParams();
 
-  // Validate password strength (min 8 chars + at least 1 number + at least 1 special char)
+  // Validate password strength according to backend requirements
   const validatePassword = (password) => {
-    const hasMinLength = password.length >= 8;
-    const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    return hasMinLength && hasNumber && hasSpecialChar;
+    if (password.length < 8) return false;
+    if (!/[A-Z]/.test(password)) return false;  // At least one uppercase
+    if (!/[a-z]/.test(password)) return false;  // At least one lowercase
+    if (!/\d/.test(password)) return false;     // At least one digit
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return false;  // At least one special character
+    return true;
   };
 
   // Password strength indicator
@@ -71,7 +73,7 @@ const ResetPassword = () => {
     // Client-side validation
     let isValid = true;
     if (!validatePassword(password)) {
-      setPasswordError('Password must be at least 8 characters, include a number, and a special character');
+      setPasswordError('Password must be 8+ chars with uppercase, lowercase, number & special char');
       isValid = false;
     }
     if (password !== confirmPassword) {

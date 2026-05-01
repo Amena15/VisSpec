@@ -1,51 +1,64 @@
 """
-Few-shot prompting templates for LLaMA 3 requirement analysis.
-Based on IEEE 830 standards for software requirements specification.
+Professional Requirements Extraction & Analysis Prompts.
+Engineering-grade prompts designed to extract clean, atomic requirements while
+strictly filtering document noise (TOC, figures, tables, section headers).
 """
 
-AMBIGUITY_DETECTION_PROMPT = """You are a requirements analyst. Detect ambiguous, vague, or defective requirements.
+REQUIREMENT_EXTRACTION_PROMPT = """You are a highly strict Automated Requirements Extraction Engine. Your sole purpose is to scan raw document text, isolate individual software requirements, and discard 100% of the surrounding context.
 
-Rules:
-- Flag pronouns without clear antecedents (it, they, this, these)
-- Flag subjective terms (user-friendly, efficient, fast, appropriate)
-- Flag incomplete conditions or missing edge cases
-- Flag contradictory statements
-- Flag unverifiable requirements (no measurable criteria)
+CRITICAL DIRECTIVES (YOU MUST OBEY THESE OR FAIL):
+1. THE KEYWORD RULE: A valid requirement MUST contain at least one of these modal verbs: "shall", "must", "should", or "will". If a sentence does not contain one of these words, YOU MUST IGNORE IT COMPLETELY.
+2. THE BAN LIST: You must NEVER output sentences that contain the following boilerplate words: "Figure", "Table", "Section", "Appendix", "This document details", "As shown in", "Sequence Diagram".
+3. THE ATOMIC RULE: You must isolate the core rule. Maximum length is 2 sentences. NEVER output a whole paragraph.
+4. SPLIT COMPOUND RULES: If a paragraph contains multiple "shall" or "must" statements, split them into separate JSON objects.
 
-Return JSON only:
-{{
-  "defects": [
-    {{
-      "text": "the defective sentence",
-      "type": "ambiguity|incompleteness|inconsistency|unverifiable",
-      "severity": "high|medium|low",
-      "confidence": 0.0-1.0,
-      "description": "explanation of the defect",
-      "suggestion": "how to fix it"
-    }}
-  ]
-}}
+EXAMPLES OF YOUR TASK:
+Bad Raw Text: "The system must operate 24/7. 4.3 Reliability. Table 63 Business Rules. Section 5 Summary. This document details the software requirement specification."
+Correct Output: "The system must operate 24/7." (Notice everything after the core rule was instantly deleted).
 
-Requirements to analyze:
-{text}
-"""
+Bad Raw Text: "The system shall interface with a payment gateway. For offline consultation, payments shall be via cash. Table 6 Sign In."
+Correct Output (Split into two objects): 
+Object 1: "The system shall interface with a payment gateway."
+Object 2: "For offline consultation, payments shall be via cash."
 
-CLASSIFICATION_PROMPT = """Classify each requirement according to IEEE 830 categories.
+OUTPUT SCHEMA (JSON Array Only):
+[
+  {{
+    "module_name": "String (Determine from context, e.g., 'System Deployment', 'Payment', 'User Management')",
+    "category": "String (Strictly ONE of: functional, non_functional, interface, constraint, data)",
+    "semantic_id": "String (e.g., FR-DEP-01 for Deployment, NFR-PERF-01 for Performance)",
+    "original_text": "String (THE ISOLATED, CLEANED REQUIREMENT ONLY. MAX 2 SENTENCES.)",
+    "actors": ["String (Extract implied actors, e.g., 'System', 'Patient', 'Admin')"]
+  }}
+]
 
-Categories:
-- functional: What the system shall do
-- non_functional: Performance, security, usability constraints
-- interface: User interface, API, hardware interfaces
-- constraint: Technical, regulatory, or business constraints
-- data: Data storage, format, or structure requirements
+Raw Text to Scan:
+{text}"""
+
+CLASSIFICATION_PROMPT = """You are a Requirements Classification Specialist. Classify each requirement using IEEE 830 standards.
+
+CATEGORIES WITH STRICT DEFINITIONS:
+- functional: System behaviors, features, capabilities (what system SHALL DO)
+- non_functional: Performance, security, usability, reliability constraints
+- interface: User interfaces, APIs, hardware/software interactions
+- constraint: Technical, regulatory, business limitations
+- data: Data storage, format, structure requirements
+
+CLASSIFICATION RULES:
+- If requirement describes an ACTION or BEHAVIOR → functional
+- If requirement describes PERFORMANCE METRICS or QUALITY → non_functional
+- If requirement describes INTERACTION POINT → interface
+- If requirement describes LIMITATION or RESTRICTION → constraint
+- If requirement describes DATA handling → data
 
 Return JSON only:
 {{
   "classifications": [
     {{
-      "text": "the requirement text",
+      "text": "exact requirement text",
       "category": "functional|non_functional|interface|constraint|data",
-      "confidence": 0.0-1.0
+      "confidence": 0.0-1.0,
+      "rationale": "brief justification"
     }}
   ]
 }}
@@ -54,42 +67,87 @@ Requirements to classify:
 {text}
 """
 
-ENTITY_EXTRACTION_PROMPT = """Extract entities, actors, and relationships from requirements text.
+ENTITY_EXTRACTION_PROMPT = """You are an Entity Extraction Specialist. Identify actors, systems, and key terms from requirements.
+
+EXTRACTION RULES:
+- ACTORS: Users, roles, external systems that interact with the system
+- SYSTEMS: Software components, databases, services
+- MODAL VERBS: shall, must, should, may, will (indicate requirement strength)
+- VAGUE TERMS: subjective, immeasurable, unclear terms
+
+STRICT FILTERING:
+- Ignore document structure elements
+- Ignore table/figure references
+- Only extract entities mentioned in actual requirement statements
 
 Return JSON only:
 {{
   "entities": [
     {{
-      "text": "entity name",
-      "type": "actor|system|component|data|external_system",
-      "description": "brief description"
+      "name": "entity_name",
+      "type": "actor|system|component|data",
+      "description": "brief role/purpose"
     }}
   ],
-  "relationships": [
-    {{
-      "source": "entity name",
-      "target": "entity name",
-      "type": "uses|creates|validates|sends_to|receives_from",
-      "description": "relationship description"
-    }}
-  ],
-  "modal_verbs": ["shall", "should", "may", "must"],
-  "vague_terms": ["list of vague terms found"]
+  "modal_verbs": ["shall", "must", "should", "may", "will"],
+  "vague_terms": ["efficient", "user-friendly", "appropriate", "fast", "sufficient"],
+  "confidence": 0.0-1.0
 }}
 
-Text to analyze:
+Requirements text to analyze:
 {text}
 """
 
-COMPLEXITY_ESTIMATION_PROMPT = """Estimate the complexity of implementing these requirements.
+AMBIGUITY_DETECTION_PROMPT = """You are a Requirements Quality Specialist. Detect ambiguous, vague, or defective requirements using strict criteria.
 
-Consider:
-- Number of actors and their interactions
-- Conditional logic complexity
-- Data validation requirements
-- Integration points with external systems
+DEFECT TYPES WITH PRECISE DEFINITIONS:
+- ambiguity: Pronouns without clear antecedents (it, they, this), multiple interpretations
+- incompleteness: Missing conditions, edge cases, or preconditions
+- inconsistency: Contradictory statements or conflicting requirements
+- unverifiable: No measurable criteria or testable outcomes
+- vagueness: Subjective terms (user-friendly, efficient, fast, appropriate)
+
+DETECTION RULES:
+- Flag requirements with pronouns lacking clear references
+- Identify subjective terms without quantifiable metrics
+- Find statements with missing error handling or edge cases
+- Detect contradictions between related requirements
+- Mark requirements that cannot be objectively tested
+
+Return JSON only:
+{{
+  "defects": [
+    {{
+      "text": "exact problematic text",
+      "type": "ambiguity|incompleteness|inconsistency|unverifiable|vagueness",
+      "severity": "high|medium|low",
+      "confidence": 0.0-1.0,
+      "description": "clear explanation of the issue",
+      "suggestion": "specific improvement recommendation"
+    }}
+  ]
+}}
+
+Requirements to analyze:
+{text}
+"""
+
+COMPLEXITY_ESTIMATION_PROMPT = """You are a Technical Estimation Specialist. Analyze implementation complexity for requirements.
+
+COMPLEXITY FACTORS:
+- Actor count and interaction complexity
+- Conditional logic and decision branches
+- Data validation and transformation requirements
+- External system integrations
 - Security and compliance requirements
-- Performance constraints
+- Performance constraints and scalability needs
+- User interface complexity
+
+SCORING CRITERIA:
+- 0-25: Low complexity (simple CRUD, single actor)
+- 26-50: Medium complexity (multiple actors, basic logic)
+- 51-75: High complexity (integrations, complex workflows)
+- 76-100: Critical complexity (real-time, high security, scaling)
 
 Return JSON only:
 {{
@@ -98,37 +156,44 @@ Return JSON only:
   "risk_level": "low|medium|high|critical",
   "factors": [
     {{
-      "factor": "description of complexity factor",
-      "impact": "low|medium|high"
+      "factor": "specific complexity factor",
+      "impact": "low|medium|high",
+      "description": "why this adds complexity"
     }}
   ],
-  "recommendations": ["list of recommendations to reduce complexity"]
+  "recommendations": ["specific suggestions to reduce complexity"]
 }}
 
 Requirements to estimate:
 {text}
 """
 
-DIAGRAM_GENERATION_PROMPT = """Generate a Mermaid diagram from the following requirements.
+DIAGRAM_GENERATION_PROMPT = """You are a Technical Visualization Specialist. Generate clean Mermaid diagrams from requirements.
 
-For use case diagrams, use this syntax:
+DIAGRAM STANDARDS:
+- Use clear, descriptive names for actors and components
+- Follow proper Mermaid syntax for the specified diagram type
+- Include only essential interactions, avoid clutter
+- Ensure logical flow and readability
+
+USE CASE DIAGRAM SYNTAX:
 ```mermaid
 usecaseDiagram
-  actor ActorName
+  actor ActorName as "Actor Display Name"
   usecase "Use Case Description" as UC1
   ActorName --> UC1
 ```
 
-For sequence diagrams, use this syntax:
+SEQUENCE DIAGRAM SYNTAX:
 ```mermaid
 sequenceDiagram
   participant A as Actor
   participant S as System
-  A->>S: Action
-  S-->>A: Response
+  A->>S: Action Description
+  S-->>A: Response Description
 ```
 
-Return ONLY the mermaid code block, nothing else.
+Return ONLY the complete mermaid code block. No explanations or extra text.
 
 Requirements:
 {text}
