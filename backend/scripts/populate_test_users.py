@@ -29,7 +29,7 @@ def create_test_users():
             analyst_user = User(
                 username="analyst",
                 email="analyst@vispec.com",
-                role=UserRole.ANALYST,
+                role=UserRole.ANALYST.value,
                 is_active=True
             )
             analyst_user.set_password("VisSpec123")
@@ -42,7 +42,7 @@ def create_test_users():
             supervisor_user = User(
                 username="supervisor",
                 email="supervisor@vispec.com",
-                role=UserRole.SUPERVISOR,
+                role=UserRole.SUPERVISOR.value,
                 is_active=True
             )
             supervisor_user.set_password("VisSpec123")

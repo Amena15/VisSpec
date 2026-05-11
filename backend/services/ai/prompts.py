@@ -98,35 +98,39 @@ Requirements text to analyze:
 {text}
 """
 
-AMBIGUITY_DETECTION_PROMPT = """You are a Requirements Quality Specialist. Detect ambiguous, vague, or defective requirements using strict criteria.
+AMBIGUITY_DETECTION_PROMPT = """You are a Requirements Quality Specialist. Detect ONLY CRITICAL ambiguous, vague, or defective requirements. Be lenient for academic/student projects.
 
-DEFECT TYPES WITH PRECISE DEFINITIONS:
-- ambiguity: Pronouns without clear antecedents (it, they, this), multiple interpretations
-- incompleteness: Missing conditions, edge cases, or preconditions
-- inconsistency: Contradictory statements or conflicting requirements
-- unverifiable: No measurable criteria or testable outcomes
-- vagueness: Subjective terms (user-friendly, efficient, fast, appropriate)
+DEFECT TYPES WITH PRECISE DEFINITIONS (FLAG ONLY CRITICAL ISSUES):
+- ambiguity: CRITICAL pronoun issues (it, they, this) with NO clear context, severe multiple interpretations
+- incompleteness: MISSING essential functionality or MAJOR missing conditions
+- inconsistency: DIRECT contradictions between requirements
+- unverifiable: COMPLETELY impossible to test or measure
 
-DETECTION RULES:
-- Flag requirements with pronouns lacking clear references
-- Identify subjective terms without quantifiable metrics
-- Find statements with missing error handling or edge cases
-- Detect contradictions between related requirements
-- Mark requirements that cannot be objectively tested
+SEVERITY GUIDELINES (BE CONSERVATIVE):
+- HIGH: Only for critical issues that make requirement unusable
+- MEDIUM: For significant clarity problems that affect implementation
+- LOW: For minor improvements that would be nice to have
 
-Return JSON only:
-{{
+LENIENT DETECTION RULES:
+- IGNORE minor vague terms like "user-friendly" unless completely meaningless
+- ALLOW reasonable flexibility in student project requirements
+- FLAG only issues that would genuinely prevent implementation
+- Don't flag missing edge cases unless they're major functionality gaps
+- Be practical - this is not a military specification
+
+Return JSON only (defects should be < 30% of requirements):
+{
   "defects": [
-    {{
+    {
       "text": "exact problematic text",
-      "type": "ambiguity|incompleteness|inconsistency|unverifiable|vagueness",
+      "type": "ambiguity|incompleteness|inconsistency|unverifiable",
       "severity": "high|medium|low",
       "confidence": 0.0-1.0,
       "description": "clear explanation of the issue",
       "suggestion": "specific improvement recommendation"
-    }}
+    }
   ]
-}}
+}
 
 Requirements to analyze:
 {text}

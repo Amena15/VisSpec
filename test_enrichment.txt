@@ -1,0 +1,1 @@
+Test requirement: The system shall allow users to register accounts with email verification. Patients must be able to login using secure credentials. Admin users should manage user roles and permissions.

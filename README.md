@@ -152,7 +152,7 @@ Complexity (0-100) → Weeks → Cost Index → Risk Level
 - Python 3.10 or higher
 - Node.js 18 or higher
 - npm or yarn
-- PostgreSQL 12+ (or SQLite for local development)
+- PostgreSQL 12+
 - Git
 
 ### Backend Setup
@@ -226,7 +226,7 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 | `DEBUG` | `True` | Enable debug mode (disable in production) |
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `8000` | Backend server port |
-| `DATABASE_URL` | `sqlite:///./vispec.db` | Database connection string (SQLite for dev, PostgreSQL for production) |
+| `DATABASE_URL` | `postgresql://vispec:password@localhost:5432/vispec` | Database connection string (PostgreSQL) |
 | `SECRET_KEY` | *(required)* | JWT signing key (min 32 chars) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT token expiration time |
 | `GROQ_API_KEY` | *(required)* | Groq API key for LLaMA 3 access |
@@ -252,26 +252,6 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 > In any production-like environment, you **MUST** override it with a strong, random key in your `.env` file.
 
 > ℹ️ **Note:** If `GROQ_API_KEY` is not provided, the system automatically falls back to a **rule-based heuristic** for semantic analysis. The heuristic has lower accuracy but ensures the system remains functional without an internet connection or API key.
-
-### PostgreSQL Migration
-
-To migrate from SQLite to PostgreSQL:
-
-```bash
-cd VisSpec/backend
-source venv/bin/activate
-
-# 1. Set DATABASE_URL to PostgreSQL in .env
-# DATABASE_URL=postgresql://user:password@localhost:5432/vispec
-
-# 2. Run the migration script (original SQLite DB is never modified)
-python scripts/migrate_sqlite_to_postgres.py
-
-# 3. Start the backend — it will use PostgreSQL automatically
-python main.py
-```
-
-**Rollback:** To revert to SQLite, simply comment out the PostgreSQL `DATABASE_URL` and uncomment the SQLite one. Original `vispec.db` is never modified or deleted.
 
 ---
 
@@ -468,10 +448,9 @@ VisSpec/
 │   │   └── report/                   # PDF export service
 │   ├── utils/                        # Utility functions
 │   │   └── security.py               # JWT, bcrypt, rate limiting
-│   ├── scripts/                      # Database seeding & migration
+│   ├── scripts/                      # Database seeding & utilities
 │   │   ├── seed_users.py             # Create test users
 │   │   ├── populate_test_users.py    # Alternative seeding script
-│   │   ├── migrate_sqlite_to_postgres.py  # SQLite → PostgreSQL migration
 │   │   └── migrate_full_schema.py    # Schema upgrade script
 │   ├── tests/                        # Unit & integration tests
 │   ├── config/                       # Database & environment config

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Database
-    DATABASE_URL: str = "sqlite:///./vispec.db"
+    DATABASE_URL: str = "postgresql://localhost/vispec # Override in .env"
 
     # Security
     SECRET_KEY: str = "vispec_secret_key_for_development_purpose_only"

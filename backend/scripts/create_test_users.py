@@ -3,7 +3,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from sqlalchemy.orm import Session
-from config.database import engine, Base
+from backend.config.database import engine, Base
+
 from models import User, UserRole
 from utils.security import get_password_hash
 
@@ -23,7 +24,7 @@ def create_test_users():
             analyst_user = User(
                 username="analyst",
                 email="analyst@vispec.com",
-                role=UserRole.ANALYST
+                role=UserRole.ANALYST.value
             )
             analyst_user.set_password("VisSpec123")  # Shorter password to avoid bcrypt issues
             db.add(analyst_user)
@@ -35,7 +36,7 @@ def create_test_users():
             supervisor_user = User(
                 username="supervisor",
                 email="supervisor@vispec.com",
-                role=UserRole.SUPERVISOR
+                role=UserRole.SUPERVISOR.value
             )
             supervisor_user.set_password("VisSpec123")  # Shorter password to avoid bcrypt issues
             db.add(supervisor_user)

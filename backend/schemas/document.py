@@ -46,6 +46,7 @@ class DocumentUploadResponse(BaseModel):
     file_extension: str
     file_size_bytes: int
     word_count: int
+    extracted_text: Optional[str] = None
     page_count: Optional[int] = None
     status: str
     extracted_author: Optional[str] = None
@@ -67,6 +68,7 @@ class DocumentSummary(BaseModel):
     file_extension: str
     file_size_bytes: int
     word_count: Optional[int] = None
+    extracted_text: Optional[str] = None
     page_count: Optional[int] = None
     status: str
     requirements_found: int = 0
@@ -84,6 +86,7 @@ class DocumentDetail(BaseModel):
     file_extension: str
     file_size_bytes: int
     word_count: Optional[int] = None
+    extracted_text: Optional[str] = None
     page_count: Optional[int] = None
     status: str
     parse_error: Optional[str] = None

@@ -84,7 +84,10 @@ function App() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col bg-[var(--content-bg)]">
-      <Routes>
+      <Routes future={{ 
+        v7_startTransition: true,
+        v7_relativeSplatPath: true 
+      }}>
         <Route
           path="/"
           element={<LandingPage />}

@@ -8,6 +8,7 @@ Organizes, classifies, and enriches raw requirements with:
 4. Compound requirement splitting
 5. Category classification (functional, non_functional, etc.)
 6. Entity extraction (actors, modal verbs, vague terms)
+7. Text cleaning (removes repeated words like willwill, shallshall)
 
 This service is designed to run AFTER document upload (decoupled from
 the HTTP upload request to prevent timeouts).
@@ -18,6 +19,7 @@ from typing import Dict, List, Any, Optional
 
 from core.logging import get_logger
 from services.ai.llm_service import llm_service
+from services.ai.text_cleaner import TextCleaner
 
 logger = get_logger(__name__)
 
@@ -25,31 +27,138 @@ logger = get_logger(__name__)
 class RequirementOrganizer:
     """Organizes and enriches raw requirements into structured SRS format."""
 
-    # Module keywords for rule-based grouping (fallback when LLM unavailable)
+    # Enhanced module keywords for rule-based grouping (fallback when LLM unavailable)
     MODULE_KEYWORDS = {
-        "User Management": ["user", "account", "profile", "registration", "signup", "sign up", "register"],
-        "Authentication": ["login", "logout", "signin", "sign in", "authenticate", "authentication", "credential", "password", "session", "token", "sso", "oauth", "mfa", "2fa", "biometric"],
-        "Authorization & Access Control": ["role", "permission", "access", "authorize", "rbac", "acl", "privilege", "restrict", "grant", "deny"],
-        "Dashboard & Reporting": ["dashboard", "report", "analytics", "metric", "kpi", "chart", "graph", "visualization", "overview", "summary", "statistic"],
-        "Document Management": ["document", "file", "upload", "download", "attachment", "pdf", "docx", "storage", "folder", "repository"],
-        "Notification & Communication": ["notification", "alert", "email", "sms", "message", "communication", "reminder", "broadcast", "push"],
-        "Audit & Logging": ["audit", "log", "trail", "record", "history", "tracking", "monitor", "compliance"],
-        "System Administration": ["admin", "administrator", "configuration", "setting", "system", "maintenance", "backup", "restore"],
-        "Data Management": ["data", "database", "storage", "backup", "archive", "retention", "encryption", "privacy"],
-        "Search & Filtering": ["search", "filter", "query", "sort", "find", "lookup", "index", "criteria"],
-        "Workflow & Process": ["workflow", "approval", "review", "process", "stage", "step", "state", "transition"],
-        "Integration & API": ["api", "integration", "interface", "webhook", "endpoint", "service", "third-party", "external system"],
-        "Security & Compliance": ["security", "compliance", "regulation", "gdpr", "hipaa", "encryption", "secure", "vulnerability", "threat"],
-        "Performance & Scalability": ["performance", "scalability", "latency", "throughput", "response time", "load", "concurrent", "capacity"],
+        "User Management": [
+            "user", "account", "profile", "registration", "signup", "sign up", "register", 
+            "create account", "user profile", "user details", "personal information", 
+            "user preferences", "user settings", "manage account", "update profile"
+        ],
+        "Authentication": [
+            "login", "logout", "signin", "sign in", "authenticate", "authentication", 
+            "credential", "password", "session", "token", "sso", "oauth", "mfa", "2fa", 
+            "biometric", "two-factor", "multi-factor", "single sign-on", "identity", 
+            "verify identity", "user verification", "access credentials"
+        ],
+        "Authorization & Access Control": [
+            "role", "permission", "access", "authorize", "rbac", "acl", "privilege", 
+            "restrict", "grant", "deny", "access control", "user role", "admin role", 
+            "user permission", "security level", "access rights", "privilege management"
+        ],
+        "Document Management": [
+            "document", "file", "upload", "download", "attachment", "pdf", "docx", 
+            "storage", "folder", "repository", "file management", "document storage", 
+            "file sharing", "version control", "document library", "file system"
+        ],
+        "Dashboard & Reporting": [
+            "dashboard", "report", "analytics", "metric", "kpi", "chart", "graph", 
+            "visualization", "overview", "summary", "statistic", "data visualization", 
+            "business intelligence", "reporting tool", "analytics dashboard", 
+            "performance metrics", "data analysis"
+        ],
+        "Notification & Communication": [
+            "notification", "alert", "email", "sms", "message", "communication", 
+            "reminder", "broadcast", "push", "alert system", "messaging", 
+            "email notification", "sms alert", "push notification", "communication system"
+        ],
+        "Audit & Logging": [
+            "audit", "log", "trail", "record", "history", "tracking", "monitor", 
+            "compliance", "audit trail", "system log", "activity log", "audit record", 
+            "compliance monitoring", "audit system", "logging system"
+        ],
+        "System Administration": [
+            "admin", "administrator", "configuration", "setting", "system", 
+            "maintenance", "backup", "restore", "system configuration", "admin panel", 
+            "system settings", "maintenance mode", "system backup", "admin tools"
+        ],
+        "Data Management": [
+            "data", "database", "storage", "backup", "archive", "retention", 
+            "encryption", "privacy", "data protection", "database management", 
+            "data storage", "data backup", "data security", "data privacy"
+        ],
+        "Search & Filtering": [
+            "search", "filter", "query", "sort", "find", "lookup", "index", 
+            "criteria", "search function", "filter results", "data search", 
+            "advanced search", "search algorithm", "filter options"
+        ],
+        "Workflow & Process": [
+            "workflow", "approval", "review", "process", "stage", "step", 
+            "state", "transition", "business process", "workflow management", 
+            "approval process", "process automation", "workflow state"
+        ],
+        "Integration & API": [
+            "api", "integration", "interface", "webhook", "endpoint", "service", 
+            "third-party", "external system", "api integration", "web service", 
+            "system integration", "api endpoint", "external api"
+        ],
+        "Security & Compliance": [
+            "security", "compliance", "regulation", "gdpr", "hipaa", "encryption", 
+            "secure", "vulnerability", "threat", "security policy", "data security", 
+            "cybersecurity", "threat detection", "security compliance"
+        ],
+        "Performance & Scalability": [
+            "performance", "scalability", "latency", "throughput", "response time", 
+            "load", "concurrent", "capacity", "system performance", "scalability", 
+            "performance optimization", "load balancing", "capacity planning"
+        ],
+        "User Interface & Experience": [
+            "interface", "ui", "user interface", "screen", "form", "button", 
+            "menu", "display", "view", "user experience", "ux design", 
+            "interface design", "user interaction", "screen layout"
+        ],
+        "Business Logic": [
+            "business rule", "logic", "calculation", "validation", "business process", 
+            "algorithm", "business logic", "rule engine", "validation rule", 
+            "business calculation", "process rule"
+        ]
     }
 
-    # Category keywords for rule-based classification (fallback)
+    # Enhanced category keywords for rule-based classification (fallback)
     CATEGORY_KEYWORDS = {
-        "functional": ["shall", "must", "will", "function", "feature", "capability", "allow", "enable", "support", "provide"],
-        "non_functional": ["performance", "scalability", "reliability", "availability", "usability", "maintainability", "security", "efficiency", "response time", "throughput"],
-        "interface": ["interface", "api", "ui", "user interface", "screen", "form", "button", "menu", "dashboard", "display", "view"],
-        "constraint": ["constraint", "limitation", "restrict", "comply", "regulation", "standard", "must not", "shall not", "only", "maximum", "minimum"],
-        "data": ["data", "database", "storage", "field", "record", "schema", "table", "entity", "attribute", "json", "xml", "format"],
+        "functional": [
+            "shall", "must", "will", "function", "feature", "capability", "allow", "enable", 
+            "support", "provide", "perform", "execute", "process", "handle", "manage", 
+            "create", "update", "delete", "read", "view", "edit", "add", "remove", "generate", 
+            "calculate", "validate", "verify", "approve", "reject", "submit", "save", "store", 
+            "retrieve", "display", "show", "hide", "send", "receive", "transmit", "transfer"
+        ],
+        "non_functional": [
+            "performance", "scalability", "reliability", "availability", "usability", "maintainability", 
+            "security", "efficiency", "response time", "throughput", "latency", "load", "capacity", 
+            "concurrent", "simultaneous", "multi-user", "real-time", "batch", "scheduled", "automatic", 
+            "manual", "quality", "accuracy", "precision", "consistency", "integrity", "robustness", 
+            "flexibility", "portability", "interoperability", "compatibility", "testability"
+        ],
+        "interface": [
+            "interface", "api", "ui", "user interface", "screen", "form", "button", "menu", 
+            "dashboard", "display", "view", "page", "window", "dialog", "modal", "popup", 
+            "navigation", "search bar", "input field", "dropdown", "checkbox", "radio button", 
+            "slider", "tab", "breadcrumb", "link", "hyperlink", "tooltip", "icon", "image"
+        ],
+        "constraint": [
+            "constraint", "limitation", "restrict", "comply", "regulation", "standard", 
+            "must not", "shall not", "only", "maximum", "minimum", "shall", "should", "must", 
+            "will", "requirement", "specification", "policy", "rule", "guideline", "procedure", 
+            "protocol", "format", "template", "schema", "validation", "verification", "audit"
+        ],
+        "data": [
+            "data", "database", "storage", "field", "record", "schema", "table", "entity", 
+            "attribute", "json", "xml", "format", "file", "document", "content", "information", 
+            "metadata", "log", "backup", "archive", "export", "import", "migration", "synchronization", 
+            "replication", "version", "history", "audit trail", "index", "key", "relationship"
+        ],
+        "security": [
+            "security", "authentication", "authorization", "access", "permission", "role", 
+            "privilege", "login", "password", "token", "session", "encryption", "decryption", 
+            "secure", "protect", "prevent", "detect", "monitor", "audit", "compliance", "privacy", 
+            "confidential", "sensitive", "vulnerability", "threat", "risk", "attack", "breach"
+        ],
+        "integration": [
+            "integration", "api", "web service", "endpoint", "interface", "third-party", 
+            "external", "system", "application", "service", "connect", "communicate", 
+            "exchange", "synchronize", "import", "export", "feed", "webhook", "callback", 
+            "notification", "event", "message", "queue", "protocol", "standard"
+        ]
     }
 
     # Modal verbs to detect
@@ -83,9 +192,12 @@ class RequirementOrganizer:
             return []
 
         try:
+            # Step 0: Clean the full text first to remove repeated words
+            cleaned_full_text = TextCleaner.clean_requirement_text(full_text)
+            
             # Use professional extraction prompt with smaller text for better results
             # First, try to extract only the main requirement sections, skip TOC/figures
-            lines = full_text.split('\n')
+            lines = cleaned_full_text.split('\n')
             requirement_lines = []
             skip_sections = ['Table ', 'Figure ', 'Appendix', 'Contents', 'Overview', 'Summary']
             
@@ -203,9 +315,12 @@ class RequirementOrganizer:
                 logger.warning("Professional extraction failed, falling back to traditional pipeline")
 
         # Traditional pipeline as fallback
+        # Step 0: Clean text first (remove repeated words like willwill, shallshall)
+        cleaned_requirements = TextCleaner.clean_requirements_batch(requirements)
+        
         # Step 1 & 2: Split compound and standardize
         atomic_reqs = []
-        for req in requirements:
+        for req in cleaned_requirements:
             split = self._split_compound_requirement(req)
             atomic_reqs.extend(split)
 
@@ -361,17 +476,57 @@ class RequirementOrganizer:
         return self._group_by_module_heuristic(requirements)
 
     def _group_by_module_heuristic(self, requirements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Rule-based module grouping using keyword matching."""
+        """Enhanced rule-based module grouping using weighted keyword matching."""
 
         for req in requirements:
             text = req.get("original_text", "").lower()
             best_module = "General"
             best_score = 0
 
+            # Module importance weights - some modules are more specific
+            module_weights = {
+                "Authentication": 2.5,
+                "Document Management": 2.3,
+                "Security & Compliance": 2.4,
+                "User Management": 2.2,
+                "Authorization & Access Control": 2.1,
+                "Dashboard & Reporting": 1.9,
+                "Integration & API": 2.0,
+                "Audit & Logging": 2.0,
+                "Performance & Scalability": 1.8,
+                "Data Management": 1.7,
+                "Notification & Communication": 1.6,
+                "Search & Filtering": 1.5,
+                "Workflow & Process": 1.4,
+                "System Administration": 1.3,
+                "User Interface & Experience": 1.2,
+                "Business Logic": 1.1,
+                "General": 0.5,
+            }
+
             for module, keywords in self.MODULE_KEYWORDS.items():
-                score = sum(1 for kw in keywords if kw.lower() in text)
-                if score > best_score:
-                    best_score = score
+                score = 0
+                text_words = text.split()
+                
+                # Count keyword matches with different weights
+                for kw in keywords:
+                    kw_lower = kw.lower()
+                    
+                    # Exact phrase match (higher score)
+                    if ' ' in kw and kw_lower in text:
+                        score += 3
+                    # Single word match
+                    elif kw_lower in text:
+                        score += 1
+                
+                # Apply module weight
+                weighted_score = score * module_weights.get(module, 1.0)
+                
+                # Normalize by text length
+                normalized_score = weighted_score / max(len(text_words), 1)
+                
+                if normalized_score > best_score:
+                    best_score = normalized_score
                     best_module = module
 
             req["module_name"] = best_module
@@ -432,33 +587,111 @@ Requirements to group:
         return requirements
 
     def _generate_semantic_ids(self, requirements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Generate hierarchical semantic IDs like FR-UM-01, NFR-SEC-01."""
+        """Enhanced semantic ID generation with meaningful module codes."""
 
         # Track counters per (category, module) pair
         counters = {}
 
+        # Module code mapping for more meaningful IDs
+        module_codes = {
+            "User Management": "UM",
+            "Authentication": "AUTH",
+            "Authorization & Access Control": "AC",
+            "Document Management": "DM",
+            "Dashboard & Reporting": "DR",
+            "Notification & Communication": "NC",
+            "Audit & Logging": "AL",
+            "System Administration": "SA",
+            "Data Management": "DT",
+            "Search & Filtering": "SF",
+            "Workflow & Process": "WF",
+            "Integration & API": "API",
+            "Security & Compliance": "SEC",
+            "Performance & Scalability": "PERF",
+            "User Interface & Experience": "UI",
+            "Business Logic": "BL",
+            "General": "GEN",
+        }
+
+        # Category to prefix mapping
+        prefix_map = {
+            "functional": "FR",
+            "non_functional": "NFR",
+            "interface": "UIR",
+            "constraint": "CR",
+            "data": "DR",
+            "security": "SEC",
+            "integration": "INT",
+        }
+
         for req in requirements:
-            module = req.get("module_name", "General")[:2].upper()
+            module_name = req.get("module_name", "General")
             category = req.get("category", "functional")
 
-            # Map category to prefix
-            prefix_map = {
-                "functional": "FR",
-                "non_functional": "NFR",
-                "interface": "IR",
-                "constraint": "CR",
-                "data": "DR",
-            }
+            # Get module code
+            module_code = module_codes.get(module_name, "GEN")
+            
+            # Get category prefix
             prefix = prefix_map.get(category, "REQ")
 
-            # Get counter
-            key = (prefix, module)
+            # Get counter for this combination
+            key = (prefix, module_code)
             counters[key] = counters.get(key, 0) + 1
             seq = counters[key]
 
-            req["semantic_id"] = f"{prefix}-{module}-{seq:02d}"
+            req["semantic_id"] = f"{prefix}-{module_code}-{seq:02d}"
 
         return requirements
+
+    def _calculate_requirement_quality(self, text: str) -> Dict[str, Any]:
+        """Calculate quality metrics for a requirement."""
+        
+        quality_score = 100.0
+        issues = []
+        
+        # Check for modal verbs (should have at least one)
+        modal_verbs = ["shall", "must", "should", "will", "may"]
+        has_modal = any(modal in text.lower() for modal in modal_verbs)
+        if not has_modal:
+            quality_score -= 20
+            issues.append("Missing modal verb (shall/must/should/will)")
+        
+        # Check for vague terms
+        vague_terms_found = [term for term in self.VAGUE_TERMS if term in text.lower()]
+        if vague_terms_found:
+            quality_score -= len(vague_terms_found) * 5
+            issues.append(f"Contains vague terms: {', '.join(vague_terms_found[:3])}")
+        
+        # Check length (too short or too long)
+        word_count = len(text.split())
+        if word_count < 5:
+            quality_score -= 15
+            issues.append("Too short (may be incomplete)")
+        elif word_count > 50:
+            quality_score -= 10
+            issues.append("Too long (may be compound requirement)")
+        
+        # Check for actors (should have at least one)
+        actors = self._extract_actors_heuristic(text)
+        if not actors:
+            quality_score -= 10
+            issues.append("No clear actor identified")
+        
+        # Check for measurable criteria
+        measurable_terms = ["seconds", "minutes", "hours", "days", "percent", "%", "number", "count", "limit", "maximum", "minimum"]
+        has_measurable = any(term in text.lower() for term in measurable_terms)
+        if not has_measurable and category in ["non_functional"]:
+            quality_score -= 15
+            issues.append("Non-functional requirement lacks measurable criteria")
+        
+        return {
+            "quality_score": max(0, quality_score),
+            "issues": issues,
+            "word_count": word_count,
+            "has_modal": has_modal,
+            "actors": actors,
+            "vague_terms": vague_terms_found
+        }
 
     def _classify_requirements(
         self,
@@ -496,16 +729,60 @@ Requirements to group:
         return requirements
 
     def _heuristic_classify(self, text: str) -> str:
-        """Rule-based classification fallback."""
-
         text_lower = text.lower()
-        best_category = "functional"
-        best_score = 0
+        
+        # Strong functional indicators
+        if any(word in text_lower for word in ["shall", "must", "will", "system shall"]):
+            return "functional"
+        # Non-functional indicators
+        if any(word in text_lower for word in ["performance", "response time", 
+            "scalability", "reliability", "availability", "99.999%", "24/7"]):
+            return "non_functional"
+        # Security indicators
+        if any(word in text_lower for word in ["encrypt", "authentication", 
+            "authorization", "confidential", "https", "tls"]):
+            return "security"
+        # Data indicators
+        if any(word in text_lower for word in ["database", "mysql", "backup", 
+            "store", "retrieve", "schema"]):
+            return "data"
+        
+        # Default to functional, never uncategorized
+        return "functional"
+        category_weights = {
+            "non_functional": 2.0,  # Non-functional requirements often have specific keywords
+            "security": 2.5,        # Security terms are very distinctive
+            "interface": 1.8,       # Interface terms are quite specific
+            "constraint": 2.2,      # Constraints have clear indicators
+            "integration": 2.0,     # Integration terms are distinctive
+            "data": 1.5,           # Data terms are common but still useful
+            "functional": 1.0,      # Default category, lowest weight
+        }
 
         for category, keywords in self.CATEGORY_KEYWORDS.items():
-            score = sum(1 for kw in keywords if kw.lower() in text_lower)
-            if score > best_score:
-                best_score = score
+            score = 0
+            text_words = text_lower.split()
+            
+            # Count keyword matches with different weights
+            for kw in keywords:
+                kw_lower = kw.lower()
+                
+                # Exact phrase match (higher score)
+                if ' ' in kw and kw_lower in text_lower:
+                    score += 3 * category_weights.get(category, 1.0)
+                # Single word match
+                elif kw_lower in text_lower:
+                    score += 1 * category_weights.get(category, 1.0)
+                
+                # Bonus for modal verbs in functional requirements
+                if category == "functional" and any(modal in text_lower for modal in ["shall", "must", "will"]):
+                    score += 0.5
+            
+            # Normalize score by text length to avoid bias towards longer texts
+            normalized_score = score / max(len(text_words), 1)
+            
+            if normalized_score > best_score:
+                best_score = normalized_score
                 best_category = category
 
         return best_category

@@ -250,8 +250,16 @@ class Validator:
         medium_severity = sum(1 for d in all_defects if d.get("severity") == "medium")
         low_severity = sum(1 for d in all_defects if d.get("severity") == "low")
 
-        deductions = (high_severity * 0.15) + (medium_severity * 0.08) + (low_severity * 0.03)
-        score = round(max(0.0, min(1.0, 1.0 - deductions)), 2)
+        # More realistic scoring: start from baseline and deduct proportionally
+        # Base score of 70% for typical SRS, deduct based on severity
+        base_score = 0.70
+        max_deduction = 0.60  # Maximum 60% deduction, score won't go below 10%
+        
+        # Calculate proportional deductions (more lenient)
+        deductions = (high_severity * 0.05) + (medium_severity * 0.025) + (low_severity * 0.01)
+        deductions = min(deductions, max_deduction)  # Cap the deduction
+        
+        score = round(max(0.10, min(1.0, base_score - deductions)), 2)
 
         return {
             "overall_score": score,

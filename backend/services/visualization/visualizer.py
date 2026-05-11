@@ -209,60 +209,128 @@ class Visualizer:
         return ""
 
     def _plantuml_usecase(self, result: Dict[str, Any]) -> str:
-        """Generate PlantUML use case diagram syntax with system boundary."""
-        lines = ["@startuml", "skinparam backgroundColor white", ""]
+        """Generate PlantUML use case diagram syntax following IEEE/UML standards."""
+        lines = ["@startuml", ""]
+        
+        # IEEE/UML standard styling
+        lines.append("skinparam actorStyle stickman")
+        lines.append("skinparam packageStyle rect")
+        lines.append("skinparam rectangleStyle rounded")
+        lines.append("skinparam usecaseStyle ellipse")
+        lines.append("left to right direction")
+        lines.append("")
 
         actors = result.get("actors", [])
         use_cases = result.get("use_cases", [])
         relationships = result.get("relationships", [])
 
         title = result.get("title", "System")
-        lines.append(f'    rectangle "{title}" {{')
+        
+        # Define actors with IEEE stickman notation
+        for actor in actors:
+            # Mark external systems as machines
+            if actor.lower() in ["database", "system", "api", "server"]:
+                lines.append(f'actor "{actor}" as {_safe_id(actor)} << Machine >>')
+            else:
+                lines.append(f'actor "{actor}" as {_safe_id(actor)}')
+        
+        lines.append("")
 
+        # System boundary with proper IEEE notation
+        lines.append(f'rectangle "{title}" {{')
+        lines.append("")
+
+        # Define use cases within system boundary
         for uc in use_cases:
             safe = _safe_id(uc)
-            lines.append(f'        usecase "{uc}" as {safe}')
-
-        lines.append("    }")
-        lines.append("")
-
-        for actor in actors:
-            lines.append(f'    actor "{actor}"')
+            lines.append(f'    usecase "{uc}" as {safe}')
 
         lines.append("")
+        lines.append("}")
+        lines.append("")
 
+        # Process relationships with IEEE standard notation
         for rel in relationships:
             rel_type = rel.get("type", "association")
             from_name = rel.get("from", "")
             to_name = rel.get("to", "")
+            from_safe = _safe_id(from_name)
             to_safe = _safe_id(to_name)
 
-            if rel_type in ("include", "extend"):
-                lines.append(f'    {_safe_id(from_name)} ..> {to_safe} : <<{rel_type}>>')
+            if rel_type == "include":
+                # IEEE Standard: Dashed lines for include
+                lines.append(f'    ({to_safe}) ..> ({from_safe}) : <<include>>')
+            elif rel_type == "extend":
+                # IEEE Standard: Dashed lines for extend
+                lines.append(f'    ({to_safe}) ..> ({from_safe}) : <<extend>>')
             else:
-                lines.append(f'    "{from_name}" --> {to_safe}')
+                # IEEE Standard: Solid lines for associations
+                lines.append(f'    {from_safe} -- {to_safe}')
 
+        lines.append("")
         lines.append("@enduml")
         return "\n".join(lines)
 
     def _plantuml_sequence(self, result: Dict[str, Any]) -> str:
-        """Generate PlantUML sequence diagram syntax."""
-        lines = ["@startuml", "skinparam backgroundColor white", ""]
+        """Generate PlantUML sequence diagram syntax following IEEE/UML standards."""
+        lines = ["@startuml", "sequence", ""]
+        
+        # IEEE/UML standard styling for sequence diagrams
+        lines.append("skinparam participantPadding 20")
+        lines.append("skinparam boxPadding 20")
+        lines.append("skinparam rectangleStyle rounded")
+        lines.append("skinparam sequenceMessageAlign center")
+        lines.append("skinparam sequenceLifeLineBorder #333333")
+        lines.append("skinparam sequenceArrowColor #333333")
+        lines.append("")
 
         participants = result.get("participants", [])
         messages = result.get("messages", [])
 
+        # Define participants with IEEE standard notation
         for p in participants:
-            safe = p.replace(" ", "")
-            lines.append(f'    participant "{p}" as {safe}')
+            safe = p.replace(" ", "_")
+            # Mark external systems/machines
+            if p.lower() in ["database", "system", "api", "server"]:
+                lines.append(f'participant "{p}" as {safe} << Machine >>')
+            else:
+                lines.append(f'participant "{p}" as {safe}')
 
         lines.append("")
 
-        for msg in messages:
-            sender = msg["sender"].replace(" ", "")
-            receiver = msg["receiver"].replace(" ", "")
-            lines.append(f'    {sender} -> {receiver} : {msg["message"]}')
+        # Process messages with IEEE standard notation
+        if messages:
+            for i, msg in enumerate(messages):
+                sender = msg["sender"].replace(" ", "_")
+                receiver = msg["receiver"].replace(" ", "_")
+                message_text = msg["message"]
+                
+                # Truncate long messages for readability
+                if len(message_text) > 50:
+                    message_text = message_text[:47] + "..."
+                
+                # IEEE Standard: Solid lines for synchronous calls
+                lines.append(f'    {sender} -> {receiver} : {message_text}')
+                
+                # Add activation/deactivation for better visualization
+                if i == 0:
+                    lines.append(f'    activate {receiver}')
+                elif i < len(messages) - 1:
+                    next_receiver = messages[i + 1]["receiver"].replace(" ", "_")
+                    if receiver != next_receiver:
+                        lines.append(f'    deactivate {receiver}')
+                        lines.append(f'    activate {next_receiver}')
+        else:
+            # Default interaction if no messages
+            if len(participants) >= 2:
+                first = participants[0].replace(" ", "_")
+                second = participants[1].replace(" ", "_")
+                lines.append(f'    {first} -> {second} : Initialize Process')
+                lines.append(f'    activate {second}')
+                lines.append(f'    {second} --> {first} : Response')
+                lines.append(f'    deactivate {second}')
 
+        lines.append("")
         lines.append("@enduml")
         return "\n".join(lines)
 
@@ -286,86 +354,159 @@ class Visualizer:
     def _generate_usecase_mermaid(self, actors: List[str], use_cases: List[str],
                                    relationships: List[Dict[str, str]],
                                    title: str) -> str:
-        """Generate Mermaid syntax following UML use case diagram notation with system boundary."""
-        lines = ["graph LR"]
+        """Generate Mermaid syntax following IEEE/UML standards with stickman actors."""
+        lines = ["graph TD"]
 
         # System title
         safe_title = title.replace('"', '#quot;')
-        lines.append(f'    SystemTitle["{safe_title}"]')
-        lines.append('    classDef titleStyle fill:none,stroke:none,font-weight:bold,font-size:16px')
-        lines.append('    class SystemTitle titleStyle')
+        lines.append(f'    Title["{safe_title}"]')
+        lines.append('    classDef titleStyle fill:none,stroke:none,font-size:18px,text-align:center,font-weight:bold')
+        lines.append('    class Title titleStyle')
         lines.append("")
 
-        # System boundary
-        lines.append('    subgraph SystemBoundary["System Boundary"]')
+        # Actors with stickman representation (IEEE standard)
+        for i, actor in enumerate(actors):
+            safe = f"Actor{i}"
+            safe_label = actor.replace('"', '#quot;')
+            # Use Unicode stickman symbol for IEEE standard representation
+            lines.append(f'    {safe}["<div style=\'font-size:24px;text-align:center\'>&#128100;<br/><small>{safe_label}</small></div>"]')
 
+        lines.append("")
+
+        # System boundary with proper IEEE styling
+        lines.append('    subgraph System["System Boundary"]')
+        lines.append('        direction TB')
+        lines.append('        classDef systemStyle fill:#F8F9FA,stroke:#333333,stroke-width:2px,font-weight:bold')
+        lines.append('        class System systemStyle')
+        lines.append("")
+
+        # Use cases with oval shape (UML standard)
         for i, uc in enumerate(use_cases):
             safe = f"UC{i}"
             safe_label = uc.replace('"', '#quot;')
-            lines.append(f'    {safe}(("{safe_label}"))')
+            # Truncate long use case names for better readability
+            display_label = safe_label[:30] + "..." if len(safe_label) > 30 else safe_label
+            lines.append(f'        {safe}["{display_label}"]')
 
         lines.append("    end")
         lines.append("")
 
-        # Actors (outside boundary)
-        for i, actor in enumerate(actors):
-            safe = f"A{i}"
-            safe_label = actor.replace('"', '#quot;')
-            lines.append(f'    {safe}[["{safe_label}"]]')
-
-        lines.append("")
-
-        # Relationships
+        # Relationships with proper IEEE notation
         assoc_rels = [r for r in relationships if r["type"] == "association"]
         include_extends = [r for r in relationships if r["type"] in ("include", "extend")]
 
-        # Actor -> Use Case associations
+        # Actor -> Use Case associations (solid lines)
         for rel in assoc_rels:
             actor_idx = next((i for i, a in enumerate(actors) if a == rel["from"]), None)
             uc_idx = next((i for i, uc in enumerate(use_cases) if uc == rel["to"]), None)
 
             if actor_idx is not None and uc_idx is not None:
-                lines.append(f"    A{actor_idx} --> UC{uc_idx}")
+                lines.append(f"    Actor{actor_idx} --> UC{uc_idx}")
 
-        # Include/Extend (dashed arrows with stereotypes)
+        # Include/Extend relationships (dashed lines with proper notation)
         for rel in include_extends:
             from_idx = next((i for i, uc in enumerate(use_cases) if uc == rel["from"]), None)
             to_idx = next((i for i, uc in enumerate(use_cases) if uc == rel["to"]), None)
 
             if from_idx is not None and to_idx is not None:
-                lines.append(f"    UC{from_idx} -. <<{rel['type']}>> .-> UC{to_idx}")
+                if rel["type"] == "include":
+                    lines.append(f"    UC{from_idx} -.-> UC{to_idx}")
+                    lines.append(f"    UC{from_idx}:::includeEdge -.-> UC{to_idx}:::includeEdge")
+                else:  # extend
+                    lines.append(f"    UC{from_idx} ..> UC{to_idx}")
+                    lines.append(f"    UC{from_idx}:::extendEdge ..> UC{to_idx}:::extendEdge")
 
-        # Styling
+        # IEEE standard styling
         lines.append("")
-        lines.append("    %% Styling")
-        lines.append(f'    classDef actor fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20')
-        lines.append(f'    classDef usecase fill:#FFFFFF,stroke:#1565C0,stroke-width:2px,color:#0D47A1')
+        lines.append("    %% IEEE/UML Standard Styling")
+        lines.append('    classDef actorStyle fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1,font-size:12px')
+        lines.append('    classDef usecaseStyle fill:#FFFFFF,stroke:#424242,stroke-width:2px,color:#212121,font-size:11px,shape:ellipse')
+        lines.append('    classDef includeEdge stroke:#FF9800,stroke-width:2px,stroke-dasharray: 5 5')
+        lines.append('    classDef extendEdge stroke:#4CAF50,stroke-width:2px,stroke-dasharray: 3 3')
 
+        # Apply styles
         if actors:
-            actor_ids = ",".join(f"A{i}" for i in range(len(actors)))
-            lines.append(f'    class {actor_ids} actor')
+            actor_ids = ",".join(f"Actor{i}" for i in range(len(actors)))
+            lines.append(f'    class {actor_ids} actorStyle')
 
         if use_cases:
             uc_ids = ",".join(f"UC{i}" for i in range(len(use_cases)))
-            lines.append(f'    class {uc_ids} usecase')
+            lines.append(f'    class {uc_ids} usecaseStyle')
+
+        # Add legend for IEEE notation
+        lines.append("")
+        lines.append("    %% Legend")
+        lines.append('    subgraph Legend["IEEE/UML Notation"]')
+        lines.append('        direction LR')
+        lines.append('        L1["Actor (Stickman)"]')
+        lines.append('        L2["Use Case (Oval)"]')
+        lines.append('        L3["Include (Dashed)"]')
+        lines.append('        L4["Extend (Dotted)"]')
+        lines.append('        classDef legendStyle fill:#F5F5F5,stroke:#999999,stroke-width:1px')
+        lines.append('        class Legend legendStyle')
+        lines.append('        class L1 actorStyle')
+        lines.append('        class L2 usecaseStyle')
+        lines.append('        class L3 includeEdge')
+        lines.append('        class L4 extendEdge')
+        lines.append('    end')
 
         return "\n".join(lines)
 
     def _generate_sequence_mermaid(self, participants: List[str], messages: List[Dict[str, str]]) -> str:
-        """Generate Mermaid sequence diagram syntax."""
+        """Generate Mermaid sequence diagram syntax following IEEE/UML standards."""
         lines = ["sequenceDiagram"]
 
-        for p in participants:
+        # Add title
+        lines.append('    title Sequence Diagram - IEEE/UML Standard')
+        lines.append("")
+
+        # Define participants with proper IEEE styling
+        for i, p in enumerate(participants):
             safe = p.replace(" ", "_")
+            # Use different styling for actors vs system components
+            # Note: Mermaid doesn't support HTML formatting in participant names
             lines.append(f'    participant "{p}" as {safe}')
 
-        for msg in messages:
-            sender = msg["sender"].replace(" ", "_")
-            receiver = msg["receiver"].replace(" ", "_")
-            lines.append(f'    {sender}->>{receiver}: {msg["message"]}')
+        lines.append("")
 
-        if not messages and len(participants) >= 2:
-            lines.append(f'    {participants[0].replace(" ", "_")}->>{participants[1].replace(" ", "_")}: Process')
+        # Process messages with proper IEEE notation
+        if messages:
+            for i, msg in enumerate(messages):
+                sender = msg["sender"].replace(" ", "_")
+                receiver = msg["receiver"].replace(" ", "_")
+                message_text = msg["message"]
+                
+                # Truncate very long messages for better readability
+                if len(message_text) > 50:
+                    message_text = message_text[:47] + "..."
+                
+                # Use solid lines for synchronous communication (IEEE standard)
+                lines.append(f'    {sender}->>{receiver}: {message_text}')
+                
+                # Add activation boxes for better visualization
+                if i == 0:
+                    lines.append(f'    activate {receiver}')
+                elif i < len(messages) - 1:
+                    next_receiver = messages[i + 1]["receiver"].replace(" ", "_")
+                    if receiver != next_receiver:
+                        lines.append(f'    deactivate {receiver}')
+                        lines.append(f'    activate {next_receiver}')
+        else:
+            # Default interaction if no messages
+            if len(participants) >= 2:
+                first = participants[0].replace(" ", "_")
+                second = participants[1].replace(" ", "_")
+                lines.append(f'    {first}->>{second}: Initialize Process')
+                lines.append(f'    activate {second}')
+                lines.append(f'    {second}-->>{first}: Response')
+                lines.append(f'    deactivate {second}')
+
+        # Add IEEE/UML notation legend
+        lines.append("")
+        lines.append("    %% IEEE/UML Notation Legend")
+        lines.append("    Note over Participant: ->> Synchronous Call")
+        lines.append("    Note over Participant: -->> Return Message")
+        lines.append("    Note over Participant: activate/deactivate Lifeline")
 
         return "\n".join(lines)
 

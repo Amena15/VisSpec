@@ -114,42 +114,6 @@ const AnalysisWorkspace = () => {
     }
   ];
 
-  const getIssueColor = (type) => {
-    switch(type) {
-      case 'ambiguity':
-        return 'border-l-[var(--warning-main)]'; // amber
-      case 'conflict':
-        return 'border-l-[var(--error-main)]'; // red
-      default:
-        return 'border-l-[var(--primary-main)]'; // indigo
-    }
-  };
-
-  const getIssueBadge = (type) => {
-    switch(type) {
-      case 'ambiguity':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--warning-light)] text-[var(--warning-hover)]">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Ambiguity
-          </span>
-        );
-      case 'conflict':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-light)] text-[var(--error-hover)]">
-            <AlertOctagon className="h-3 w-3 mr-1" />
-            Conflict
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--primary-50)] text-[var(--primary-hover)]">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Suggestion
-          </span>
-        );
-    }
-  };
 
   const [activeTab, setActiveTab] = useState('findings'); // Added state for active tab
 
@@ -309,7 +273,7 @@ const AnalysisWorkspace = () => {
                   key={req.id}
                   className={`p-4 rounded-lg border ${
                     req.issue
-                      ? 'bg-red-50 border-red-200'
+                      ? 'bg-[var(--error-light)]/30 border-[var(--error-main)]'
                       : 'bg-[var(--card-bg)] border-[var(--card-border)]'
                   }`}
                 >

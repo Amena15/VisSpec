@@ -4,12 +4,12 @@ from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
 
-# SQLite requires check_same_thread=False; PostgreSQL does not use it
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+# PostgreSQL database connection
+connect_args = {}
 
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args=connect_args
+    pool_pre_ping=True  # Good for PostgreSQL connections
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

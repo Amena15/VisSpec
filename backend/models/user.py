@@ -37,6 +37,7 @@ class User(Base):
     last_login_at = Column(String, nullable=True)
     is_active = Column(Integer, nullable=False, default=1)
     storage_quota_mb = Column(Float, nullable=False, default=100)
+    storage_used_bytes = Column(Integer, nullable=False, default=0)
     created_at = Column(String, nullable=False, default=_now)
     updated_at = Column(String, nullable=False, default=_now, onupdate=_now)
 

@@ -3,7 +3,7 @@ import {
   ArrowLeft, FileText, AlertTriangle, CheckCircle, Clock, Eye, Download,
   TrendingUp, XCircle, AlertOctagon, BarChart3, Loader2, Play, ShieldCheck,
   Tags, Users, MessageSquare, Search, Filter, ChevronDown, ChevronRight,
-  Wand2, Lightbulb, ShieldAlert
+  Wand2, Lightbulb, ShieldAlert, RotateCcw, RotateCw
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -37,37 +37,62 @@ const AnalysisResults = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('findings');
   const [expandedFinding, setExpandedFinding] = useState(null);
-  const [expandedReq, setExpandedReq] = useState(null);
   const [document, setDocument] = useState(null);
   const [validation, setValidation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isValidating, setIsValidating] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [autoEnrichTriggered, setAutoEnrichTriggered] = useState(false);
+  const [isEnriched, setIsEnriched] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const [reqSearch, setReqSearch] = useState('');
   const [reqFilter, setReqFilter] = useState('all');
   const [reqGroupBy, setReqGroupBy] = useState('module');
+
+  // Helper function to format dates
+  const newDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
   const [expandedModules, setExpandedModules] = useState({});
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
 
   useEffect(() => {
     if (id) fetchDocument();
   }, [id]);
 
-  const fetchDocument = async () => {
+  const fetchDocument = async (forceRefresh = false) => {
     setIsLoading(true);
     try {
-      const response = await documentAPI.getById(id);
+      // Add simple cache-busting only when force refresh is requested
+      const cacheBuster = forceRefresh ? `?t=${Date.now()}` : '';
+      const response = await documentAPI.getById(id + cacheBuster, forceRefresh);
       
-      // Auto-organize requirements when document loads
-      if (response.data && response.data.requirements && !isEnriched) {
-        handleEnrichRequirements();
-      }
+      // Update document state
       setDocument(response.data);
+      
+      // Check if requirements are already enriched
+      const hasEnrichedRequirements = response.data?.requirements?.some(r => r.category && r.category !== 'uncategorized');
+      setIsEnriched(hasEnrichedRequirements);
       
       // Also fetch validation results if available
       await fetchValidationResults();
+      
+      return response;
+      
     } catch (error) {
       console.error('Failed to fetch document:', error);
       toast.error('Failed to load document');
+      setDocument(null);
     } finally {
       setIsLoading(false);
     }
@@ -88,13 +113,53 @@ const AnalysisResults = () => {
     setIsEnriching(true);
     try {
       const response = await analysisAPI.enrichDocument(id);
-      toast.success(`Organized ${response.data.total_requirements} requirements with classifications!`);
-      await fetchDocument();
+      
+      const { total_requirements, updated_requirements, cleaning_improvements } = response.data;
+      
+      toast.success(
+        `Successfully organized ${total_requirements} requirements! ` +
+        `Updated ${updated_requirements} items with ${cleaning_improvements} text improvements.`
+      );
+      
+      // Simple refresh after enrichment
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await fetchDocument(true);
+      
     } catch (error) {
       console.error('Enrichment failed:', error);
-      toast.error(error.response?.data?.detail || 'Requirement organization failed. Please try again.');
+      const errorMessage = error.response?.data?.detail || 'Requirement organization failed. Please try again.';
+      toast.error(errorMessage);
+      setIsEnriched(false);
     } finally {
       setIsEnriching(false);
+      setAutoEnrichTriggered(false);
+    }
+  };
+
+  const handleFixDocument = async () => {
+    if (!id) return;
+    
+    try {
+      const response = await fetch(`/api/documents/fix-document/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Document fixed! Updated ${result.requirements_updated} requirements with ${result.text_cleaning_improvements} text improvements.`);
+        
+        // Refresh document data instead of page reload
+        await fetchDocument(true);
+      } else {
+        toast.error('Failed to fix document');
+      }
+    } catch (error) {
+      console.error('Error fixing document:', error);
+      toast.error('Error fixing document');
     }
   };
 
@@ -118,9 +183,38 @@ const AnalysisResults = () => {
     }
   };
 
-  const handleApplySuggestion = (findingId) => {
-    toast.success('Suggestion applied successfully!');
-    setExpandedFinding(null);
+  const handleApplySuggestion = async (findingIndex) => {
+    const finding = defects[findingIndex];
+    if (!finding || !finding.suggestion) return;
+    
+    try {
+      setIsApplying(true);
+      const response = await analysisAPI.applySuggestion(finding.req_id, finding.suggestion);
+      
+      if (response.data.success) {
+        toast.success('Suggestion applied successfully!');
+        setExpandedFinding(null);
+        
+        // Refresh document to show updated requirement text
+        await fetchDocument();
+        
+        // Add to undo stack for BR-15
+        setUndoStack(prev => [...prev, {
+          req_id: response.data.req_id,
+          old_text: response.data.old_text,
+          new_text: response.data.new_text,
+          timestamp: new Date().toISOString()
+        }]);
+        
+        // Clear redo stack when new action is performed
+        setRedoStack([]);
+      }
+    } catch (error) {
+      console.error('Failed to apply suggestion:', error);
+      toast.error(error.response?.data?.detail || 'Failed to apply suggestion');
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const handleIgnoreFinding = (findingId) => {
@@ -128,17 +222,99 @@ const AnalysisResults = () => {
     setExpandedFinding(null);
   };
 
+  const handleUndo = async () => {
+    if (undoStack.length === 0) return;
+    
+    const lastAction = undoStack[undoStack.length - 1];
+    
+    try {
+      const response = await analysisAPI.undoSuggestion(lastAction.req_id);
+      
+      if (response.data.success) {
+        // Move from undo stack to redo stack
+        setUndoStack(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, lastAction]);
+        
+        toast.success('Suggestion undone successfully!');
+        await fetchDocument();
+      }
+    } catch (error) {
+      console.error('Failed to undo suggestion:', error);
+      toast.error(error.response?.data?.detail || 'Failed to undo suggestion');
+    }
+  };
+
+  const handleRedo = async () => {
+    if (redoStack.length === 0) return;
+    
+    const actionToRedo = redoStack[redoStack.length - 1];
+    
+    try {
+      const response = await analysisAPI.applySuggestion(actionToRedo.req_id, actionToRedo.new_text);
+      
+      if (response.data.success) {
+        // Move from redo stack to undo stack
+        setRedoStack(prev => prev.slice(0, -1));
+        setUndoStack(prev => [...prev, actionToRedo]);
+        
+        toast.success('Suggestion redone successfully!');
+        await fetchDocument();
+      }
+    } catch (error) {
+      console.error('Failed to redo suggestion:', error);
+      toast.error(error.response?.data?.detail || 'Failed to redo suggestion');
+    }
+  };
+
   const toggleModule = (moduleName) => {
     setExpandedModules(prev => ({ ...prev, [moduleName]: !prev[moduleName] }));
   };
 
-  const isEnriched = useMemo(() => {
-    return document?.requirements?.some(r => r.category);
-  }, [document]);
-
+  
   const processedRequirements = useMemo(() => {
     if (!document?.requirements) return [];
     let reqs = [...document.requirements];
+    
+    // Parse JSON fields for each requirement
+    reqs = reqs.map(req => {
+      const parsedReq = { ...req };
+      
+      // Parse actors from JSON string
+      try {
+        if (req.actors_json && req.actors_json !== '[]') {
+          parsedReq.actors = JSON.parse(req.actors_json);
+        } else {
+          parsedReq.actors = [];
+        }
+      } catch (e) {
+        parsedReq.actors = [];
+      }
+      
+      // Parse modal verbs from JSON string
+      try {
+        if (req.modal_verbs_json && req.modal_verbs_json !== '[]') {
+          parsedReq.modal_verbs = JSON.parse(req.modal_verbs_json);
+        } else {
+          parsedReq.modal_verbs = [];
+        }
+      } catch (e) {
+        parsedReq.modal_verbs = [];
+      }
+      
+      // Parse vague terms from JSON string
+      try {
+        if (req.vague_terms_json && req.vague_terms_json !== '[]') {
+          parsedReq.vague_terms = JSON.parse(req.vague_terms_json);
+        } else {
+          parsedReq.vague_terms = [];
+        }
+      } catch (e) {
+        parsedReq.vague_terms = [];
+      }
+      
+      return parsedReq;
+    });
+    
     if (reqSearch.trim()) {
       const term = reqSearch.toLowerCase();
       reqs = reqs.filter(r =>
@@ -192,21 +368,48 @@ const AnalysisResults = () => {
 
   const highlightText = (text, req) => {
     if (!text) return text;
-    const modalRegex = new RegExp(`\\b(${Object.keys(MODAL_VERB_COLORS).join('|')})\\b`, 'gi');
-    const vaguePattern = (req.vague_terms || []).map(vt => vt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const parts = text.split(new RegExp(`(${modalRegex.source}|${vaguePattern ? `\\b(${vaguePattern})\\b` : ''})`, 'gi'));
     
-    return parts.map((part, i) => {
-      if (!part) return null;
-      const lower = part.toLowerCase();
-      if (MODAL_VERB_COLORS[lower]) {
-        return <span key={i} className={MODAL_VERB_COLORS[lower]}>{part}</span>;
+    const modalVerbs = Object.keys(MODAL_VERB_COLORS);
+    const vagueTerms = req.vague_terms || [];
+    
+    let result = text;
+    let lastIndex = 0;
+    const parts = [];
+    
+    // Find all modal verbs and vague terms
+    const allTerms = [...modalVerbs, ...vagueTerms];
+    
+    for (const term of allTerms) {
+      const regex = new RegExp(`\\b${term}\\b`, 'gi');
+      let match;
+      
+      while ((match = regex.exec(result)) !== null) {
+        // Add text before the match
+        if (match.index > lastIndex) {
+          parts.push(result.substring(lastIndex, match.index));
+        }
+        // Add the matched term
+        const isModal = modalVerbs.includes(term.toLowerCase());
+        const isVague = vagueTerms.includes(term);
+        
+        if (isModal) {
+          parts.push(<span key={parts.length} className={MODAL_VERB_COLORS[term.toLowerCase()]}>{match[0]}</span>);
+        } else if (isVague) {
+          parts.push(<span key={parts.length} className="bg-amber-200 text-amber-900 px-1 rounded font-medium" title="Vague Term">{match[0]}</span>);
+        } else {
+          parts.push(<span key={parts.length}>{match[0]}</span>);
+        }
+        
+        lastIndex = regex.lastIndex;
       }
-      if ((req.vague_terms || []).some(vt => vt.toLowerCase() === lower)) {
-        return <span key={i} className="bg-amber-200 text-amber-900 px-1 rounded font-medium" title="Vague Term">{part}</span>;
-      }
-      return <span key={i}>{part}</span>;
-    });
+    }
+    
+    // Add remaining text
+    if (lastIndex < result.length) {
+      parts.push(result.substring(lastIndex));
+    }
+    
+    return <>{parts}</>;
   };
 
   if (isLoading) {
@@ -250,11 +453,38 @@ const AnalysisResults = () => {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
+              {/* Undo/Redo functionality for BR-15 */}
+              {(undoStack.length > 0 || redoStack.length > 0) && (
+                <>
+                  <button
+                    onClick={handleUndo}
+                    disabled={undoStack.length === 0 || isApplying}
+                    className="flex items-center px-3 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Undo (Ctrl+Z)"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" /> Undo
+                  </button>
+                  <button
+                    onClick={handleRedo}
+                    disabled={redoStack.length === 0 || isApplying}
+                    className="flex items-center px-3 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Redo (Ctrl+Y)"
+                  >
+                    <RotateCw className="h-4 w-4 mr-1" /> Redo
+                  </button>
+                </>
+              )}
               {/* Organization is now automatic when document loads */}
               {hasValidation && (
-                <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
-                  <Download className="h-4 w-4 mr-2" /> Export Report
-                </button>
+                <>
+                  <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+                    <Download className="h-4 w-4 mr-2" /> Export Report
+                  </button>
+                  <button onClick={handleRunValidation}
+                    className="flex items-center px-4 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors">
+                    <RotateCcw className="h-4 w-4 mr-2" /> Rerun Validation
+                  </button>
+                </>
               )}
               {!hasValidation && !isValidating && (
                 <button onClick={handleRunValidation}
@@ -315,6 +545,12 @@ const AnalysisResults = () => {
                     </div>
                     <p className="text-xs text-[var(--text-secondary)]">Defects Found</p>
                   </div>
+                  <div className="text-center">
+                    <button onClick={handleRunValidation}
+                      className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+                      <RotateCcw className="h-4 w-4 mr-2" /> Rerun Validation
+                    </button>
+                  </div>
                 </>
               ) : (
                 <div className="text-center">
@@ -326,14 +562,16 @@ const AnalysisResults = () => {
                 </div>
               )}
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                document.status === 'ready' ? 'bg-[var(--success-light)] text-[var(--success-hover)]' :
+                document.status?.includes('Validated') ? 'bg-[var(--success-light)] text-[var(--success-hover)]' :
+                document.status === 'Ready for Analysis' ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]' :
                 document.status === 'uploading' ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]' :
                 'bg-[var(--error-light)] text-[var(--error-hover)]'
               }`}>
-                {document.status === 'ready' ? <CheckCircle className="h-4 w-4 mr-1" /> :
+                {document.status?.includes('Validated') ? <CheckCircle className="h-4 w-4 mr-1" /> :
+                 document.status === 'Ready for Analysis' ? <Clock className="h-4 w-4 mr-1" /> :
                  document.status === 'uploading' ? <Clock className="h-4 w-4 mr-1" /> :
                  <XCircle className="h-4 w-4 mr-1" />}
-                <span className="capitalize">{document.status}</span>
+                <span>{document.status}</span>
               </span>
             </div>
           </div>
@@ -462,8 +700,16 @@ const AnalysisResults = () => {
                               )}
                               <div className="mt-4 flex space-x-3">
                                 <button onClick={() => handleApplySuggestion(index)}
-                                  className="px-3 py-1.5 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] transition-colors text-sm">
-                                  Apply Suggestion
+                                  disabled={isApplying}
+                                  className="px-3 py-1.5 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                  {isApplying ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Applying...
+                                    </>
+                                  ) : (
+                                    'Apply Suggestion'
+                                  )}
                                 </button>
                                 <button onClick={() => handleIgnoreFinding(index)}
                                   className="px-3 py-1.5 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors text-sm border border-[var(--card-border)]">
@@ -485,7 +731,51 @@ const AnalysisResults = () => {
               <div>
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <h3 className="text-lg font-semibold text-[var(--text-primary)]">System Requirements</h3>
-                  {/* Categories and filters are now automatically enabled */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => window.location.reload(true)}
+                      className="flex items-center px-3 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors text-sm border border-[var(--card-border)]"
+                      title="Hard refresh to clear cache"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Refresh
+                    </button>
+{false && (
+                      <button
+                        onClick={handleEnrichRequirements}
+                        disabled={isEnriching}
+                        className="flex items-center px-3 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      >
+                        {isEnriching ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Organizing...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="h-4 w-4 mr-1" />
+                            Organize Requirements
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {/* Add Fix Document button for documents with repeated words or uncategorized requirements */}
+{false && (
+                      <button
+                        onClick={handleFixDocument}
+                        className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Fix Document
+                      </button>
+                    )}
+                    {isEnriched && (
+                      <div className="flex items-center px-3 py-2 bg-[var(--success-light)] text-[var(--success-main)] rounded-lg text-sm">
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Organized
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -574,8 +864,24 @@ const AnalysisResults = () => {
                                     </div>
                                     
                                     {/* Requirement Text */}
-                                    <div className="text-sm text-[var(--text-primary)] leading-relaxed">
-                                      {highlightText(req.original_text, req)}
+                                    <div className="bg-[var(--surface-bg)] p-4 rounded-lg border border-[var(--card-border)]">
+                                      <div className="space-y-3">
+                                        {/* Requirement Header */}
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-[var(--text-secondary)]">REQ-{req.sequence_order + 1}</span>
+                                            <span className="text-xs text-[var(--text-secondary)] ml-2">• {req.word_count} words</span>
+                                          </div>
+                                          <span className="text-xs text-[var(--text-secondary)]">
+                                            {req.upload_date ? new Date(req.upload_date).toLocaleDateString() : 'Not available'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Requirement Content */}
+                                      <div className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">
+                                        {highlightText(req.original_text, req)}
+                                      </div>
                                     </div>
                                   </div>
 

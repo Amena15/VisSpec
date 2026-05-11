@@ -1,0 +1,1 @@
+Test document for binary storage verification. The system shall store the original file as binary data in the content column and extracted text in the extracted_text column. This ensures REQ_05 compliance for text extraction and parsing.

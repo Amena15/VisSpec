@@ -131,14 +131,27 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
               <div class="flex flex-col items-center justify-center min-h-[400px] text-center p-4">
                 <div class="inline-block bg-[#E0E7FF] p-4 rounded-lg mb-4">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 002-2v6a2 2 0 002-2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 002-2v10m-6 0a2 2 0 002-2h2a2 2 0 012-2v14a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h3 class="text-lg font-semibold text-[#1F2933] mb-2">UML Diagram</h3>
+                <h3 class="text-lg font-semibold text-[#1F2933] mb-2">
+                  ${isPlantUML ? 'PlantUML Diagram' : 'Mermaid Diagram'}
+                </h3>
                 <p class="text-[#6B7280] max-w-md">
-                  Error rendering diagram. Check console for details.
+                  ${isPlantUML ? 
+                    'PlantUML syntax detected. Check console for details.' : 
+                    'Interactive diagram with zoom, pan, and export features.'}
                 </p>
-                <p class="text-sm text-[#EF4444] mt-2">Error: ${error.message}</p>
+                ${error ? `
+                  <div class="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
+                    <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-2">Rendering Error</h4>
+                    <p class="text-sm text-[var(--text-secondary)] mb-2">Error: ${error.message}</p>
+                    <div class="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
+                      <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-2">Diagram Syntax</h4>
+                      <pre class="text-xs text-[var(--text-secondary)] overflow-x-auto whitespace-pre-wrap bg-[var(--content-bg)] p-2 rounded">${chartString}</pre>
+                    </div>
+                  </div>
+                ` : ''}
               </div>
             `;
           }
@@ -155,7 +168,7 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
   const generatePlantUMLImage = (plantUMLCode) => {
     try {
       const encoded = plantumlEncoder.encode(plantUMLCode);
-      return `https://www.plantuml.com/plantuml/svg/${encoded}`;
+      return `https://www.planttext.com/api/plantuml/svg/${encoded}`;
     } catch (error) {
       console.error('Error encoding PlantUML:', error);
       return '';
@@ -172,6 +185,26 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
           style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'center' }}
         >
           {/* Render PlantUML or Mermaid based on diagram type */}
+          {isPlantUML && (
+            <div className="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2">PlantUML Diagram Export</h4>
+                <button
+                  onClick={() => {
+                    const encoded = plantumlEncoder.encode(chartString);
+                    window.open(`https://www.planttext.com/api/plantuml/svg/${encoded}`, '_blank');
+                  }}
+                  className="px-3 py-1 bg-[var(--primary-main)] text-white rounded hover:bg-[var(--primary-dark)] transition-colors"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as Image
+                </button>
+              </div>
+              <div className="mt-2">
+                <p className="text-xs text-[var(--text-secondary)] mb-2">PlantUML syntax detected. Check console for details.</p>
+              </div>
+            </div>
+          )}
           {isPlantUML ? (
             <div className="w-full h-full flex justify-center items-center">
               <img

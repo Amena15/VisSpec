@@ -111,7 +111,18 @@ export const documentAPI = {
     const params = projectId ? { project_id: projectId } : {};
     return apiClient.get('/api/documents/', { params });
   },
-  getById: (id) => apiClient.get(`/api/documents/${id}`),
+  getById: (id, cacheBust = false) => {
+    let url = `/api/documents/${id}`;
+    if (cacheBust) {
+      // Use aggressive cache-busting with multiple parameters
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const random2 = Math.random().toString(36).substring(7);
+      const counter = Math.floor(Math.random() * 10000);
+      url = `/api/documents/${id}?_t=${timestamp}&_r=${random}&_s=${random2}&_c=${counter}`;
+    }
+    return apiClient.get(url);
+  },
   delete: (id) => apiClient.delete(`/api/documents/${id}`),
 };
 
@@ -131,14 +142,34 @@ export const analysisAPI = {
   enrichDocument: (docId) => apiClient.post(`/api/analysis/enrich/${docId}`, {}, {
     timeout: 120000 // 120 seconds timeout override
   }),
+  applySuggestion: (reqId, newText) => apiClient.post('/api/analysis/apply-suggestion', { req_id: reqId, new_text: newText }),
+  undoSuggestion: (reqId) => apiClient.post('/api/analysis/undo', { req_id: reqId }),
 };
 
-// Visualization API
+// Diagrams API (Module 4 - Visualization)
+export const diagramsAPI = {
+  getUseCaseDiagram: (documentId) => apiClient.get(`/api/diagrams/usecase/${documentId}`),
+  getScenarios: (documentId) => apiClient.get(`/api/diagrams/scenarios/${documentId}`),
+  getSequenceDiagram: (documentId, scenarioId) => apiClient.get(`/api/diagrams/sequence/${documentId}`, {
+    params: { scenario: scenarioId }
+  }),
+};
+
+// Legacy Visualization API (kept for backward compatibility)
 export const visualizationAPI = {
   generate: (data) => apiClient.post('/api/visualization/', data),
   generateUseCase: (data) => apiClient.post('/api/visualization/usecase', data),
   generateSequence: (data) => apiClient.post('/api/visualization/sequence', data),
+  // Updated to use new diagrams endpoints
+  getUseCaseDiagram: (documentId) => apiClient.get(`/api/diagrams/usecase/${documentId}`),
+  getScenarios: (documentId) => apiClient.get(`/api/diagrams/scenarios/${documentId}`),
+  getSequenceDiagram: (documentId, scenarioId) => apiClient.get(`/api/diagrams/sequence/${documentId}`, {
+    params: { scenario: scenarioId }
+  }),
 };
+
+// Export apiClient for direct use in components
+export { apiClient };
 
 // Processing API (Hybrid Architecture)
 export const processingAPI = {

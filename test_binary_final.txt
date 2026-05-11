@@ -1,0 +1,1 @@
+Test document for binary storage verification. This document will be stored as binary data in the content column and extracted text in the extracted_text column according to REQ_05 compliance requirements.

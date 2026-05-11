@@ -15,9 +15,17 @@ class DocumentParser:
         r"^(?:\d+\.)+\s*(?:System Features|Use Cases|User Requirements)",
         r"^(?:\d+\.)+\s*(?:Constraints|Assumptions|Dependencies)",
         r"^(?:\d+\.)+\s*(?:Data Requirements|Database|Data Model)",
+        r"^(?:\d+\.)+\s*(?:Overall Description|Product Perspective|Product Features)",
+        r"^(?:\d+\.)+\s*(?:Specific Requirements|Functional Requirements|User Requirements)",
+        r"^(?:\d+\.)+\s*(?:Other Non-Functional Requirements|Performance Requirements)",
+        r"^(?:\d+\.)+\s*(?:Availability Requirements|Reliability|Security|Usability)",
+        r"^(?:\d+\.)+\s*(?:Scalability|Maintainability|Portability|Backup)",
+        r"^(?:\d+\.)+\s*(?:Business Rules|Summary|Appendices)",
         r"^\d+\.\d+\s+",  # Generic numbered section like 1.1, 3.2
         r"^(?:Chapter|Section)\s+\d+",
         r"^(?:APPENDIX|Appendix)\s+[A-Z]",
+        r"^\d+\.\s*[A-Z][a-zA-Z\s]+",  # Main sections like "1. Introduction"
+        r"^\d+\.\d+\s*[A-Z][a-zA-Z\s]+",  # Subsections like "2.1 Product Perspective"
     ]
 
     # Requirement ID patterns (REQ_05)
@@ -78,14 +86,19 @@ class DocumentParser:
         except Exception as e:
             return {"error": str(e)}
 
-    def parse_txt(self, file_content: bytes, filename: str) -> Dict[str, Any]:
+    def parse_txt(self, file_content, filename: str) -> Dict[str, Any]:
         """Parse a plain text file."""
-        text = file_content.decode("utf-8", errors="replace")
+        # Handle both bytes and string input
+        if isinstance(file_content, bytes):
+            text = file_content.decode("utf-8", errors="replace")
+        else:
+            text = str(file_content)
+        
         return {
             "filename": filename,
             "file_extension": "txt",
             "text": text,
-            "page_count": None,
+            "page_count": 1,
             "word_count": len(text.split()),
             "is_scanned_pdf": 0,
             "extracted_author": "",
@@ -161,95 +174,142 @@ class DocumentParser:
 
     def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
         """
-        Extract individual requirements from text.
-        Identifies requirement IDs, headers, and body text.
-        Implements REQ_05: Text Extraction & Parsing.
+        Extract requirements from text using improved patterns.
+        Properly identifies individual requirement statements.
         """
+        if not text:
+            return []
+        
+        lines = text.split('\n')
         requirements = []
-        lines = text.split("\n")
         seq = 0
-
-        # More flexible requirement trigger patterns
-        req_triggers = [
-            r"(?:shall|should|must|will|may)\s+.+",
-            r"(?:the\s+)?(?:system|user|application|software|database)\s+(?:shall|should|must|will|may)\s+.+",
-            r"(?:patients|doctors|administrators|users)\s+(?:shall|should|must|will|may)\s+.+",
+        
+        # Requirement identification patterns - more precise
+        req_patterns = [
+            # System requirements with modal verbs
+            r'\bThe\s+system\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\bThe\s+application\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\bUsers?\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            
+            # General requirements with modal verbs
+            r'\b(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            
+            # Requirements with actors/subjects
+            r'\b(?:Doctor|Patient|Admin|Chemist|Lab|System|User)\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            
+            # Requirements with clear subjects
+            r'\b[A-Z][a-z]*\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
         ]
-
-        # First pass: look for lines with modal verbs
+        
+        # Non-requirement patterns to skip
+        skip_patterns = [
+            # Document structure
+            r'^(?:\d+\.?\s*)?(?:Introduction|Overview|Summary|Conclusion|Contents?|Table\s+\d+|Figure\s+\d+|Appendix\s+[A-Z]?)\b',
+            r'^[A-Z][A-Z\s]+$',
+            r'^\s*[=-]{3,}\s*$',
+            r'^\s*\d+\.\s*$',
+            
+            # Lists and references
+            r'^\s*[-•*]\s*',
+            r'^\s*\d+\)\s*',
+            r'^BR-\d+|FR-\d+|NFR-\d+|UC-\d+',
+            
+            # Meta descriptions
+            r'^(?:This\s+document|The\s+following|For\s+this|Word\s+count)',
+            r'^\s*(?:All\s+data|Full\s+system|The\s+system|The\s+codebase)',
+        ]
+        
         for line in lines:
             line_stripped = line.strip()
-            if not line_stripped or len(line_stripped) < 10:
+            
+            # Skip empty and very short lines
+            if not line_stripped or len(line_stripped) < 8:
                 continue
-
-            # Check if line contains a requirement statement
+            
+            # Skip non-requirement patterns
+            should_skip = False
+            for pattern in skip_patterns:
+                if re.search(pattern, line_stripped, re.IGNORECASE):
+                    should_skip = True
+                    break
+            
+            if should_skip:
+                continue
+            
+            # Check if line is a requirement
             is_requirement = False
-            for trigger in req_triggers:
-                if re.search(trigger, line_stripped, re.IGNORECASE):
+            for pattern in req_patterns:
+                if re.search(pattern, line_stripped, re.IGNORECASE):
                     is_requirement = True
                     break
-
+            
             if is_requirement:
-                # Try to find a requirement ID
+                # Clean up the requirement text
+                cleaned_text = re.sub(r'\s+', ' ', line_stripped)  # Normalize whitespace
+                cleaned_text = re.sub(r'\.+$', '', cleaned_text)  # Remove trailing period
+                
+                # Try to find requirement ID
                 req_id = None
                 for pattern in self.REQ_ID_PATTERNS:
-                    match = re.search(pattern, line_stripped, re.IGNORECASE)
+                    match = re.search(pattern, cleaned_text, re.IGNORECASE)
                     if match:
                         req_id = match.group(1).upper()
                         break
 
                 requirements.append({
                     "req_identifier": req_id or f"REQ-{seq+1:03d}",
-                    "original_text": line_stripped,
-                    "word_count": len(line_stripped.split()),
+                    "original_text": cleaned_text,
+                    "word_count": len(cleaned_text.split()),
                     "sequence_order": seq,
                 })
                 seq += 1
 
-        # If still no requirements found, do very broad search for modal verbs
-        if not requirements:
-            seq = 0
-            for line in lines:
-                line_stripped = line.strip()
-                if not line_stripped or len(line_stripped) < 10:
-                    continue
-                
-                # Very broad modal verb search
-                if re.search(r'\b(shall|must|should|will|may)\b', line_stripped, re.IGNORECASE):
-                    requirements.append({
-                        "req_identifier": f"REQ-{seq+1:03d}",
-                        "original_text": line_stripped,
-                        "word_count": len(line_stripped.split()),
-                        "sequence_order": seq,
-                    })
-                    seq += 1
-
         return requirements
 
     def sanitize_text(self, text: str) -> str:
-        """
-        Remove useless metadata and formatting noise.
-        Eliminates page numbers, repeated headers/footers.
-        """
-        # Remove page numbers like "Page 1 of 10" or just "1"
-        text = re.sub(r"\n\s*Page\s+\d+\s+of\s+\d+\s*\n", "\n", text, flags=re.IGNORECASE)
-        text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
-
-        # Remove repeated header/footer patterns
-        lines = text.split("\n")
-        cleaned = []
-        seen_lines = set()
-        for line in lines:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            # Skip if it's a very short repeated line (likely header/footer)
-            if len(stripped) < 30 and stripped in seen_lines:
-                continue
-            seen_lines.add(stripped)
-            cleaned.append(stripped)
-
-        return "\n".join(cleaned)
+        """Sanitize extracted text for storage and search."""
+        if not text:
+            return ""
+        
+        # Remove duplicate consecutive words (willwill -> will, shallwill -> shall, mustmust -> must)
+        # Handle both with and without space: "will will" and "willwill"
+        # More aggressive pattern to catch cases like "shallwill", "mustmust"
+        text = re.sub(r'\b(\w+)(\s*\1)+\b', r'\1', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(\w+)(\1)+\b', r'\1', text, flags=re.IGNORECASE)  # For concatenated duplicates
+        
+        # Specific handling for merged modal verbs (common parsing artifacts)
+        modal_pairs = {
+            'shallwill': 'shall',
+            'shallmust': 'shall', 
+            'willshall': 'shall',
+            'mustmust': 'must',
+            'shouldshall': 'shall',
+            'shallshould': 'shall',
+            'willmust': 'must',
+            'mustwill': 'must',
+            'maywill': 'will',
+            'willmay': 'may',
+        }
+        
+        for merged, corrected in modal_pairs.items():
+            text = re.sub(rf'\b{merged}\b', corrected, text, flags=re.IGNORECASE)
+        
+        # Generic pattern for any repeated modal verbs
+        text = re.sub(r'\b(shall|must|should|will|may|might|could|would|can)\1+\b', r'\1', text, flags=re.IGNORECASE)
+        
+        # Remove page numbers (but preserve section headers)
+        # Page numbers are typically standalone or at the end of lines
+        text = re.sub(r'^\s*\d+\s*$', '', text, flags=re.MULTILINE)  # Standalone numbers
+        text = re.sub(r'Page\s+\d+\s+of\s+\d+', '', text, flags=re.IGNORECASE)  # "Page 1 of 3"
+        text = re.sub(r'\n\s*\d+\s*\n', '\n', text)  # Numbers alone on lines
+        
+        # Remove multiple newlines but preserve single newlines
+        text = re.sub(r'\n\s*\n', '\n', text)
+        
+        # Remove extra spaces but preserve newlines
+        text = re.sub(r'[ \t]+', ' ', text)  # Only spaces and tabs, not newlines
+        
+        return text.strip()
 
     def parse_full(self, file_content: bytes, filename: str) -> Dict[str, Any]:
         """
@@ -265,7 +325,7 @@ class DocumentParser:
 
         # Step 2: Sanitize (remove noise)
         cleaned_text = self.sanitize_text(text)
-        result["cleaned_text"] = cleaned_text
+        result["extracted_text"] = cleaned_text
 
         # Step 3: Structure identification (REQ_06)
         sections = self.identify_structure(cleaned_text)

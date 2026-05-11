@@ -1,5 +1,5 @@
 """RequirementDocument model."""
-from sqlalchemy import Column, String, Integer, Text, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship
 from config.database import Base
 from models.user import _uuid, _now
@@ -16,13 +16,14 @@ class RequirementDocument(Base):
     file_size_bytes = Column(Integer, nullable=False)
     word_count = Column(Integer, nullable=True)
     page_count = Column(Integer, nullable=True)
-    status = Column(String, nullable=False, default="uploading", index=True)
+    status = Column(String, nullable=False, default="Ready for Analysis", index=True)
     parse_error = Column(Text, nullable=True)
     is_scanned_pdf = Column(Integer, nullable=False, default=0)
     extracted_author = Column(String, nullable=True)
     extracted_version = Column(String, nullable=True)
     malware_scan_passed = Column(Integer, nullable=False, default=0)
-    content = Column(Text, nullable=True)  # Store full document content for professional extraction
+    content = Column(LargeBinary, nullable=True)  # Store original uploaded file (binary)
+    extracted_text = Column(Text, nullable=True)  # Sanitized text for full-text search indexing
     upload_date = Column(String, nullable=False, default=_now)
 
     project = relationship("Project", back_populates="documents")
