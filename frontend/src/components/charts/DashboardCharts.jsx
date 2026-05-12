@@ -75,19 +75,47 @@ const DashboardCharts = ({ documents, stats, loading }) => {
     const monthlyData = [];
     const now = new Date();
     
-    // Generate last 6 months of data
+    // Group documents by actual upload date
+    const documentsByMonth = {};
+    
+    documents.forEach(doc => {
+      let uploadDate;
+      try {
+        uploadDate = new Date(doc.uploadedAt || doc.upload_date || Date.now());
+      } catch (error) {
+        uploadDate = new Date(); // Fallback to current date
+      }
+      
+      const monthKey = uploadDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      if (!documentsByMonth[monthKey]) {
+        documentsByMonth[monthKey] = {
+          documents: 0,
+          totalQuality: 0,
+          qualityCount: 0
+        };
+      }
+      
+      documentsByMonth[monthKey].documents++;
+      if (doc.qualityScore) {
+        documentsByMonth[monthKey].totalQuality += doc.qualityScore;
+        documentsByMonth[monthKey].qualityCount++;
+      }
+    });
+    
+    // Generate last 6 months with real data or zeros
     for (let i = 5; i >= 0; i--) {
       const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       
-      // Count documents uploaded in this month (mock data for now)
-      const docCount = Math.max(0, documents.length - i * 2 + Math.floor(Math.random() * 3));
-      const avgQuality = Math.max(50, Math.min(100, stats.avgQualityScore + (Math.random() * 20 - 10)));
+      const monthData = documentsByMonth[monthName] || { documents: 0, totalQuality: 0, qualityCount: 0 };
       
       monthlyData.push({
         month: monthName,
-        documents: docCount,
-        avgQuality: Math.round(avgQuality)
+        documents: monthData.documents,
+        avgQuality: monthData.qualityCount > 0 
+          ? Math.round(monthData.totalQuality / monthData.qualityCount)
+          : 0
       });
     }
     

@@ -51,9 +51,9 @@ export const useDashboardData = () => {
       uploadedAt: doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : 'Unknown',
       updatedAt: doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : 'Unknown',
       status: doc.status || 'Ready for Analysis',
-      qualityScore: Math.min(100, Math.max(0, Math.round((doc.word_count || 0) / 10))) || 75,
+      qualityScore: doc.quality_score || Math.min(100, Math.max(0, Math.round((doc.word_count || 0) / 10))),
       complexity: doc.word_count > 1000 ? 'High' : doc.word_count > 500 ? 'Medium' : 'Low',
-      defects: Math.floor(Math.random() * 10) || 0, // TODO: Get from validation results
+      defects: doc.defect_count || 0, // Real defect count from database validation
       effortEstimate: doc.word_count ? `${Math.ceil(doc.word_count / 200)}h` : 'Unknown',
       comments: doc.requirements_found ? `${doc.requirements_found} requirements found` : 'No comments',
       projectId: doc.project_id,

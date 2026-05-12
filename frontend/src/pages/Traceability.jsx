@@ -5,8 +5,13 @@ import { documentAPI, validationAPI, traceabilityAPI, projectAPI } from '../serv
 import { toast } from 'sonner';
 
 const Traceability = () => {
-  const { id } = useParams(); // Get project ID parameter from the URL
-  console.log('Traceability component - URL project ID:', id);
+  const { id } = useParams(); // Get ID parameter from the URL
+  console.log('Traceability component - URL ID:', id);
+  
+  // Determine if this is a document-level or project-level traceability request
+  const isDocumentLevel = window.location.pathname.includes('/traceability/document/');
+  
+  console.log('Is document-level traceability:', isDocumentLevel);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -49,9 +54,15 @@ const Traceability = () => {
       
       setIsLoading(true);
       try {
-        // Load project traceability data
-        console.log('Loading traceability data for project:', id);
-        const response = await traceabilityAPI.getTraceability(id);
+        // Load traceability data (project-level or document-level)
+        let response;
+        if (isDocumentLevel) {
+          console.log('Loading document-level traceability data for document:', id);
+          response = await traceabilityAPI.getDocumentTraceability(id);
+        } else {
+          console.log('Loading project-level traceability data for project:', id);
+          response = await traceabilityAPI.getTraceability(id);
+        }
         console.log('Traceability response:', response.data);
         
         // Handle different response formats and error cases
@@ -75,15 +86,10 @@ const Traceability = () => {
             timestamp: new Date().toLocaleDateString()
           })));
           setDefects([]);
-          
-          if (response.data.project) {
-            setSelectedProject(response.data.project);
-          }
-        } 
-        // Fallback for different response structure
-        else {
-          console.warn('Unexpected response format:', response.data);
-          toast.error('Unexpected response format from server');
+        }
+        const project = response.data.project;
+        if (project) {
+          setSelectedProject(project);
         }
       } catch (error) {
         console.error('Failed to load traceability data:', error);
@@ -136,7 +142,23 @@ const Traceability = () => {
       const matchesSearch = !searchTerm || 
         item.requirement.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.visualElement.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+      
+      // Handle status filtering with proper mapping
+      let matchesStatus = false;
+      if (filterStatus === 'all') {
+        matchesStatus = true;
+      } else if (filterStatus === 'valid') {
+        matchesStatus = item.status === 'valid' || item.status === 'passed';
+      } else if (filterStatus === 'defective') {
+        matchesStatus = item.status === 'defective' || item.status === 'failed';
+      } else if (filterStatus === 'ambiguous') {
+        matchesStatus = item.status === 'ambiguous' || item.status === 'warning';
+      } else if (filterStatus === 'conflict') {
+        matchesStatus = item.status === 'conflict' || item.status === 'conflict';
+      } else {
+        matchesStatus = item.status === filterStatus;
+      }
+      
       return matchesSearch && matchesStatus;
     });
   }, [traceabilityData, searchTerm, filterStatus]);

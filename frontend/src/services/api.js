@@ -145,6 +145,14 @@ export const traceabilityAPI = {
     return apiClient.get(`/api/traceability/${projectId}`);
   },
   
+  getDocumentTraceability: (docId) => {
+    if (!docId) {
+      console.error('traceabilityAPI.getDocumentTraceability: docId is required');
+      return Promise.reject(new Error('Document ID is required'));
+    }
+    return apiClient.get(`/api/traceability/document/${docId}`);
+  },
+  
   saveNote: (noteData) => {
     if (!noteData.req_id || !noteData.content?.trim()) {
       console.error('traceabilityAPI.saveNote: Missing req_id or content');

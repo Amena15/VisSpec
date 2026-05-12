@@ -308,7 +308,7 @@ const AnalystDashboard = () => {
                             Analysis
                           </Link>
                           <Link
-                            to={`/traceability/${doc.id}`}
+                            to={`/traceability/${doc.projectId}`}
                             className="text-[var(--primary-main)] hover:text-[var(--primary-hover)] flex items-center"
                             title="Inspect Traceability"
                           >

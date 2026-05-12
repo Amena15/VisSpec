@@ -73,6 +73,8 @@ class DocumentSummary(BaseModel):
     status: str
     requirements_found: int = 0
     upload_date: str
+    quality_score: Optional[float] = None
+    defect_count: Optional[int] = 0
 
     class Config:
         from_attributes = True

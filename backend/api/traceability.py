@@ -138,6 +138,10 @@ async def get_traceability(
     Get traceability data for all requirements in a project.
     Implements REQ_18: Requirements Traceability Matrix.
     """
+    """
+    Get traceability data for all requirements in a project.
+    Implements REQ_18: Requirements Traceability Matrix.
+    """
     try:
         # Log authentication info for debugging
         logger.info(f"User {current_user.user_id} requesting traceability for project {project_id}")
@@ -237,7 +241,118 @@ async def get_traceability(
         )
 
 
-    
+@router.get("/document/{doc_id}", response_model=TraceabilityResponse)
+async def get_document_traceability(
+    doc_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get traceability data for a specific document.
+    Allows document-level access from dashboard.
+    """
+    try:
+        # Log authentication info for debugging
+        logger.info(f"User {current_user.user_id} requesting traceability for document {doc_id}")
+        
+        # Verify document exists and user has access
+        document = db.query(RequirementDocument).filter(
+            RequirementDocument.doc_id == doc_id
+        ).first()
+        
+        if not document:
+            logger.warning(f"Document {doc_id} not found in database")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {doc_id} not found"
+            )
+        
+        # Check if user has access (through project ownership)
+        project = db.query(Project).filter(
+            Project.project_id == document.project_id
+        ).first()
+        
+        if not project or project.owner_id != current_user.user_id:
+            logger.warning(f"User {current_user.user_id} does not have access to document {doc_id} (project {document.project_id})")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: You don't have permission to access this document"
+            )
+        
+        logger.info(f"Access granted: User {current_user.user_id} accessing document {doc_id}")
+        
+        # Get requirements for this document only
+        requirements = db.query(Requirement).filter(
+            Requirement.doc_id == doc_id
+        ).all()
+        
+        logger.info(f"Found {len(requirements)} requirements for document {doc_id}")
+        
+        traceability_items = []
+        
+        for req in requirements:
+            # Get defects for this requirement
+            defects = db.query(Defect).filter(
+                Defect.req_id == req.req_id
+            ).all()
+            
+            # Determine validation status
+            validation_status = _determine_validation_status(req.req_id, defects)
+            
+            # Extract visual elements
+            visual_elements = _extract_visual_elements(req.current_text or req.original_text)
+            
+            # Determine complexity
+            complexity = _determine_complexity(req.current_text or req.original_text)
+            
+            # Get note for this requirement
+            note = db.query(TraceabilityNote).filter(
+                TraceabilityNote.req_id == req.req_id
+            ).order_by(TraceabilityNote.created_at.desc()).first()
+            
+            note_data = None
+            if note:
+                note_data = {
+                    "id": note.note_id,
+                    "content": note.content,
+                    "updated_at": note.created_at
+                }
+            
+            # Create traceability item
+            trace_item = TraceabilityItem(
+                req_id=req.req_id,
+                identifier=req.req_identifier or f"REQ-{req.sequence_order + 1:03d}",
+                semantic_id=req.semantic_id,
+                text=req.current_text or req.original_text,
+                validation_status=validation_status,
+                visual_elements=visual_elements,
+                complexity=complexity,
+                note=note_data
+            )
+            
+            traceability_items.append(trace_item)
+        
+        return TraceabilityResponse(
+            project_id=document.project_id,
+            project={
+                "id": project.project_id,
+                "name": project.name,
+                "description": project.description,
+                "status": project.status,
+                "created_at": project.created_at
+            },
+            traceability=traceability_items
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting document traceability data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve traceability data"
+        )
+
 
 @router.post("/note", response_model=NoteResponse)
 async def save_traceability_note(

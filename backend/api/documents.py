@@ -334,6 +334,42 @@ def list_documents(
             except:
                 req_count = 0
 
+            # Calculate quality score and defect count from validation sessions
+            quality_score = 0
+            defect_count = 0
+            
+            try:
+                # Get defect count from validation sessions (more accurate)
+                if d.validation_sessions:
+                    # Use the most recent validation session
+                    latest_validation = max(d.validation_sessions, key=lambda v: v.validation_date if v.validation_date else "")
+                    defect_count = latest_validation.defect_count or 0
+                    quality_score = latest_validation.overall_score or 50
+                else:
+                    # Fallback: calculate from requirements if no validation sessions exist
+                    if d.requirements:
+                        valid_requirements = 0
+                        total_requirements = len(d.requirements)
+                        
+                        for req in d.requirements:
+                            if req.validation_status == 'approved':
+                                valid_requirements += 1
+                        
+                        # Quality score: percentage of approved requirements + word count factor
+                        if total_requirements > 0:
+                            approval_rate = (valid_requirements / total_requirements) * 100
+                            word_count_bonus = min(10, (d.word_count or 0) / 1000 * 5)
+                            quality_score = min(100, approval_rate + word_count_bonus)
+                        else:
+                            quality_score = 50
+                    else:
+                        quality_score = 50  # Default score for documents with no requirements
+                        defect_count = 0
+            except Exception as e:
+                print(f"Error calculating quality score for document {d.doc_id}: {e}")
+                quality_score = 50
+                defect_count = 0
+
             result.append(
                 DocumentSummary(
                     doc_id=d.doc_id,
@@ -347,6 +383,8 @@ def list_documents(
                     status=d.status,
                     requirements_found=req_count,
                     upload_date=d.upload_date,
+                    quality_score=round(quality_score, 1),
+                    defect_count=defect_count,
                 )
             )
         return result
