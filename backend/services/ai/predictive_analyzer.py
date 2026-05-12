@@ -8,7 +8,6 @@ References:
 - REQ_10: Risk levels (low/medium/high/very high)
 - BR-10: Confidence threshold 0.70
 
-Author: Mohammed Aamena Mohammed Abdulkarem (1221305728)
 """
 
 import re

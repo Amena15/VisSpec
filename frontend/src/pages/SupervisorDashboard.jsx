@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { handleReviewClick } from '../utils/reviewHandler';
+import { userAPI, documentAPI } from '../services/api';
+import { toast } from 'sonner';
 
 // Helper function to get color based on score
 const getScoreColor = (score) => {
@@ -36,69 +38,50 @@ const SupervisorDashboard = () => {
   const [selectedComment, setSelectedComment] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
 
-  // Mock data for demonstration
+  // Load real data from API
   useEffect(() => {
-    // Simulate loading data
-    const mockProjects = [
-      {
-        id: 1,
-        title: 'Developer Registration System',
-        developer: 'John Doe',
-        submittedAt: '2025-10-24',
-        lastReviewed: '2025-10-25',
-        status: 'pending',
-        qualityScore: 78,
-        complexity: 'Medium',
-        defects: 5,
-        comments: 'Needs clarification on authentication flow'
-      },
-      {
-        id: 2,
-        title: 'E-Commerce Platform Requirements',
-        developer: 'Jane Smith',
-        submittedAt: '2025-10-23',
-        lastReviewed: '2025-10-24',
-        status: 'pending',
-        qualityScore: 85,
-        complexity: 'High',
-        defects: 3,
-        comments: 'Good structure, minor improvements needed'
-      },
-      {
-        id: 3,
-        title: 'Healthcare Management System',
-        developer: 'Robert Johnson',
-        submittedAt: '2025-10-22',
-        lastReviewed: '2025-10-23',
-        status: 'approved',
-        qualityScore: 92,
-        complexity: 'Low',
-        defects: 1,
-        comments: 'Excellent requirements specification'
-      },
-      {
-        id: 4,
-        title: 'Financial Reporting Tool',
-        developer: 'Emily Davis',
-        submittedAt: '2025-10-21',
-        lastReviewed: '2025-10-22',
-        status: 'rejected',
-        qualityScore: 65,
-        complexity: 'High',
-        defects: 12,
-        comments: 'Multiple ambiguities and contradictions found'
+    const loadSupervisorData = async () => {
+      try {
+        // Load all users and their projects
+        const usersResponse = await userAPI.getAll();
+        const documentsResponse = await documentAPI.getAll();
+        
+        const users = usersResponse.data || [];
+        const documents = documentsResponse.data || [];
+        
+        // Create project list from documents with user info
+        const projects = documents.map(doc => {
+          const user = users.find(u => u.id === doc.user_id);
+          return {
+            id: doc.id,
+            title: doc.filename || `Document ${doc.id}`,
+            developer: user?.username || 'Unknown',
+            submittedAt: doc.uploaded_at,
+            lastReviewed: doc.updated_at,
+            status: doc.status || 'pending',
+            qualityScore: doc.quality_score || 0,
+            complexity: doc.complexity || 'Medium',
+            defects: doc.defect_count || 0,
+            comments: doc.comments || 'No comments'
+          };
+        });
+
+        setProjects(projects);
+
+        // Calculate stats
+        setStats({
+          totalProjects: projects.length,
+          pendingReviews: projects.filter(p => p.status === 'pending').length,
+          approvedProjects: projects.filter(p => p.status === 'approved').length,
+          rejectedProjects: projects.filter(p => p.status === 'rejected').length
+        });
+      } catch (error) {
+        console.error('Failed to load supervisor data:', error);
+        toast.error('Failed to load dashboard data');
       }
-    ];
+    };
 
-    setProjects(mockProjects);
-
-    // Calculate stats
-    setStats({
-      totalProjects: mockProjects.length,
-      pendingReviews: mockProjects.filter(p => p.status === 'pending').length,
-      approvedProjects: mockProjects.filter(p => p.status === 'approved').length,
-      rejectedProjects: mockProjects.filter(p => p.status === 'rejected').length
-    });
+    loadSupervisorData();
   }, []);
 
   const getStatusColor = (status) => {

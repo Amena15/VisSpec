@@ -286,6 +286,17 @@ async def upload_document(
     except Exception as e:
         logger.warning(f"Auto-organize failed: {e} - manual fix available")
     
+    # Update project status to 'ready' after successful document processing
+    try:
+        project = db.query(Project).filter(Project.project_id == project_id).first()
+        if project:
+            project.status = "ready"
+            project.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            db.commit()
+            logger.info(f"Updated project {project_id} status to 'ready' after document processing")
+    except Exception as e:
+        logger.warning(f"Failed to update project status: {e}")
+    
     return DocumentUploadResponse(
         doc_id=doc_id,
         project_id=project_id,
@@ -729,3 +740,80 @@ def delete_document(
         deleted_requirements=req_count,
         deleted_validations=val_count,
     )
+
+
+@router.post("/{doc_id}/traceability-notes")
+async def add_traceability_note(
+    doc_id: str,
+    note_data: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Add a traceability note to a document/requirement.
+    Implements BR-16: User notes field with timestamp.
+    """
+    try:
+        # Verify document exists and user has access
+        doc = (
+            db.query(RequirementDocument)
+            .join(Project)
+            .filter(
+                RequirementDocument.doc_id == doc_id,
+                Project.owner_id == current_user.user_id,
+            )
+            .first()
+        )
+        if not doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+            )
+        
+        # Get requirement_id from note_data
+        req_id = note_data.get("req_id")
+        if not req_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Requirement ID is required"
+            )
+        
+        # Verify requirement exists in the document
+        req = db.query(Requirement).filter(
+            Requirement.req_id == req_id,
+            Requirement.doc_id == doc_id
+        ).first()
+        
+        if not req:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Requirement not found in this document"
+            )
+        
+        # Create note entry
+        from models.traceability import TraceabilityNote
+        
+        note = TraceabilityNote(
+            req_id=req_id,
+            created_by=current_user.user_id,
+            project_id=doc.project_id,
+            content=note_data.get("note", ""),
+            note_type="user_annotation",
+            created_at=_now_iso()
+        )
+        
+        db.add(note)
+        db.commit()
+        db.refresh(note)
+        
+        return {
+            "message": "Traceability note added successfully",
+            "note_id": note.note_id,
+            "timestamp": note.created_at
+        }
+        
+    except Exception as e:
+        logger.error(f"Error adding traceability note: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add traceability note"
+        )

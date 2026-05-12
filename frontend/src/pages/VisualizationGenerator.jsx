@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye,
   FileText,
@@ -11,70 +11,61 @@ import {
   Settings,
   ChevronDown
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { diagramsAPI, visualizationAPI } from '../services/api';
+import { toast } from 'sonner';
 
 const VisualizationGenerator = () => {
+  const { id } = useParams();
   const [activeView, setActiveView] = useState('sequence');
   const [selectedScenario, setSelectedScenario] = useState('');
   const [zoomLevel, setZoomLevel] = useState(100);
   const [showSettings, setShowSettings] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [scenarios, setScenarios] = useState([]);
+  const [diagramData, setDiagramData] = useState(null);
+  const [document, setDocument] = useState(null);
 
-  // Mock scenarios extracted from requirements
-  const scenarios = [
-    { id: 'login', name: 'Login Process', steps: 5 },
-    { id: 'registration', name: 'User Registration', steps: 6 },
-    { id: 'payment', name: 'Payment Processing', steps: 7 },
-    { id: 'document-upload', name: 'Document Upload', steps: 4 }
-  ];
+  useEffect(() => {
+    if (id) {
+      loadDocumentAndDiagrams();
+    }
+  }, [id]);
 
-  // Mock diagram data
-  const diagramData = {
-    sequence: {
-      title: 'Online Shopping Flow',
-      code: `sequenceDiagram
-    participant C as Customer
-    participant UI as Shopping Portal
-    participant PM as Payment Manager
-    participant IN as Inventory System
-    participant SH as Shipping Service
+  const loadDocumentAndDiagrams = async () => {
+    setIsLoading(true);
+    try {
+      // Load scenarios from API
+      const scenariosResponse = await diagramsAPI.getScenarios(id);
+      setScenarios(scenariosResponse.data || []);
 
-    C->>UI: Browse products
-    UI->>IN: Request product details
-    IN-->>UI: Return product info
-    UI->>C: Display products
-    C->>UI: Add to cart
-    C->>UI: Proceed to checkout
-    UI->>PM: Process payment
-    PM-->>UI: Payment confirmed
-    UI->>IN: Update inventory
-    IN-->>UI: Inventory updated
-    UI->>SH: Request shipping
-    SH-->>C: Send shipment details`,
-      description: 'Shows the interaction flow for online shopping: browse, purchase, payment, and shipping.'
-    },
-    usecase: {
-      title: 'Online Shopping System',
-      code: `graph TD
-    A[Customer] --> B[Browse Products]
-    A --> C[Search Items]
-    A --> D[Add to Cart]
-    A --> E[Checkout Process]
-    A --> F[Make Payment]
-    A --> G[Track Order]
-    A --> H[Leave Review]
-    
-    B --> I[View Product Details]
-    D --> J[View Cart]
-    E --> K[Enter Shipping Info]
-    F --> L[Select Payment Method]
-    G --> M[View Shipment Status]
-    
-    N[Admin] --> O[Manage Inventory]
-    N --> P[Process Orders]
-    N --> Q[Handle Returns]`,
-      description: 'Use cases for an online shopping system: customer interactions and administrative functions.'
+      // Load diagram data based on active view
+      if (activeView === 'sequence') {
+        const useCaseResponse = await diagramsAPI.getUseCaseDiagram(id);
+        setDiagramData({
+          usecase: useCaseResponse.data,
+          sequence: null
+        });
+      } else {
+        const sequenceResponse = await diagramsAPI.getSequenceDiagram(id, selectedScenario);
+        setDiagramData({
+          usecase: null,
+          sequence: sequenceResponse.data
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load diagrams:', error);
+      toast.error('Failed to load diagram data');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (id && activeView) {
+      loadDocumentAndDiagrams();
+    }
+  }, [id, activeView, selectedScenario]);
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 10, 150));
@@ -89,8 +80,34 @@ const VisualizationGenerator = () => {
   };
 
   const handleDownload = () => {
-    // In a real app, this would download the diagram
-    alert('Downloading diagram as PNG...');
+    try {
+      const diagramElement = document.querySelector('.mermaid, .diagram-container svg');
+      if (diagramElement) {
+        const svgData = new XMLSerializer().serializeToString(diagramElement);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          
+          const link = document.createElement('a');
+          link.download = `${activeView}-diagram.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+        };
+        
+        img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+        toast.success('Diagram downloaded successfully!');
+      } else {
+        toast.error('No diagram to download');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download diagram');
+    }
   };
 
   return (

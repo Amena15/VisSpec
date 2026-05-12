@@ -55,15 +55,28 @@ def list_projects(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """List all projects owned by the authenticated user."""
+    """List all projects owned by authenticated user."""
     try:
         projects = (
             db.query(Project)
             .filter(Project.owner_id == current_user.user_id, Project.is_deleted == 0)
             .all()
         )
-        return [
-            {
+        result = []
+        for p in projects:
+            # Count requirements across all documents in this project
+            req_count = 0
+            doc_count = 0
+            if p.documents:
+                doc_count = len(p.documents)
+                print(f"DEBUG: Project {p.name} has {doc_count} documents")
+                for doc in p.documents:
+                    print(f"DEBUG: Document {doc.filename} has {len(doc.requirements) if doc.requirements else 0} requirements")
+                    if doc.requirements:
+                        req_count += len(doc.requirements)
+            
+            print(f"DEBUG: Project {p.name} total requirements: {req_count}")
+            result.append({
                 "project_id": p.project_id,
                 "name": p.name,
                 "description": p.description,
@@ -71,10 +84,11 @@ def list_projects(
                 "review_status": p.review_status,
                 "created_at": p.created_at,
                 "updated_at": p.updated_at,
-                "document_count": 0,  # Simplified for now
-            }
-            for p in projects
-        ]
+                "document_count": doc_count,
+                "requirements_count": req_count,
+                "quality_score": "N/A"  # TODO: Compute from validation results
+            })
+        return result
     except Exception as e:
         print(f"Error in projects API: {e}")
         return []

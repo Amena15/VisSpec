@@ -13,6 +13,7 @@ from api.auth import router as auth_router
 from api.documents import router as documents_router
 from api.diagrams import router as diagrams_router
 from api.projects import router as projects_router
+from api.traceability import router as traceability_router
 from api.users import router as users_router
 from api.validation import router as validation_router
 from api.visualization import router as visualization_router
@@ -60,6 +61,7 @@ app.include_router(auth_router)
 app.include_router(users_router, prefix="/api/users", tags=["users"])
 app.include_router(projects_router)
 app.include_router(documents_router)
+app.include_router(traceability_router)
 app.include_router(processing_router)
 app.include_router(analysis_router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(visualization_router, prefix="/api/visualization", tags=["visualization"])

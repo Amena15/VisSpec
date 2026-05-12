@@ -51,30 +51,7 @@ export const authAPI = {
     });
   },
   register: (userData) => {
-    const header = btoa(JSON.stringify({alg: 'HS256', typ: 'JWT'}));
-    const payload = btoa(JSON.stringify({
-      sub: userData.email,
-      role: 'analyst',
-      exp: Math.floor(Date.now() / 1000) + (60 * 60)
-    }));
-    const padBase64 = (str) => {
-      const padding = '='.repeat((4 - str.length % 4) % 4);
-      return (str + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    };
-    const paddedHeader = padBase64(header);
-    const paddedPayload = padBase64(payload);
-    const mockToken = `${paddedHeader}.${paddedPayload}.mock_signature`;
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            access_token: mockToken,
-            token_type: 'bearer'
-          }
-        });
-      }, 500);
-    });
+    return apiClient.post('/api/auth/register', userData);
   },
   getProfile: () => apiClient.get('/api/auth/profile'),
   changePassword: (passwordData) => apiClient.post('/api/auth/change-password', passwordData),
@@ -124,6 +101,9 @@ export const documentAPI = {
     return apiClient.get(url);
   },
   delete: (id) => apiClient.delete(`/api/documents/${id}`),
+  addTraceabilityNote: (requirementId, noteData) => {
+    return apiClient.post(`/api/documents/${requirementId}/traceability-notes`, noteData);
+  },
 };
 
 // Validation API
@@ -153,6 +133,35 @@ export const diagramsAPI = {
   getSequenceDiagram: (documentId, scenarioId) => apiClient.get(`/api/diagrams/sequence/${documentId}`, {
     params: { scenario: scenarioId }
   }),
+};
+
+// Traceability API
+export const traceabilityAPI = {
+  getTraceability: (projectId) => {
+    if (!projectId) {
+      console.error('traceabilityAPI.getTraceability: projectId is required');
+      return Promise.reject(new Error('Project ID is required'));
+    }
+    return apiClient.get(`/api/traceability/${projectId}`);
+  },
+  
+  saveNote: (noteData) => {
+    if (!noteData.req_id || !noteData.content?.trim()) {
+      console.error('traceabilityAPI.saveNote: Missing req_id or content');
+      return Promise.reject(new Error('Requirement ID and content are required'));
+    }
+    console.log('API: Making POST request to /api/traceability/note');
+    console.log('API: Request data:', JSON.stringify(noteData, null, 2));
+    return apiClient.post('/api/traceability/note', noteData);
+  },
+  
+  deleteNote: (noteId) => {
+    if (!noteId) {
+      console.error('traceabilityAPI.deleteNote: noteId is required');
+      return Promise.reject(new Error('Note ID is required'));
+    }
+    return apiClient.delete(`/api/traceability/note/${noteId}`);
+  },
 };
 
 // Legacy Visualization API (kept for backward compatibility)
