@@ -12,6 +12,7 @@ from services.validation.ambiguity_detector import AmbiguityDetector
 from services.validation.consistency_checker import ConsistencyChecker
 from services.validation.completeness_analyzer import CompletenessAnalyzer
 from services.ai.llm_service import llm_service
+from services.ai.requirement_organizer import RequirementOrganizer
 
 logger = get_logger(__name__)
 
@@ -44,36 +45,37 @@ class Validator:
     def validate_text(self, text: str) -> Dict[str, Any]:
         """
         Run full validation pipeline on a block of requirements text.
+        Tries LLM first, falls back to rule-based if unavailable.
         Returns structured validation results.
         """
         start_time = time.time()
         all_defects = []
-
-        # 1. Ambiguity detection (rule-based)
-        ambiguity_defects = self.ambiguity_detector.analyze(text)
-        all_defects.extend(ambiguity_defects)
-
-        # 2. Completeness analysis
-        completeness_defects = self.completeness_analyzer.analyze(text)
-        all_defects.extend(completeness_defects)
-
-        # 3. Consistency checking
-        consistency_defects = self.consistency_checker.check_single(text)
-        all_defects.extend(consistency_defects)
-
-        # 4. LLM-enhanced analysis (if available)
         llm_result = None
+
+        # 1. Try LLM validation first (if available)
         if self.use_llm:
             try:
-                llm_result = llm_service.analyze_ambiguity(text)
+                llm_result = llm_service.validate_requirement(text)
                 llm_defects = llm_result.get("defects", [])
-                # Merge LLM defects, avoiding duplicates
-                existing_texts = {d["text"] for d in all_defects}
-                for defect in llm_defects:
-                    if defect["text"] not in existing_texts:
-                        all_defects.append(defect)
+                all_defects.extend(llm_defects)
+                logger.info(f"LLM validation found {len(llm_defects)} defects")
             except Exception as e:
-                logger.warning(f"LLM analysis failed, using rule-based only: {e}")
+                logger.warning(f"LLM validation failed: {e}. Falling back to rule-based.")
+
+        # 2. Fallback to rule-based validation (always runs as backup)
+        if not all_defects or not self.use_llm:
+            logger.info("Running rule-based validation")
+            # Ambiguity detection (rule-based)
+            ambiguity_defects = self.ambiguity_detector.analyze(text)
+            all_defects.extend(ambiguity_defects)
+
+            # Completeness analysis
+            completeness_defects = self.completeness_analyzer.analyze(text)
+            all_defects.extend(completeness_defects)
+
+            # Consistency checking
+            consistency_defects = self.consistency_checker.check_single(text)
+            all_defects.extend(consistency_defects)
 
         processing_time_ms = int((time.time() - start_time) * 1000)
 
@@ -173,10 +175,17 @@ class Validator:
         Detect issues based purely on classification data.
         """
         defects = []
-        vague_terms = req.get("vague_terms", []) or []
+        vague_terms = list(req.get("vague_terms") or [])
         modal_verbs = req.get("modal_verbs", []) or []
         category = req.get("category", "functional")
         text = req.get("original_text", "")
+
+        # Heuristic vague terms if enrichment/LLM entity pass left the list empty
+        if not vague_terms and text:
+            text_lower = text.lower()
+            for vt in RequirementOrganizer.VAGUE_TERMS:
+                if vt.lower() in text_lower and vt not in vague_terms:
+                    vague_terms.append(vt)
 
         # Defect: vague terms present
         if vague_terms:

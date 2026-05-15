@@ -15,6 +15,8 @@ const CATEGORY_CONFIG = {
   interface: { label: 'Interface', color: 'bg-green-100 text-green-800 border-green-200', icon: '' },
   constraint: { label: 'Constraint', color: 'bg-orange-100 text-orange-800 border-orange-200', icon: '' },
   data: { label: 'Data', color: 'bg-teal-100 text-teal-800 border-teal-200', icon: '' },
+  security: { label: 'Security', color: 'bg-red-100 text-red-800 border-red-200', icon: '' },
+  integration: { label: 'Integration', color: 'bg-cyan-100 text-cyan-800 border-cyan-200', icon: '' },
   uncategorized: { label: 'Uncategorized', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: '' },
 };
 
@@ -49,17 +51,15 @@ const AnalysisResults = () => {
   const [reqFilter, setReqFilter] = useState('all');
   const [reqGroupBy, setReqGroupBy] = useState('module');
 
-  // Helper function to format dates
-  const newDate = (dateString) => {
+  // ISO date (YYYY-MM-DD) for unambiguous display
+  const formatIsoDate = (dateString) => {
     if (!dateString) return '';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      const d = new Date(dateString);
+      if (Number.isNaN(d.getTime())) return String(dateString);
+      return d.toISOString().split('T')[0];
     } catch {
-      return dateString;
+      return String(dateString);
     }
   };
   const [expandedModules, setExpandedModules] = useState({});
@@ -74,8 +74,7 @@ const AnalysisResults = () => {
     setIsLoading(true);
     try {
       // Add simple cache-busting only when force refresh is requested
-      const cacheBuster = forceRefresh ? `?t=${Date.now()}` : '';
-      const response = await documentAPI.getById(id + cacheBuster, forceRefresh);
+      const response = await documentAPI.getById(id, forceRefresh);
       
       // Update document state
       setDocument(response.data);
@@ -127,8 +126,20 @@ const AnalysisResults = () => {
       
     } catch (error) {
       console.error('Enrichment failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Requirement organization failed. Please try again.';
-      toast.error(errorMessage);
+      
+      // Handle LLM-specific errors gracefully
+      if (error.isLLMError || error.isLLMTimeout) {
+        toast.warning('AI analysis unavailable. Using rule-based organization instead.', {
+          duration: 5000,
+        });
+      } else if (error.isRateLimit) {
+        toast.error('Rate limit exceeded. Please wait a moment before trying again.', {
+          duration: 5000,
+        });
+      } else {
+        const errorMessage = error.response?.data?.detail || 'Requirement organization failed. Please try again.';
+        toast.error(errorMessage);
+      }
       setIsEnriched(false);
     } finally {
       setIsEnriching(false);
@@ -173,11 +184,24 @@ const AnalysisResults = () => {
       } else {
         toast.success(`Validation complete! Found ${response.data.total_defects} defects.`);
       }
-      // Refresh validation results from database
+      // Refresh validation results and document (backend updates doc.status on validation)
       await fetchValidationResults();
+      await fetchDocument(true);
     } catch (error) {
       console.error('Validation failed:', error);
-      toast.error(error.response?.data?.detail || 'Validation failed. Please try again.');
+      
+      // Handle LLM-specific errors gracefully
+      if (error.isLLMError || error.isLLMTimeout) {
+        toast.warning('AI validation unavailable. Using rule-based validation instead.', {
+          duration: 5000,
+        });
+      } else if (error.isRateLimit) {
+        toast.error('Rate limit exceeded. Please wait a moment before trying again.', {
+          duration: 5000,
+        });
+      } else {
+        toast.error(error.response?.data?.detail || 'Validation failed. Please try again.');
+      }
     } finally {
       setIsValidating(false);
     }
@@ -366,6 +390,18 @@ const AnalysisResults = () => {
     return { total, byCategory, withVagueTerms, enriched };
   }, [document]);
 
+  /** DB status can lag behind validation; align badge with validation when still "Ready for Analysis". */
+  const resolvedDocumentStatus = useMemo(() => {
+    if (!document?.status) return '';
+    if (validation?.status === 'completed' && document.status === 'Ready for Analysis') {
+      const total = validation.total_defects ?? 0;
+      if (total === 0 || validation.perfect_score) return 'Validated - Perfect';
+      if (total <= 3) return 'Validated - Minor Issues';
+      return 'Validated - Issues Found';
+    }
+    return document.status;
+  }, [document, validation]);
+
   const highlightText = (text, req) => {
     if (!text) return text;
     
@@ -476,15 +512,9 @@ const AnalysisResults = () => {
               )}
               {/* Organization is now automatic when document loads */}
               {hasValidation && (
-                <>
-                  <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
-                    <Download className="h-4 w-4 mr-2" /> Export Report
-                  </button>
-                  <button onClick={handleRunValidation}
-                    className="flex items-center px-4 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors">
-                    <RotateCcw className="h-4 w-4 mr-2" /> Rerun Validation
-                  </button>
-                </>
+                <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+                  <Download className="h-4 w-4 mr-2" /> Export Report
+                </button>
               )}
               {!hasValidation && !isValidating && (
                 <button onClick={handleRunValidation}
@@ -562,16 +592,32 @@ const AnalysisResults = () => {
                 </div>
               )}
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                document.status?.includes('Validated') ? 'bg-[var(--success-light)] text-[var(--success-hover)]' :
-                document.status === 'Ready for Analysis' ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]' :
-                document.status === 'uploading' ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]' :
-                'bg-[var(--error-light)] text-[var(--error-hover)]'
+                resolvedDocumentStatus.includes('Validated - Perfect')
+                  ? 'bg-[var(--success-light)] text-[var(--success-hover)]'
+                  : resolvedDocumentStatus.includes('Validated - Minor Issues')
+                  ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]'
+                  : resolvedDocumentStatus.includes('Validated - Issues Found')
+                  ? 'bg-[var(--error-light)] text-[var(--error-hover)]'
+                  : resolvedDocumentStatus.includes('Validated')
+                  ? 'bg-[var(--success-light)] text-[var(--success-hover)]'
+                  : resolvedDocumentStatus === 'Ready for Analysis'
+                  ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]'
+                  : resolvedDocumentStatus === 'uploading'
+                  ? 'bg-[var(--warning-light)] text-[var(--warning-hover)]'
+                  : 'bg-[var(--error-light)] text-[var(--error-hover)]'
               }`}>
-                {document.status?.includes('Validated') ? <CheckCircle className="h-4 w-4 mr-1" /> :
-                 document.status === 'Ready for Analysis' ? <Clock className="h-4 w-4 mr-1" /> :
-                 document.status === 'uploading' ? <Clock className="h-4 w-4 mr-1" /> :
-                 <XCircle className="h-4 w-4 mr-1" />}
-                <span>{document.status}</span>
+                {resolvedDocumentStatus.includes('Validated - Perfect') ? (
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                ) : resolvedDocumentStatus.includes('Validated - Minor Issues') || resolvedDocumentStatus.includes('Validated - Issues Found') ? (
+                  <AlertTriangle className="h-4 w-4 mr-1" />
+                ) : resolvedDocumentStatus.includes('Validated') ? (
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                ) : resolvedDocumentStatus === 'Ready for Analysis' || resolvedDocumentStatus === 'uploading' ? (
+                  <Clock className="h-4 w-4 mr-1" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-1" />
+                )}
+                <span>{resolvedDocumentStatus}</span>
               </span>
             </div>
           </div>
@@ -847,11 +893,9 @@ const AnalysisResults = () => {
                                   <div className="flex-1">
                                     {/* Top Row: Badges & Tags */}
                                     <div className="flex items-center gap-2 flex-wrap mb-2">
-                                      {req.semantic_id && (
-                                        <span className="text-xs font-mono font-bold text-[var(--primary-main)] bg-[var(--primary-light)]/20 px-2 py-0.5 rounded border border-[var(--primary-light)]">
-                                          {req.semantic_id}
-                                        </span>
-                                      )}
+                                      <span className="text-xs font-mono font-bold text-[var(--primary-main)] bg-[var(--primary-light)]/20 px-2 py-0.5 rounded border border-[var(--primary-light)]">
+                                        {req.semantic_id || `REQ-${req.sequence_order + 1}`}
+                                      </span>
                                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${catConfig.color}`}>
                                         <span className="mr-1">{catConfig.icon}</span> {catConfig.label}
                                       </span>
@@ -869,17 +913,24 @@ const AnalysisResults = () => {
                                         {/* Requirement Header */}
                                         <div className="flex items-center justify-between mb-2">
                                           <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono text-[var(--text-secondary)]">REQ-{req.sequence_order + 1}</span>
+                                            <span className="text-xs text-[var(--text-secondary)]">
+                                              {req.req_identifier && req.semantic_id && req.req_identifier !== req.semantic_id
+                                                ? req.req_identifier
+                                                : `Order ${(req.sequence_order ?? 0) + 1}`}
+                                            </span>
                                             <span className="text-xs text-[var(--text-secondary)] ml-2">• {req.word_count} words</span>
                                           </div>
                                           <span className="text-xs text-[var(--text-secondary)]">
-                                            {req.upload_date ? new Date(req.upload_date).toLocaleDateString() : 'Not available'}
+                                            {req.upload_date ? formatIsoDate(req.upload_date) : 'Not available'}
                                           </span>
                                         </div>
                                       </div>
                                       
                                       {/* Requirement Content */}
-                                      <div className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">
+                                      <div
+                                        className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words"
+                                        title={req.original_text || undefined}
+                                      >
                                         {highlightText(req.original_text, req)}
                                       </div>
                                     </div>

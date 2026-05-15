@@ -296,23 +296,45 @@ class RequirementOrganizer:
         3. Split compound requirements
         4. Standardize text format
         5. Group into modules
-        6. Generate semantic IDs
-        7. Classify by category (LLM or heuristic)
+        6. Classify by category (LLM or heuristic)
+        7. Generate semantic IDs (FR/NFR prefix uses category)
         8. Extract entities (actors, modal verbs, vague terms)
         """
         if not requirements:
+            logger.warning("No requirements provided for enrichment")
             return []
 
         # Try professional extraction first if LLM is available
         if use_llm and llm_service.is_available:
-            professional_reqs = self.extract_professional_requirements(full_text, use_llm)
-            if professional_reqs:
-                logger.info("Using professional extraction results")
-                # Extract entities for the professional requirements
-                professional_reqs = self._extract_entities(professional_reqs, use_llm)
-                return professional_reqs
-            else:
-                logger.warning("Professional extraction failed, falling back to traditional pipeline")
+            try:
+                import signal
+                from contextlib import contextmanager
+                
+                @contextmanager
+                def timeout(seconds):
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("LLM enrichment timed out")
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(seconds)
+                    try:
+                        yield
+                    finally:
+                        signal.alarm(0)
+                
+                # Use 30 second timeout for LLM enrichment
+                with timeout(30):
+                    professional_reqs = self.extract_professional_requirements(full_text, use_llm)
+                    if professional_reqs:
+                        logger.info("Using professional extraction results")
+                        # Extract entities for the professional requirements
+                        professional_reqs = self._extract_entities(professional_reqs, use_llm)
+                        return professional_reqs
+                    else:
+                        logger.warning("Professional extraction failed, falling back to traditional pipeline")
+            except TimeoutError:
+                logger.warning("LLM enrichment timed out after 30 seconds, falling back to rule-based enrichment")
+            except Exception as e:
+                logger.warning(f"LLM enrichment failed: {e}, falling back to rule-based enrichment")
 
         # Traditional pipeline as fallback
         # Step 0: Clean text first (remove repeated words like willwill, shallshall)
@@ -327,11 +349,11 @@ class RequirementOrganizer:
         # Step 3: Group into modules
         grouped = self._group_by_module(atomic_reqs, full_text, use_llm)
 
-        # Step 4: Generate semantic IDs
-        grouped = self._generate_semantic_ids(grouped)
-
-        # Step 5: Classify by category
+        # Step 4: Classify by category (prefix FR vs NFR depends on this)
         grouped = self._classify_requirements(grouped, use_llm)
+
+        # Step 5: Generate semantic IDs
+        grouped = self._generate_semantic_ids(grouped)
 
         # Step 6: Extract entities
         grouped = self._extract_entities(grouped, use_llm)
@@ -586,6 +608,20 @@ Requirements to group:
 
         return requirements
 
+    @staticmethod
+    def _abbreviate_module_name(module_name: str) -> str:
+        """Build a short code from a module title (e.g. 'Laboratory Management' -> 'LM')."""
+        if not module_name or not str(module_name).strip():
+            return "GEN"
+        clean = re.sub(r"[^a-zA-Z0-9\s]", "", str(module_name)).strip()
+        if not clean:
+            return "GEN"
+        parts = clean.split()
+        if len(parts) >= 2:
+            initials = "".join(p[0].upper() for p in parts[:5] if p)
+            return initials[:4] if initials else "GEN"
+        return clean[:4].upper()
+
     def _generate_semantic_ids(self, requirements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Enhanced semantic ID generation with meaningful module codes."""
 
@@ -611,6 +647,10 @@ Requirements to group:
             "User Interface & Experience": "UI",
             "Business Logic": "BL",
             "General": "GEN",
+            "Laboratory Management": "LAB",
+            "Doctor Management": "DRM",
+            "Patient Management": "PAT",
+            "Chemist Management": "CHM",
         }
 
         # Category to prefix mapping
@@ -628,8 +668,10 @@ Requirements to group:
             module_name = req.get("module_name", "General")
             category = req.get("category", "functional")
 
-            # Get module code
-            module_code = module_codes.get(module_name, "GEN")
+            # Get module code (explicit map, else derive from module title)
+            module_code = module_codes.get(module_name)
+            if not module_code:
+                module_code = self._abbreviate_module_name(module_name)
             
             # Get category prefix
             prefix = prefix_map.get(category, "REQ")
@@ -680,7 +722,14 @@ Requirements to group:
         # Check for measurable criteria
         measurable_terms = ["seconds", "minutes", "hours", "days", "percent", "%", "number", "count", "limit", "maximum", "minimum"]
         has_measurable = any(term in text.lower() for term in measurable_terms)
-        if not has_measurable and category in ["non_functional"]:
+        nfr_hint = any(
+            x in text.lower()
+            for x in (
+                "performance", "availability", "scalability", "latency", "throughput",
+                "response time", "uptime", "reliability", "maintainability", "backup",
+            )
+        )
+        if not has_measurable and nfr_hint:
             quality_score -= 15
             issues.append("Non-functional requirement lacks measurable criteria")
         
@@ -717,6 +766,18 @@ Requirements to group:
                         # Fallback for missing classifications
                         req["category"] = self._heuristic_classify(req.get("original_text", ""))
                         req["category_confidence"] = 0.3
+                # LLM often defaults everything to functional; reconcile with keyword heuristics
+                for i, req in enumerate(requirements):
+                    if i >= len(classifications):
+                        continue
+                    heur = self._heuristic_classify(req.get("original_text", ""))
+                    llm_cat = (classifications[i].get("category") or "functional").lower()
+                    if llm_cat == "functional" and heur != "functional":
+                        req["category"] = heur
+                        req["category_confidence"] = max(
+                            float(classifications[i].get("confidence") or 0.5),
+                            0.72,
+                        )
                 return requirements
             except Exception as e:
                 logger.warning(f"LLM classification failed: {e}, falling back to heuristic")
@@ -729,63 +790,88 @@ Requirements to group:
         return requirements
 
     def _heuristic_classify(self, text: str) -> str:
+        """
+        Rule-based category from requirement text.
+        Non-functional / security / data cues are checked before generic functional
+        (almost all SRS lines contain shall/must — those must not force 'functional').
+        """
         text_lower = text.lower()
-        
-        # Strong functional indicators
-        if any(word in text_lower for word in ["shall", "must", "will", "system shall"]):
-            return "functional"
-        # Non-functional indicators
-        if any(word in text_lower for word in ["performance", "response time", 
-            "scalability", "reliability", "availability", "99.999%", "24/7"]):
-            return "non_functional"
-        # Security indicators
-        if any(word in text_lower for word in ["encrypt", "authentication", 
-            "authorization", "confidential", "https", "tls"]):
-            return "security"
-        # Data indicators
-        if any(word in text_lower for word in ["database", "mysql", "backup", 
-            "store", "retrieve", "schema"]):
-            return "data"
-        
-        # Default to functional, never uncategorized
-        return "functional"
-        category_weights = {
-            "non_functional": 2.0,  # Non-functional requirements often have specific keywords
-            "security": 2.5,        # Security terms are very distinctive
-            "interface": 1.8,       # Interface terms are quite specific
-            "constraint": 2.2,      # Constraints have clear indicators
-            "integration": 2.0,     # Integration terms are distinctive
-            "data": 1.5,           # Data terms are common but still useful
-            "functional": 1.0,      # Default category, lowest weight
-        }
 
-        for category, keywords in self.CATEGORY_KEYWORDS.items():
-            score = 0
-            text_words = text_lower.split()
-            
-            # Count keyword matches with different weights
+        priority = [
+            (
+                "non_functional",
+                [
+                    "non-functional", "non functional", "nfr-", "nfr ",
+                    "performance", "response time", "throughput", "latency",
+                    "availability", "uptime", "99.99", "99.999", "24/7", "mean time",
+                    "mtbf", "mttr", "recoverability", "disaster recovery",
+                    "scalability", "scalable", "concurrent users", "load balancing",
+                    "maintainability", "maintainable", "portability", "usability",
+                    "reliability", "benchmark", "capacity planning", "resource usage",
+                    "memory footprint", "cpu usage", "timeout", "sla", "service level",
+                    "backup", "restore", "archiv", "retention policy",
+                ],
+            ),
+            (
+                "security",
+                [
+                    "encrypt", "encryption", "tls", "ssl", "https",
+                    "authentication", "authorization", "password policy",
+                    "confidential", "vulnerability", "breach", "rbac",
+                    "access control", "audit trail", "gdpr", "hipaa",
+                ],
+            ),
+            (
+                "interface",
+                [
+                    "user interface", "gui", "screen layout", "ux ",
+                    " ui ", "dashboard", "form field", "navigation menu",
+                ],
+            ),
+            (
+                "integration",
+                [
+                    "third-party", "third party", "external system", "webhook",
+                    "api integration", "interoperat", "hl7", "fhir",
+                ],
+            ),
+            (
+                "data",
+                [
+                    "database", "schema", "data model", "persist", "sql ",
+                    "json schema", "data retention", "data migration",
+                ],
+            ),
+            (
+                "constraint",
+                [
+                    "regulation", "compliance", "must comply", "legal requirement",
+                    "standard iso", "constraint:", "restriction:",
+                ],
+            ),
+        ]
+
+        for cat, phrases in priority:
+            if any(p in text_lower for p in phrases):
+                return cat
+
+        scores: Dict[str, float] = {c: 0.0 for c in self.CATEGORY_KEYWORDS}
+        weak_modal_tokens = {"shall", "must", "will", "should", "may", "might", "could", "would", "can"}
+
+        for cat, keywords in self.CATEGORY_KEYWORDS.items():
             for kw in keywords:
-                kw_lower = kw.lower()
-                
-                # Exact phrase match (higher score)
-                if ' ' in kw and kw_lower in text_lower:
-                    score += 3 * category_weights.get(category, 1.0)
-                # Single word match
-                elif kw_lower in text_lower:
-                    score += 1 * category_weights.get(category, 1.0)
-                
-                # Bonus for modal verbs in functional requirements
-                if category == "functional" and any(modal in text_lower for modal in ["shall", "must", "will"]):
-                    score += 0.5
-            
-            # Normalize score by text length to avoid bias towards longer texts
-            normalized_score = score / max(len(text_words), 1)
-            
-            if normalized_score > best_score:
-                best_score = normalized_score
-                best_category = category
+                kl = kw.lower()
+                if len(kl) < 3 or kl not in text_lower:
+                    continue
+                weight = 2.5 if " " in kl else 1.0
+                if cat == "functional" and kl in weak_modal_tokens:
+                    weight = 0.12
+                scores[cat] += weight
 
-        return best_category
+        best_cat, best_score = max(scores.items(), key=lambda kv: kv[1])
+        if best_score >= 0.35:
+            return best_cat
+        return "functional"
 
     def _extract_entities(
         self,

@@ -120,6 +120,11 @@ def validate_document(
     # Get requirements for the document
     requirements = doc.requirements
     if not requirements:
+        logger.warning(
+            f"No requirements found for document {request.doc_id}. "
+            f"Cannot run validation without requirements.",
+            extra={"doc_id": request.doc_id, "project_id": doc.project_id}
+        )
         return {
             "validation_id": validation_id,
             "doc_id": request.doc_id,
@@ -221,6 +226,16 @@ def validate_document(
     # ------------------------------------------------------------------
     all_defects = result.get("defects", [])
     filtered_defects = [d for d in all_defects if d.get("confidence", 0) > settings.MIN_CONFIDENCE_THRESHOLD]
+    
+    # Log warning if defects found but no requirements exist (data inconsistency)
+    if filtered_defects and not requirements:
+        logger.error(
+            f"Data inconsistency: {len(filtered_defects)} defects found but 0 requirements for document {request.doc_id}. "
+            f"This should not happen - defects require requirements.",
+            extra={"doc_id": request.doc_id, "defect_count": len(filtered_defects), "req_count": 0}
+        )
+        # Clear defects to prevent data inconsistency
+        filtered_defects = []
 
     # ------------------------------------------------------------------
     # 5. Save defects to database with proper req_id mapping
@@ -513,6 +528,36 @@ def get_validation_results(
             llm_used=False,
             processing_time_ms=0,
             perfect_score=False,
+        )
+
+    # Data consistency check: if no requirements but validation session has defects, fix it
+    if len(doc.requirements) == 0 and val_session and val_session.defect_count > 0:
+        logger.warning(
+            f"Data inconsistency for document {doc_id}: "
+            f"{val_session.defect_count} defects but 0 requirements. "
+            f"Resetting validation session.",
+            extra={"doc_id": doc_id, "defect_count": val_session.defect_count}
+        )
+        # Clear the inconsistent validation data
+        val_session.defect_count = 0
+        val_session.overall_score = 100.0
+        val_session.status = "completed"
+        db.commit()
+        # Return a clean response (no defects)
+        return DocumentValidationResponse(
+            validation_id=val_session.validation_id,
+            doc_id=doc_id,
+            project_id=doc.project_id,
+            status="completed",
+            overall_score=100.0,
+            total_defects=0,
+            total_requirements=0,
+            defects_by_type={},
+            defects_by_severity={},
+            defects=[],
+            llm_used=val_session.llm_model_used is not None,
+            processing_time_ms=val_session.processing_time_ms,
+            perfect_score=True,
         )
 
     # Get defects for this validation session with requirement details

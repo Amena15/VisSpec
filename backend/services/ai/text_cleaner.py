@@ -9,6 +9,13 @@ from core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Modal verbs that often get concatenated by PDF extraction (no space between words)
+_MODAL_ALT = r"shall|must|should|will|may|might|could|would|can"
+CONCATENATED_MODAL_PAIR = re.compile(
+    rf"(?i)({_MODAL_ALT})({_MODAL_ALT})(?!\w)",
+)
+
+
 class TextCleaner:
     """Cleans and standardizes requirement text."""
 
@@ -72,6 +79,23 @@ class TextCleaner:
     DOUBLE_MODAL_PATTERN = re.compile(r'\b(shall|will|must|should|can|may|could|would|might|need|have|be|do|is|are|was|were|the|and|or|to|of|in|on|at|for|with|by|from|as)(\s+\1|\1)\b', re.IGNORECASE)
 
     @classmethod
+    def fix_concatenated_modals(cls, text: str) -> str:
+        """
+        Split modal verbs jammed together without a space (e.g. PDF extraction: 'shallwill').
+        A trailing \\b between modals does not match, so the old merged-modal regex missed these.
+        """
+        if not text or not isinstance(text, str):
+            return text
+
+        def _repl(m: re.Match) -> str:
+            a, b = m.group(1), m.group(2)
+            if a.lower() == b.lower():
+                return a
+            return f"{a} {b}"
+
+        return CONCATENATED_MODAL_PAIR.sub(_repl, text)
+
+    @classmethod
     def clean_requirement_text(cls, text: str) -> str:
         """
         Clean and standardize requirement text.
@@ -86,6 +110,9 @@ class TextCleaner:
             return text
 
         original_text = text
+
+        # Step 0: Modal + modal with no space (shallwill -> shall will)
+        text = cls.fix_concatenated_modals(text)
         
         # Step 1: Fix repeated words (willwill -> will)
         for repeated, correction in cls.WORD_CORRECTIONS.items():

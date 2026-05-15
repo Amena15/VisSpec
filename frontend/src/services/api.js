@@ -34,6 +34,27 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+    
+    // Handle LLM-specific errors
+    if (error.response?.status === 429) {
+      // Rate limit exceeded - add retry info to error
+      error.isRateLimit = true;
+      error.message = 'Rate limit exceeded. Please try again later.';
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      // Timeout - could be LLM taking too long
+      error.isTimeout = true;
+      error.isLLMTimeout = true;
+      error.message = 'Request timeout. The system may be using rule-based analysis as fallback.';
+    }
+    
+    if (error.response?.status === 500 && error.response?.data?.detail?.includes('LLM')) {
+      // LLM-specific server error
+      error.isLLMError = true;
+      error.message = 'AI analysis unavailable. Using rule-based fallback.';
+    }
+    
     return Promise.reject(error);
   }
 );

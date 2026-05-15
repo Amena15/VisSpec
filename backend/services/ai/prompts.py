@@ -39,17 +39,22 @@ CLASSIFICATION_PROMPT = """You are a Requirements Classification Specialist. Cla
 
 CATEGORIES WITH STRICT DEFINITIONS:
 - functional: System behaviors, features, capabilities (what system SHALL DO)
-- non_functional: Performance, security, usability, reliability constraints
+- non_functional: Performance, scalability, availability, reliability, maintainability, portability, usability, backup/recovery, SLAs, response time, throughput, capacity, resource limits
 - interface: User interfaces, APIs, hardware/software interactions
 - constraint: Technical, regulatory, business limitations
 - data: Data storage, format, structure requirements
 
 CLASSIFICATION RULES:
 - If requirement describes an ACTION or BEHAVIOR → functional
-- If requirement describes PERFORMANCE METRICS or QUALITY → non_functional
+- If requirement describes PERFORMANCE METRICS, QUALITY ATTRIBUTES, uptime, backup, security posture (non-behavioral quality) → non_functional
 - If requirement describes INTERACTION POINT → interface
 - If requirement describes LIMITATION or RESTRICTION → constraint
 - If requirement describes DATA handling → data
+
+EXAMPLES (follow strictly):
+- "The system shall respond within 2 seconds" → non_functional
+- "The system shall encrypt data at rest using AES-256" → non_functional
+- "The system shall provide login" → functional
 
 Return JSON only:
 {{
@@ -111,14 +116,12 @@ SEVERITY GUIDELINES (BE CONSERVATIVE):
 - MEDIUM: For significant clarity problems that affect implementation
 - LOW: For minor improvements that would be nice to have
 
-LENIENT DETECTION RULES:
-- IGNORE minor vague terms like "user-friendly" unless completely meaningless
-- ALLOW reasonable flexibility in student project requirements
-- FLAG only issues that would genuinely prevent implementation
-- Don't flag missing edge cases unless they're major functionality gaps
-- Be practical - this is not a military specification
+DETECTION RULES (balanced):
+- FLAG subjective or unmeasurable wording (e.g. "user-friendly", "adequate", "appropriate", "reasonable", "fast", "scalable" without metrics) as ambiguity with severity MEDIUM unless it blocks all interpretation (then HIGH).
+- FLAG missing acceptance criteria for quality attributes (performance, security, usability) as incompleteness MEDIUM when confidence >= 0.70.
+- Do not flood: aim for meaningful defects; merge duplicates.
 
-Return JSON only (defects should be < 30% of requirements):
+Return JSON only (defects should be < 40% of lines unless text is genuinely poor quality):
 {
   "defects": [
     {
@@ -170,6 +173,37 @@ Return JSON only:
 
 Requirements to estimate:
 {text}
+"""
+
+VALIDATION_PROMPT = """You are a requirements engineering expert following IEEE 830 standards. Analyze the following requirement and return a JSON object.
+
+Requirement: {requirement_text}
+
+Evaluate for the four IEEE 830 defect types:
+1. Ambiguity: vague terms (e.g., "fast", "adequate", "user-friendly", "appropriate", "reasonable") that have multiple interpretations
+2. Incompleteness: missing conditions, exceptions, error handling, or constraints
+3. Inconsistency: contradictions with standard requirements engineering practices
+4. Unverifiability: no measurable acceptance criteria or test conditions
+
+For each defect found, provide:
+- type (string): one of "ambiguity", "incompleteness", "inconsistency", "unverifiable"
+- severity (string): "High", "Medium", or "Low"
+- confidence (float): 0.0-1.0 (only include defects with confidence >= 0.70)
+- suggestion (string): concrete rewrite recommendation with specific, measurable criteria
+
+Return JSON format:
+{{
+  "defects": [
+    {{
+      "type": "ambiguity|incompleteness|inconsistency|unverifiable",
+      "severity": "High|Medium|Low",
+      "confidence": 0.0-1.0,
+      "suggestion": "specific rewrite recommendation"
+    }}
+  ]
+}}
+
+Only include defects with confidence >= 0.70. If no defects meet this threshold, return empty defects array.
 """
 
 DIAGRAM_GENERATION_PROMPT = """You are a Technical Visualization Specialist. Generate clean Mermaid diagrams from requirements.

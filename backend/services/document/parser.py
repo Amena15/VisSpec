@@ -3,6 +3,16 @@ import io
 import re
 from typing import Dict, Any, Optional, List, Tuple
 
+from services.ai.text_cleaner import TextCleaner
+
+
+def _collapse_repeated_word_token(match: re.Match) -> str:
+    """Collapse 'willwill' -> 'will' but never touch digit runs like '000' in '25,000'."""
+    word = match.group(1)
+    if word.isdigit():
+        return match.group(0)
+    return word
+
 
 class DocumentParser:
     """Parses PDF and DOCX documents to extract text, structure, and requirements."""
@@ -26,6 +36,14 @@ class DocumentParser:
         r"^(?:APPENDIX|Appendix)\s+[A-Z]",
         r"^\d+\.\s*[A-Z][a-zA-Z\s]+",  # Main sections like "1. Introduction"
         r"^\d+\.\d+\s*[A-Z][a-zA-Z\s]+",  # Subsections like "2.1 Product Perspective"
+    ]
+    
+    # Fallback patterns for domain-specific or custom section headers
+    SECTION_FALLBACK_PATTERNS = [
+        r'^[A-Z][A-Z\s]+:$',  # All caps ending with colon (e.g., "INTRODUCTION:")
+        r'^[A-Z][a-zA-Z\s]+:$',  # Title case ending with colon (e.g., "Functional Requirements:")
+        r'^[A-Z]{3,}$',  # All caps (e.g., "INTRODUCTION")
+        r'^\d+\.\s+[A-Z][a-zA-Z]+$',  # Numbered with single word (e.g., "1. Introduction")
     ]
 
     # Requirement ID patterns (REQ_05)
@@ -127,6 +145,7 @@ class DocumentParser:
         """
         Identify logical sections/headers in the document.
         Implements REQ_06: Structure Identification.
+        Uses fallback patterns for domain-specific headers.
         """
         sections = []
         lines = text.split("\n")
@@ -140,6 +159,8 @@ class DocumentParser:
                 continue
 
             is_header = False
+            
+            # Try primary section patterns first
             for pattern in self.SECTION_PATTERNS:
                 if re.match(pattern, line_stripped, re.IGNORECASE):
                     # Save previous section
@@ -154,6 +175,23 @@ class DocumentParser:
                     seq += 1
                     is_header = True
                     break
+            
+            # If not matched by primary patterns, try fallback patterns
+            if not is_header:
+                for pattern in self.SECTION_FALLBACK_PATTERNS:
+                    if re.match(pattern, line_stripped, re.IGNORECASE):
+                        # Save previous section
+                        if current_section:
+                            sections.append({
+                                "title": current_section,
+                                "text": "\n".join(section_text).strip(),
+                                "sequence_order": seq,
+                            })
+                        current_section = line_stripped
+                        section_text = []
+                        seq += 1
+                        is_header = True
+                        break
 
             if not is_header and current_section:
                 section_text.append(line_stripped)
@@ -176,6 +214,7 @@ class DocumentParser:
         """
         Extract requirements from text using improved patterns.
         Properly identifies individual requirement statements.
+        Supports multi-line requirements (accumulates until period followed by newline).
         """
         if not text:
             return []
@@ -183,22 +222,26 @@ class DocumentParser:
         lines = text.split('\n')
         requirements = []
         seq = 0
+        current_requirement = None
         
         # Requirement identification patterns - more precise
         req_patterns = [
+            # Numbered list items with modal verbs (e.g., "1. The system shall...")
+            r'^\s*\d+[\.\)]\s*(?:The\s+system|The\s+application|Users?|Doctor|Patient|Admin|Chemist|Lab|System|User|[A-Z][a-z]*)\s+(?:shall|must|should|will|may)\s+',
+            
             # System requirements with modal verbs
-            r'\bThe\s+system\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
-            r'\bThe\s+application\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
-            r'\bUsers?\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\bThe\s+system\s+(?:shall|must|should|will|may)\s+',
+            r'\bThe\s+application\s+(?:shall|must|should|will|may)\s+',
+            r'\bUsers?\s+(?:shall|must|should|will|may)\s+',
             
             # General requirements with modal verbs
-            r'\b(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\b(?:shall|must|should|will|may)\s+',
             
             # Requirements with actors/subjects
-            r'\b(?:Doctor|Patient|Admin|Chemist|Lab|System|User)\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\b(?:Doctor|Patient|Admin|Chemist|Lab|System|User)\s+(?:shall|must|should|will|may)\s+',
             
             # Requirements with clear subjects
-            r'\b[A-Z][a-z]*\s+(?:shall|must|should|will|may)\s+[^.\n]+(?:\.|$)',
+            r'\b[A-Z][a-z]*\s+(?:shall|must|should|will|may)\s+',
         ]
         
         # Non-requirement patterns to skip
@@ -217,13 +260,25 @@ class DocumentParser:
             # Meta descriptions
             r'^(?:This\s+document|The\s+following|For\s+this|Word\s+count)',
             r'^\s*(?:All\s+data|Full\s+system|The\s+system|The\s+codebase)',
+            
+            # Code/configuration patterns
+            r'^\s*(def |class |import |from |function |var |let |const )',
         ]
         
         for line in lines:
             line_stripped = line.strip()
             
-            # Skip empty and very short lines
-            if not line_stripped or len(line_stripped) < 8:
+            # Skip empty lines
+            if not line_stripped:
+                # If we have a current requirement being built, save it
+                if current_requirement:
+                    self._finalize_requirement(current_requirement, requirements, seq)
+                    seq += 1
+                    current_requirement = None
+                continue
+            
+            # Skip very short lines (unless we're building a multi-line requirement)
+            if len(line_stripped) < 8 and not current_requirement:
                 continue
             
             # Skip non-requirement patterns
@@ -233,69 +288,82 @@ class DocumentParser:
                     should_skip = True
                     break
             
-            if should_skip:
+            if should_skip and not current_requirement:
                 continue
             
-            # Check if line is a requirement
-            is_requirement = False
+            # Check if line starts a new requirement
+            is_requirement_start = False
             for pattern in req_patterns:
                 if re.search(pattern, line_stripped, re.IGNORECASE):
-                    is_requirement = True
+                    is_requirement_start = True
                     break
             
-            if is_requirement:
-                # Clean up the requirement text
-                cleaned_text = re.sub(r'\s+', ' ', line_stripped)  # Normalize whitespace
-                cleaned_text = re.sub(r'\.+$', '', cleaned_text)  # Remove trailing period
+            if is_requirement_start:
+                # Save previous requirement if exists
+                if current_requirement:
+                    self._finalize_requirement(current_requirement, requirements, seq)
+                    seq += 1
                 
-                # Try to find requirement ID
-                req_id = None
-                for pattern in self.REQ_ID_PATTERNS:
-                    match = re.search(pattern, cleaned_text, re.IGNORECASE)
-                    if match:
-                        req_id = match.group(1).upper()
-                        break
+                # Start new requirement
+                current_requirement = {
+                    "text": line_stripped,
+                    "line_count": 1
+                }
+            elif current_requirement:
+                # Continue building multi-line requirement
+                current_requirement["text"] += " " + line_stripped
+                current_requirement["line_count"] += 1
+                
+                # Check if this line ends with a period (end of requirement)
+                if line_stripped.endswith('.'):
+                    self._finalize_requirement(current_requirement, requirements, seq)
+                    seq += 1
+                    current_requirement = None
+            else:
+                # Line doesn't match requirement patterns and we're not building one
+                continue
 
-                requirements.append({
-                    "req_identifier": req_id or f"REQ-{seq+1:03d}",
-                    "original_text": cleaned_text,
-                    "word_count": len(cleaned_text.split()),
-                    "sequence_order": seq,
-                })
-                seq += 1
+        # Save any remaining requirement
+        if current_requirement:
+            self._finalize_requirement(current_requirement, requirements, seq)
 
         return requirements
+    
+    def _finalize_requirement(self, req_data: Dict[str, Any], requirements: List[Dict[str, Any]], seq: int):
+        """Finalize and add a requirement to the list."""
+        cleaned_text = re.sub(r'\s+', ' ', req_data["text"])  # Normalize whitespace
+        cleaned_text = re.sub(r'\.+$', '', cleaned_text)  # Remove trailing period
+        
+        # Try to find requirement ID
+        req_id = None
+        for pattern in self.REQ_ID_PATTERNS:
+            match = re.search(pattern, cleaned_text, re.IGNORECASE)
+            if match:
+                req_id = match.group(1).upper()
+                break
+
+        requirements.append({
+            "req_identifier": req_id or f"REQ-{seq+1:03d}",
+            "original_text": cleaned_text,
+            "word_count": len(cleaned_text.split()),
+            "sequence_order": seq,
+        })
 
     def sanitize_text(self, text: str) -> str:
         """Sanitize extracted text for storage and search."""
         if not text:
             return ""
         
-        # Remove duplicate consecutive words (willwill -> will, shallwill -> shall, mustmust -> must)
-        # Handle both with and without space: "will will" and "willwill"
-        # More aggressive pattern to catch cases like "shallwill", "mustmust"
-        text = re.sub(r'\b(\w+)(\s*\1)+\b', r'\1', text, flags=re.IGNORECASE)
-        text = re.sub(r'\b(\w+)(\1)+\b', r'\1', text, flags=re.IGNORECASE)  # For concatenated duplicates
+        # Remove duplicate consecutive words with space (conservative approach)
+        # Only matches "will will" not "willwill" to avoid false positives
+        # Also catches triple repeats (will will will -> will)
+        text = re.sub(r'\b(\w+)(?:\s+\1)+\b', r'\1', text, flags=re.IGNORECASE)
         
-        # Specific handling for merged modal verbs (common parsing artifacts)
-        modal_pairs = {
-            'shallwill': 'shall',
-            'shallmust': 'shall', 
-            'willshall': 'shall',
-            'mustmust': 'must',
-            'shouldshall': 'shall',
-            'shallshould': 'shall',
-            'willmust': 'must',
-            'mustwill': 'must',
-            'maywill': 'will',
-            'willmay': 'may',
-        }
+        # Modal verbs jammed without space (e.g. shallwill) — \b between modals does not match
+        text = TextCleaner.fix_concatenated_modals(text)
         
-        for merged, corrected in modal_pairs.items():
-            text = re.sub(rf'\b{merged}\b', corrected, text, flags=re.IGNORECASE)
-        
-        # Generic pattern for any repeated modal verbs
-        text = re.sub(r'\b(shall|must|should|will|may|might|could|would|can)\1+\b', r'\1', text, flags=re.IGNORECASE)
+        # Handle concatenated duplicates (willwill -> will); skip digit-only tokens (preserves 25,000)
+        text = re.sub(r'\b(\w+)(\1)+\b', _collapse_repeated_word_token, text, flags=re.IGNORECASE)
         
         # Remove page numbers (but preserve section headers)
         # Page numbers are typically standalone or at the end of lines

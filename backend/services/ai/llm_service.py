@@ -17,6 +17,7 @@ from services.ai.prompts import (
     COMPLEXITY_ESTIMATION_PROMPT,
     DIAGRAM_GENERATION_PROMPT,
     REQUIREMENT_EXTRACTION_PROMPT,
+    VALIDATION_PROMPT,
 )
 from services.ai.response_parser import ResponseParser
 from services.ai.retry_handler import retry_handler
@@ -157,6 +158,28 @@ class GroqLLMService:
             return response.strip()
 
         return None
+
+    def validate_requirement(self, text: str) -> Dict[str, Any]:
+        """
+        Validate a single requirement using IEEE 830 standards.
+        Returns defects with type, severity, confidence, and suggestion.
+        Filters by confidence >= 0.70 (BR-10 threshold).
+        """
+        prompt = VALIDATION_PROMPT.format(requirement_text=text)
+        response = self.call_with_retry(prompt, max_tokens=2048)
+
+        if response:
+            parsed = ResponseParser.parse_json(response)
+            if parsed and "defects" in parsed:
+                # Filter defects by confidence threshold (BR-10: >= 0.70)
+                filtered_defects = [
+                    d for d in parsed["defects"]
+                    if d.get("confidence", 0) >= 0.70
+                ]
+                return {"defects": filtered_defects}
+
+        # Fallback: return empty result
+        return {"defects": []}
 
     @property
     def is_available(self) -> bool:

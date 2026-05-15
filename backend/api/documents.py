@@ -73,7 +73,7 @@ async def upload_document(
     if ext not in allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file format: .{ext}. Only PDF, DOCX, and TXT are accepted.",
+            detail=f"Unsupported file format: .{ext}. Only PDF, DOCX, and TXT files are accepted. Please convert your document to one of these formats.",
         )
 
     # ------------------------------------------------------------------
@@ -86,7 +86,7 @@ async def upload_document(
     if file_size > max_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large. Maximum size is {max_size // (1024 * 1024)}MB.",
+            detail=f"File too large ({file_size / (1024 * 1024):.1f}MB). Maximum size is {max_size // (1024 * 1024)}MB. Please split your document into smaller files or compress it.",
         )
 
     # ------------------------------------------------------------------
@@ -98,7 +98,7 @@ async def upload_document(
     if new_usage > quota_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Storage quota exceeded. Quota: {current_user.storage_quota_mb}MB, Used: {current_user.storage_used_bytes / (1024 * 1024):.1f}MB, File: {file_size / (1024 * 1024):.1f}MB",
+            detail=f"Storage quota exceeded. Your quota: {current_user.storage_quota_mb}MB, Currently used: {current_user.storage_used_bytes / (1024 * 1024):.1f}MB, This file: {file_size / (1024 * 1024):.1f}MB. Please delete old documents or upgrade your plan.",
         )
 
     # ------------------------------------------------------------------
@@ -119,17 +119,17 @@ async def upload_document(
             elif "PyMuPDF not installed" in error_msg:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="PDF processing library not available. Please contact support."
+                    detail="PDF processing library not available. Please contact support or try uploading as DOCX or TXT format."
                 )
             elif "python-docx not installed" in error_msg:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="DOCX processing library not available. Please contact support."
+                    detail="DOCX processing library not available. Please contact support or try uploading as PDF or TXT format."
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Document parsing failed: {error_msg}"
+                    detail=f"Document parsing failed: {error_msg}. Please ensure the file is not corrupted and try again."
                 )
         
         extracted_text = parse_result.get("text", "")
@@ -155,23 +155,41 @@ async def upload_document(
     if is_scanned_pdf == 1 or len(extracted_text.strip()) < 10:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No readable text detected. Please upload a searchable PDF."
+            detail="No readable text detected. Please upload a searchable PDF with a text layer (not an image-only scanned document)."
         )
+    
+    # Generate document ID early for logging purposes
+    doc_id = str(uuid.uuid4())
+    
+    from services.ai.text_cleaner import TextCleaner
+    # Clean full extracted text first (merged modals, etc.) so requirement extraction sees correct tokens
+    try:
+        extracted_text = TextCleaner.clean_requirement_text(extracted_text)
+    except Exception as e:
+        logger.warning(f"Pre-extract text clean skipped: {e}", extra={"doc_id": doc_id})
     
     # Extract requirements
     requirements = parser.extract_requirements(extracted_text)
     requirements_count = len(requirements)
     
+    # Add warning if no requirements found
+    if requirements_count == 0:
+        logger.warning(
+            f"No clear requirements found in document {filename}. "
+            f"Document may not contain modal verbs (shall, must, should, will, may). "
+            f"Word count: {word_count}",
+            extra={"doc_id": doc_id, "doc_filename": filename, "word_count": word_count}
+        )
+    
     # Apply text cleaning to fix repeated words (willwill -> will, etc.)
     try:
-        from services.ai.text_cleaner import TextCleaner
-        logger.info(f"Applying text cleaning to {len(requirements)} requirements")
+        logger.info(f"Applying text cleaning to {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
         
         # Clean requirements batch
         cleaned_requirements = TextCleaner.clean_requirements_batch(requirements)
         requirements = cleaned_requirements
         
-        # Also clean the main document text
+        # Also clean the main document text (idempotent if already cleaned)
         cleaned_extracted_text = TextCleaner.clean_requirement_text(extracted_text)
         
         # Log cleaning results
@@ -181,7 +199,7 @@ async def upload_document(
         
         extracted_text = cleaned_extracted_text
         
-        logger.info(f"Text cleaning completed successfully for {len(requirements)} requirements")
+        logger.info(f"Text cleaning completed successfully for {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
         
     except Exception as e:
         logger.error(f"Text cleaning failed during upload: {e}")
@@ -192,9 +210,6 @@ async def upload_document(
     sections = parser.identify_structure(extracted_text)
     sections_count = len(sections)
     sections_titles = [section["title"] for section in sections]
-    
-    # Generate document ID and save to database
-    doc_id = str(uuid.uuid4())
     
     # Sanitize text for full-text search
     sanitized_text = parser.sanitize_text(extracted_text)
@@ -249,7 +264,7 @@ async def upload_document(
     
     # Auto-organize requirements for new document (professional flow)
     try:
-        logger.info("Auto-organizing requirements for new document")
+        logger.info("Auto-organizing requirements for new document", extra={"doc_id": doc_id})
         req_objects = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
         raw_reqs = []
         for r in req_objects:
@@ -266,7 +281,10 @@ async def upload_document(
         from services.ai.text_cleaner import TextCleaner
         cleaned_reqs = TextCleaner.clean_requirements_batch(raw_reqs)
         full_text = extracted_text
-        enriched_reqs = requirement_organizer.organize_and_enrich(cleaned_reqs, full_text, use_llm=False)
+        # Use LLM for enrichment when API key is present, otherwise rule-based
+        use_llm = bool(settings.GROQ_API_KEY)
+        logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} auto-enrichment")
+        enriched_reqs = requirement_organizer.organize_and_enrich(cleaned_reqs, full_text, use_llm=use_llm)
         
         # Update DB requirements
         updated = 0
@@ -282,9 +300,9 @@ async def upload_document(
             r.vague_terms_json = json.dumps(enriched.get('vague_terms', []))
             updated += 1
         db.commit()
-        logger.info(f"Auto-organized {updated} requirements")
+        logger.info(f"Auto-organized {updated} requirements", extra={"doc_id": doc_id, "updated_count": updated})
     except Exception as e:
-        logger.warning(f"Auto-organize failed: {e} - manual fix available")
+        logger.warning(f"Auto-organize failed: {e} - manual fix available", extra={"doc_id": doc_id, "error": str(e)})
     
     # Update project status to 'ready' after successful document processing
     try:
@@ -293,9 +311,9 @@ async def upload_document(
             project.status = "ready"
             project.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             db.commit()
-            logger.info(f"Updated project {project_id} status to 'ready' after document processing")
+            logger.info(f"Updated project {project_id} status to 'ready' after document processing", extra={"project_id": project_id, "doc_id": doc_id})
     except Exception as e:
-        logger.warning(f"Failed to update project status: {e}")
+        logger.warning(f"Failed to update project status: {e}", extra={"project_id": project_id, "doc_id": doc_id, "error": str(e)})
     
     return DocumentUploadResponse(
         doc_id=doc_id,
@@ -345,6 +363,27 @@ def list_documents(
                     latest_validation = max(d.validation_sessions, key=lambda v: v.validation_date if v.validation_date else "")
                     defect_count = latest_validation.defect_count or 0
                     quality_score = latest_validation.overall_score or 50
+                    
+                    # Data consistency check: defects should not exist without requirements
+                    if defect_count > 0 and req_count == 0:
+                        logger.warning(
+                            f"Data inconsistency detected for document {d.doc_id}: "
+                            f"{defect_count} defects but {req_count} requirements. "
+                            f"Setting defect_count to 0 for consistency.",
+                            extra={"doc_id": d.doc_id, "defect_count": defect_count, "req_count": req_count}
+                        )
+                        defect_count = 0
+                        quality_score = 100.0
+                        
+                        # Fix the validation session in database to prevent future occurrences
+                        try:
+                            latest_validation.defect_count = 0
+                            latest_validation.overall_score = 100.0
+                            db.commit()
+                            logger.info(f"Fixed validation session {latest_validation.validation_id} for document {d.doc_id}")
+                        except Exception as fix_error:
+                            logger.error(f"Failed to fix validation session: {fix_error}")
+                            db.rollback()
                 else:
                     # Fallback: calculate from requirements if no validation sessions exist
                     if d.requirements:
@@ -418,10 +457,21 @@ def get_document(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
             )
         
-        # Extract structure from document content
-        from services.document.parser import DocumentParser
+        # Structure identification must use extracted plain text, not `content` (binary file bytes).
+        # Passing binary PDF/DOCX into identify_structure raises (regex on bytes) and previously
+        # caused the whole endpoint to fall through to the empty stub while validation still worked.
         parser = DocumentParser()
-        sections_data = parser.identify_structure(doc.content or "")
+        structure_source = (doc.extracted_text or "") if isinstance(doc.extracted_text, str) else ""
+        try:
+            sections_data = parser.identify_structure(structure_source)
+        except Exception as parse_err:
+            logger.warning(
+                "identify_structure failed for doc %s: %s",
+                doc_id,
+                parse_err,
+                extra={"doc_id": doc_id},
+            )
+            sections_data = []
         
         # Get requirements for this document
         requirements = db.query(Requirement).filter(
@@ -429,6 +479,7 @@ def get_document(
         ).order_by(Requirement.sequence_order).all()
         
         print(f"DEBUG: Found {len(requirements)} requirements for document {doc_id}")
+        
         for i, req in enumerate(requirements[:3]):
             print(f"DEBUG: Req {i+1}: {req.original_text[:50]}...")
         
@@ -588,10 +639,13 @@ async def enrich_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
         
         cleaned_requirements = TextCleaner.clean_requirements_batch(req_objects)
         full_text = doc.content or doc.extracted_text or ""
+        # Use LLM for enrichment when API key is present, otherwise rule-based
+        use_llm = bool(settings.GROQ_API_KEY)
+        logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} enrichment")
         enriched_requirements = requirement_organizer.organize_and_enrich(
             requirements=cleaned_requirements,
             full_text=full_text,
-            use_llm=False
+            use_llm=use_llm
         )
         
         # Update requirements with enrichment data
@@ -695,10 +749,13 @@ async def fix_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
         
         cleaned_requirements = cleaner.clean_requirements_batch(req_objects)
         full_text = "\n\n".join(req["original_text"] for req in cleaned_requirements)
+        # Use LLM for enrichment when API key is present, otherwise rule-based
+        use_llm = bool(settings.GROQ_API_KEY)
+        logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} fix enrichment")
         enriched_requirements = organizer.organize_and_enrich(
             requirements=cleaned_requirements,
             full_text=full_text,
-            use_llm=False
+            use_llm=use_llm
         )
         
         # Update requirements with enrichment data

@@ -110,14 +110,15 @@ def enrich_requirements(
         full_text = "\n\n".join(req["original_text"] for req in cleaned_reqs)
         
         try:
-            # Try rule-based organization first (more reliable)
-            logger.info("Using rule-based organization")
+            # Try LLM-based organization if API key is available, otherwise rule-based
+            use_llm = bool(settings.GROQ_API_KEY)
+            logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} organization")
             enriched_reqs = requirement_organizer.organize_and_enrich(
                 requirements=cleaned_reqs,
                 full_text=full_text,
-                use_llm=False,  # Force rule-based for reliability
+                use_llm=use_llm,
             )
-            logger.info(f"Rule-based organization successful: {len(enriched_reqs)} requirements")
+            logger.info(f"{'LLM-based' if use_llm else 'Rule-based'} organization successful: {len(enriched_reqs)} requirements")
             
         except Exception as org_error:
             logger.error(f"Rule-based organization failed: {org_error}")
