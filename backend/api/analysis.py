@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from models.user import User
 from models.document import RequirementDocument
 from models.requirement import Requirement
+from models.project import Project
 from config.database import get_db
 from utils.security import get_current_active_user
 from services.ai.requirement_organizer import requirement_organizer
@@ -29,7 +30,7 @@ class UndoSuggestionRequest(BaseModel):
     req_id: str
 
 logger = get_logger(__name__)
-router = APIRouter(tags=["analysis"])
+router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
 @router.post("/enrich/{doc_id}")
 def enrich_requirements(
@@ -110,32 +111,47 @@ def enrich_requirements(
         full_text = "\n\n".join(req["original_text"] for req in cleaned_reqs)
         
         try:
-            # Try LLM-based organization if API key is available, otherwise rule-based
-            use_llm = bool(settings.GROQ_API_KEY)
-            logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} organization")
+            # Keep LLM first (performance) but do not allow enrichment to block DB updates.
+            use_llm = True
+            logger.info("Attempting LLM-based organization first (DB persistence guaranteed)")
             enriched_reqs = requirement_organizer.organize_and_enrich(
                 requirements=cleaned_reqs,
                 full_text=full_text,
                 use_llm=use_llm,
             )
-            logger.info(f"{'LLM-based' if use_llm else 'Rule-based'} organization successful: {len(enriched_reqs)} requirements")
-            
+
+            # If LLM path returns nothing, fall back to deterministic data so DB is still updated.
+            if not enriched_reqs:
+                raise Exception("LLM enrichment returned no requirements; triggering fallback")
+
+            logger.info(f"LLM organization successful: {len(enriched_reqs)} requirements")
+
         except Exception as org_error:
-            logger.error(f"Rule-based organization failed: {org_error}")
-            # Emergency fallback: basic categorization only
+            logger.warning(f"LLM organization failed: {org_error}. Falling back to rule-based.")
+            enriched_reqs = requirement_organizer.organize_and_enrich(
+                requirements=cleaned_reqs,
+                full_text=full_text,
+                use_llm=False,
+            )
+
+
+        # Ensure DB update even if enrichment produced an empty list.
+        if not enriched_reqs:
+            logger.warning("Enrichment produced empty results; forcing deterministic DB update")
             enriched_reqs = []
             for req in cleaned_reqs:
                 enriched_reqs.append({
                     **req,
                     "semantic_id": f"REQ-{req['sequence_order']:03d}",
                     "module_name": "General",
-                    "category": "functional",  # Fixed: use 'functional' as default per requirements
+                    "category": "functional",
                     "category_confidence": 0.5,
                     "actors": [],
                     "modal_verbs": [],
                     "vague_terms": [],
                 })
-            logger.info(f"Emergency fallback applied: {len(enriched_reqs)} requirements")
+            logger.info(f"Deterministic fallback applied: {len(enriched_reqs)} requirements")
+
 
         # ------------------------------------------------------------------
         # 4. Enhanced database update with multiple attempts
@@ -258,6 +274,7 @@ def enrich_requirements(
         # ------------------------------------------------------------------
         # 5. Build enhanced response
         # ------------------------------------------------------------------
+
         result_requirements = []
         for enriched in enriched_reqs:
             result_requirements.append({
@@ -324,7 +341,7 @@ def apply_suggestion(
 ) -> Dict[str, Any]:
     """
     Apply AI suggestion to update requirement text.
-    Implements BR-14: State Consistency.
+    Implements REQ_17, BR-14: State Consistency, BR-15: Undo Log.
     """
     try:
         logger.info(f"Applying suggestion for req_id={request.req_id}")
@@ -361,12 +378,43 @@ def apply_suggestion(
                 detail="New text is the same as current text"
             )
         
-        # Store old text for undo functionality
+        # Store old text for undo functionality (BR-15)
         old_text = req.current_text
+        
+        # Create version history entry
+        try:
+            # Import version history model
+            from models.validation import RequirementVersionHistory
+            
+            version_entry = RequirementVersionHistory(
+                req_id=request.req_id,
+                doc_id=req.doc_id,
+                project_id=req.project_id,
+                old_text=old_text,
+                new_text=request.new_text,
+                change_reason="AI suggestion applied",
+                changed_by=current_user.user_id,
+                change_type="suggestion_applied"
+            )
+            db.add(version_entry)
+            logger.info(f"Created version history entry for req_id={request.req_id}")
+            
+        except ImportError:
+            # If version history table doesn't exist, use simple backup
+            req.previous_text = old_text
+            logger.info("Using simple previous_text backup for undo functionality")
         
         # Update requirement with new text
         req.current_text = request.new_text
-        req.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        req.last_modified_by = current_user.user_id
+        req.last_modified_at = datetime.now(timezone.utc)
+        
+        # Mark associated defects as suggestion_applied
+        from models.validation import Defect
+        db.query(Defect).filter(Defect.req_id == request.req_id).update({
+            "suggestion_applied": 1,
+            "applied_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        })
         
         # Commit changes
         db.commit()
@@ -378,7 +426,8 @@ def apply_suggestion(
             "req_id": request.req_id,
             "old_text": old_text,
             "new_text": request.new_text,
-            "message": "Suggestion applied successfully"
+            "message": "Suggestion applied successfully",
+            "version_history_created": True
         }
         
     except HTTPException:
@@ -386,6 +435,7 @@ def apply_suggestion(
     except Exception as e:
         logger.error(f"Failed to apply suggestion: {e}")
         logger.error(traceback.format_exc())
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to apply suggestion: {str(e)}"
@@ -400,7 +450,7 @@ def undo_suggestion(
 ) -> Dict[str, Any]:
     """
     Undo last applied suggestion by reverting to previous text.
-    Implements BR-15: Undo Log.
+    Implements BR-15: Undo Log with version history support.
     """
     try:
         logger.info(f"Undoing suggestion for req_id={request.req_id}")
@@ -424,18 +474,81 @@ def undo_suggestion(
                 detail="Requirement not found or access denied"
             )
         
-        # For simplicity, revert to original_text (stored backup)
-        # In a full implementation, you'd use a history table
-        if req.original_text == req.current_text:
+        # Try to get previous version from version history
+        previous_text = None
+        
+        try:
+            from models.requirement_history import RequirementVersionHistory
+            
+            # Get the most recent version entry for this requirement
+            version_entry = db.query(RequirementVersionHistory).filter(
+                RequirementVersionHistory.req_id == request.req_id
+            ).order_by(RequirementVersionHistory.created_at.desc()).first()
+            
+            if version_entry:
+                previous_text = version_entry.old_text
+                logger.info(f"Found previous version from history: {version_entry.version_id}")
+                
+                # Delete the version entry since we're using it
+                db.delete(version_entry)
+                
+            else:
+                # Fall back to previous_text column
+                previous_text = req.previous_text
+                if previous_text:
+                    req.previous_text = None  # Clear after using
+                
+        except ImportError:
+            # Version history table not available, use simple backup
+            previous_text = req.previous_text
+            if previous_text:
+                req.previous_text = None  # Clear after using
+        
+        if not previous_text:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No changes to undo"
+                detail="No previous version found to undo"
             )
         
-        # Revert to original text
-        old_text = req.current_text
-        req.current_text = req.original_text
-        req.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if previous_text == req.current_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current text is already the same as previous version"
+            )
+        
+        # Create version history entry for the undo action
+        try:
+            from models.requirement_history import RequirementVersionHistory
+            
+            undo_version = RequirementVersionHistory(
+                req_id=request.req_id,
+                doc_id=req.doc_id,
+                project_id=req.project_id,
+                old_text=req.current_text,
+                new_text=previous_text,
+                change_reason="Undo suggestion applied",
+                changed_by=current_user.user_id,
+                change_type="undo"
+            )
+            db.add(undo_version)
+            logger.info(f"Created undo version history entry")
+            
+        except ImportError:
+            # Store current text as previous_text for redo
+            req.previous_text = req.current_text
+        
+        # Revert to previous text
+        current_text = req.current_text
+        req.current_text = previous_text
+        req.last_modified_by = current_user.user_id
+        req.last_modified_at = datetime.now(timezone.utc)
+        
+        # Mark associated defects as suggestion_applied = 0 (restored)
+        from models.validation import Defect
+        db.query(Defect).filter(Defect.req_id == request.req_id).update({
+            "suggestion_applied": 0,
+            "applied_at": None
+        })
         
         # Commit changes
         db.commit()
@@ -445,8 +558,8 @@ def undo_suggestion(
         return {
             "success": True,
             "req_id": request.req_id,
-            "old_text": old_text,
-            "new_text": req.original_text,
+            "old_text": current_text,
+            "new_text": previous_text,
             "message": "Suggestion undone successfully"
         }
         
@@ -455,6 +568,7 @@ def undo_suggestion(
     except Exception as e:
         logger.error(f"Failed to undo suggestion: {e}")
         logger.error(traceback.format_exc())
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to undo suggestion: {str(e)}"

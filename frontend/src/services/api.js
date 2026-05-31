@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://127.0.0.1:8000',
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -30,13 +30,20 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token might be expired, redirect to login
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only force logout if we're actually on a protected area.
+      // This prevents redirect loops right after login while the UI is transitioning.
+      const path = window.location?.pathname || '';
+      const isAuthRoute = path.startsWith('/login') || path.startsWith('/forgot-password') || path.startsWith('/reset-password');
+
+      if (!isAuthRoute) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     
     // Handle LLM-specific errors
     if (error.response?.status === 429) {
+
       // Rate limit exceeded - add retry info to error
       error.isRateLimit = true;
       error.message = 'Rate limit exceeded. Please try again later.';
@@ -193,6 +200,48 @@ export const traceabilityAPI = {
   },
 };
 
+// Notifications API
+export const notificationsAPI = {
+  getUnread: () => {
+    return apiClient.get('/api/notifications/unread');
+  },
+  
+  markRead: (notificationIds) => {
+    if (!notificationIds || notificationIds.length === 0) {
+      console.error('notificationsAPI.markRead: notificationIds is required');
+      return Promise.reject(new Error('Notification IDs are required'));
+    }
+    return apiClient.post('/api/notifications/mark-read', { notification_ids: notificationIds });
+  },
+};
+
+// IEEE-Compliant Diagram Generation API
+export const ieeeDiagramsAPI = {
+  generateDiagram: (documentId, diagramType, scenario = null) => {
+    const payload = {
+      document_id: documentId,
+      diagram_type: diagramType,
+      scenario: scenario
+    };
+    return apiClient.post('/api/ieee-diagrams/generate', payload);
+  },
+  
+  renderPlantUMLToPNG: (plantumlSyntax) => {
+    const payload = plantumlSyntax;
+    return apiClient.post('/api/ieee-diagrams/render-plantuml-png', payload, {
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  },
+  
+  getProjectDiagrams: (projectId) => {
+    return apiClient.get(`/api/ieee-diagrams/project/${projectId}/diagrams`);
+  },
+  
+  getDiagramDetails: (diagramId) => {
+    return apiClient.get(`/api/ieee-diagrams/diagram/${diagramId}`);
+  },
+};
+
 // Legacy Visualization API (kept for backward compatibility)
 export const visualizationAPI = {
   generate: (data) => apiClient.post('/api/visualization/', data),
@@ -217,7 +266,7 @@ export const processingAPI = {
 
 // Users API
 export const userAPI = {
-  getAll: () => apiClient.get('/users'),
+  getAll: () => apiClient.get('/api/users'),
   getById: (id) => apiClient.get(`/users/${id}`),
   update: (id, data) => apiClient.put(`/users/${id}`, data),
   delete: (id) => apiClient.delete(`/users/${id}`),

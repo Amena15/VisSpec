@@ -4,6 +4,8 @@ Validates and parses JSON responses from the LLM.
 """
 import json
 import re
+import logging
+import sys
 from typing import Any, Dict, Optional
 from core.logging import get_logger
 

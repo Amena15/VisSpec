@@ -9,6 +9,8 @@ from models.metrics import ProjectMetrics
 from models.traceability import TraceabilityMatrix, TraceabilityNote
 from models.review import ReviewAudit
 from models.auxiliary import PasswordResetToken, SystemLog, AIPromptLog, ExportReport
+from models.notification import Notification
+
 
 __all__ = [
     "User", "UserRole",

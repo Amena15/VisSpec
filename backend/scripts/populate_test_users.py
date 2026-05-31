@@ -1,63 +1,84 @@
+"""Populate DB with known VisSpec test users.
+
+Run from repo root:
+  python backend/scripts/populate_test_users.py
 """
-Script to populate the database with test users for VisSpec
-"""
+
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
-# Add the backend directory to the path so we can import modules
-sys.path.append('/Users/amena/Documents/FYPCode/VisSpec/backend')
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../VisSpec
+BACKEND_ROOT = os.path.join(REPO_ROOT, "backend")
 
-from sqlalchemy.orm import Session
-from config.database import engine, Base
+# Ensure imports work when executed as a script
+if BACKEND_ROOT not in sys.path:
+    sys.path.insert(0, BACKEND_ROOT)
+
+# Use scripts-friendly imports (no "backend." prefix) since we added BACKEND_ROOT to sys.path.
+# repo-root runnable: import config/database via package
+from backend.config.database import engine, Base, SessionLocal
 from models.user import User, UserRole
-from utils.security import get_password_hash
 
-def create_test_users():
-    """Create test users in the database"""
-    # Create tables if they don't exist
+
+
+def _now_iso():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def populate():
     Base.metadata.create_all(bind=engine)
-    
-    # Create a session
-    from config.database import SessionLocal
+
     db = SessionLocal()
-    
     try:
-        # Create analyst user
-        analyst_user = db.query(User).filter(User.email == "analyst@vispec.com").first()
-        if not analyst_user:
-            analyst_user = User(
-                username="analyst",
-                email="analyst@vispec.com",
-                role=UserRole.ANALYST.value,
-                is_active=True
-            )
-            analyst_user.set_password("VisSpec123")
-            db.add(analyst_user)
-            print("Created analyst user")
-        
-        # Create supervisor user
-        supervisor_user = db.query(User).filter(User.email == "supervisor@vispec.com").first()
-        if not supervisor_user:
-            supervisor_user = User(
-                username="supervisor",
-                email="supervisor@vispec.com",
-                role=UserRole.SUPERVISOR.value,
-                is_active=True
-            )
-            supervisor_user.set_password("VisSpec123")
-            db.add(supervisor_user)
-            print("Created supervisor user")
-        
-        # Commit changes
+        now_str = _now_iso()
+        defaults = [
+            {
+                "username": "analyst",
+                "email": "analyst@vispec.com",
+                "role": UserRole.ANALYST.value,
+                "password": "VisSpec123",
+            },
+            {
+                "username": "yousef",
+                "email": "yousef@vispec.com",
+                "role": UserRole.ANALYST.value,
+                "password": "Yousef@2026",
+            },
+            {
+                "username": "supervisor",
+                "email": "supervisor@vispec.com",
+                "role": UserRole.SUPERVISOR.value,
+                "password": "VisSpec123",
+            },
+        ]
+
+        for d in defaults:
+            user = db.query(User).filter(User.email == d["email"]).first()
+            if not user:
+                user = User(
+                    username=d["username"],
+                    email=d["email"],
+                    role=d["role"],
+                    is_active=1,
+                    created_at=now_str,
+                    updated_at=now_str,
+                )
+                db.add(user)
+
+            # Deterministic dev creds
+            user.set_password(d["password"])
+
         db.commit()
-        print("Test users created successfully!")
-        
+        print("Test users populated/updated successfully.")
     except Exception as e:
-        print(f"Error creating test users: {e}")
         db.rollback()
+        print(f"Error populating test users: {e}")
+        raise
     finally:
         db.close()
 
+
 if __name__ == "__main__":
-    create_test_users()
+    populate()
+

@@ -1,10 +1,12 @@
 """Project management API routes."""
 import uuid
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 
 from models.user import User
@@ -14,6 +16,8 @@ from models.validation import ValidationSession
 from utils.security import get_current_active_user
 from config.database import get_db
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
@@ -22,11 +26,11 @@ def _now_iso() -> str:
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_project(
+async def create_project(
     name: str,
     description: str = "",
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Create a new project for the authenticated user."""
     project = Project(
@@ -38,9 +42,9 @@ def create_project(
         created_at=_now_iso(),
         updated_at=_now_iso(),
     )
-    db.add(project)
-    db.commit()
-    db.refresh(project)
+    await db.add(project)
+    await db.commit()
+    await db.refresh(project)
     return {
         "project_id": project.project_id,
         "name": project.name,
@@ -51,31 +55,23 @@ def create_project(
 
 
 @router.get("/")
-def list_projects(
+async def list_projects(
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """List all projects owned by authenticated user."""
     try:
-        projects = (
-            db.query(Project)
-            .filter(Project.owner_id == current_user.user_id, Project.is_deleted == 0)
-            .all()
+        result = await db.execute(
+            select(Project).filter(
+                Project.owner_id == current_user.user_id, 
+                Project.is_deleted == 0
+            )
         )
+        projects = result.scalars().all()
         result = []
         for p in projects:
-            # Count requirements across all documents in this project
-            req_count = 0
-            doc_count = 0
-            if p.documents:
-                doc_count = len(p.documents)
-                print(f"DEBUG: Project {p.name} has {doc_count} documents")
-                for doc in p.documents:
-                    print(f"DEBUG: Document {doc.filename} has {len(doc.requirements) if doc.requirements else 0} requirements")
-                    if doc.requirements:
-                        req_count += len(doc.requirements)
-            
-            print(f"DEBUG: Project {p.name} total requirements: {req_count}")
+            # Avoid lazy-loading relationships on AsyncSession.
+            # Return only direct project fields; frontend cards derive counts elsewhere.
             result.append({
                 "project_id": p.project_id,
                 "name": p.name,
@@ -84,33 +80,31 @@ def list_projects(
                 "review_status": p.review_status,
                 "created_at": p.created_at,
                 "updated_at": p.updated_at,
-                "document_count": doc_count,
-                "requirements_count": req_count,
-                "quality_score": "N/A"  # TODO: Compute from validation results
+                "document_count": 0,
+                "requirements_count": 0,
+                "quality_score": None,
             })
         return result
     except Exception as e:
-        print(f"Error in projects API: {e}")
+        logger.error(f"Error in projects API: {e}")
         return []
 
 
 @router.get("/{project_id}")
-def get_project(
+async def get_project(
     project_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get a single project by ID with its documents."""
-    project = (
-        db.query(Project)
-        .options(joinedload(Project.documents))
-        .filter(
+    result = await db.execute(
+        select(Project).filter(
             Project.project_id == project_id,
             Project.owner_id == current_user.user_id,
             Project.is_deleted == 0,
         )
-        .first()
     )
+    project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -138,23 +132,22 @@ def get_project(
 
 
 @router.delete("/{project_id}")
-def delete_project(
+async def delete_project(
     project_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Permanently delete a project and all associated data.
     Implements REQ_07: Project Data Management with cascade delete.
     """
-    project = (
-        db.query(Project)
-        .filter(
+    result = await db.execute(
+        select(Project).filter(
             Project.project_id == project_id,
             Project.owner_id == current_user.user_id,
         )
-        .first()
     )
+    project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -166,8 +159,8 @@ def delete_project(
     val_count = len(project.validation_sessions)
 
     # SQLAlchemy cascade="all, delete-orphan" handles the rest
-    db.delete(project)
-    db.commit()
+    await db.delete(project)
+    await db.commit()
 
     return {
         "message": "Project and all associated data permanently deleted",

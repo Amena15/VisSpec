@@ -10,8 +10,9 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
 from models.user import User, UserRole
 from schemas.auth import Token, UserCreate, UserResponse, PasswordReset, PasswordChange
 from utils.security import (
@@ -49,11 +50,14 @@ def _create_token(user: User, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES
 # ---------------------------------------------------------------------------
 
 @router.post("/register", response_model=Token)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     """Register a new user and return a JWT token."""
-    existing = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
-    ).first()
+    result = await db.execute(
+        select(User).filter(
+            (User.email == user_data.email) | (User.username == user_data.username)
+        )
+    )
+    existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -73,17 +77,17 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         updated_at=now_str,
     )
     db_user.set_password(password)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    await db.add(db_user)
+    await db.commit()
+    await db.refresh(db_user)
 
     return _create_token(db_user)
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     """Authenticate with email + password and return a JWT token."""
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -93,7 +97,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     user.last_login_at = _now_iso()
     user.failed_login_attempts = 0
-    db.commit()
+    await db.commit()
 
     return _create_token(user)
 
@@ -109,10 +113,10 @@ def get_profile(current_user: User = Depends(get_current_active_user)):
 
 
 @router.post("/change-password")
-def change_password(
+async def change_password(
     body: PasswordChange,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Change the authenticated user's password."""
     if not verify_password(body.current_password, current_user.password_hash):
@@ -139,9 +143,10 @@ def change_password(
 # ---------------------------------------------------------------------------
 
 @router.post("/forgot-password")
-def forgot_password(email: str, db: Session = Depends(get_db)):
+async def forgot_password(email: str, db: AsyncSession = Depends(get_db)):
     """Generate a password reset token for the given email."""
-    user = db.query(User).filter(User.email == email).first()
+    result = await db.execute(select(User).filter(User.email == email))
+    user = result.scalar_one_or_none()
     if not user:
         return {"message": "If an account exists for this email, a reset link has been sent."}
 
@@ -161,7 +166,7 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/reset-password")
-def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
+async def reset_password(reset_data: PasswordReset, db: AsyncSession = Depends(get_db)):
     """Reset a user's password using a valid reset token."""
     token_info = _reset_tokens.get(reset_data.token)
     if not token_info:
@@ -183,7 +188,8 @@ def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
             detail="Email does not match reset token",
         )
 
-    user = db.query(User).filter(User.email == reset_data.email).first()
+    result = await db.execute(select(User).filter(User.email == reset_data.email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -193,7 +199,7 @@ def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
     new_password = reset_data.new_password[:72] if len(reset_data.new_password) > 72 else reset_data.new_password
     user.set_password(new_password)
     user.updated_at = _now_iso()
-    db.commit()
+    await db.commit()
 
     del _reset_tokens[reset_data.token]
 

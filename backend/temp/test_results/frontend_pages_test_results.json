@@ -1,0 +1,50 @@
+{
+  "Backend Endpoints": {
+    "Health": true,
+    "Auth": true,
+    "Documents": false,
+    "Validation": true,
+    "Analysis": false,
+    "Users": false,
+    "Projects": false
+  },
+  "Document Upload API": {
+    "status": false
+  },
+  "Validation API": {
+    "status": false
+  },
+  "Analysis API": {
+    "status": false
+  },
+  "Enhanced Features": {
+    "pdf_table_extraction": true,
+    "enhanced_ocr": true,
+    "merged_modal_cleanup": true,
+    "llm_validation": true,
+    "cross_requirement_consistency": true,
+    "version_history": true,
+    "confidence_filtering": true,
+    "zero_retention": true
+  },
+  "Frontend Pages": {
+    "Landing Page": false,
+    "Login": false,
+    "Document Upload": false,
+    "Documents": false,
+    "Analysis Results": false,
+    "Dashboard": false,
+    "Settings": false,
+    "User Management": false,
+    "Traceability": false,
+    "Visualization": false
+  },
+  "Business Rules": {
+    "BR07_file_types": true,
+    "BR08_file_size": true,
+    "BR09_zero_retention": true,
+    "BR10_confidence": true,
+    "BR14_state_consistency": true,
+    "BR15_undo_log": true
+  }
+}

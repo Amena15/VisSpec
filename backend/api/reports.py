@@ -10,7 +10,7 @@ from utils.security import get_current_active_user
 from config.database import get_db
 from services.report.export_service import ReportExportService
 
-router = APIRouter(prefix="/api/reports", tags=["reports"])
+router = APIRouter(tags=["reports"])
 
 
 @router.post("/export")

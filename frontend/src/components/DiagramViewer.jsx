@@ -69,7 +69,6 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
   useEffect(() => {
     if (!isPlantUML) {
       const renderDiagram = async () => {
-        console.log('Rendering diagram...', { chartString, darkMode }); // Debug log
         if (diagramRef.current && chartString) {
           try {
             const mermaidModule = await import('mermaid');
@@ -114,12 +113,8 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
             // Generate a unique ID for the diagram
             const diagramId = 'diagram-' + Date.now();
 
-            console.log('About to render mermaid diagram with ID:', diagramId); // Debug log
-            console.log('Chart string:', chartString); // Debug log
-
             // Render the diagram to SVG
             const { svg } = await mermaid.render(diagramId, chartString);
-            console.log('SVG generated successfully'); // Debug log
 
             diagramRef.current.innerHTML = svg;
           } catch (error) {
@@ -155,8 +150,6 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
               </div>
             `;
           }
-        } else {
-          console.log('Diagram conditions not met', { hasRef: !!diagramRef.current, hasChartString: !!chartString }); // Debug log
         }
       };
 

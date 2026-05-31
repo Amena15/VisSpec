@@ -1,0 +1,34 @@
+{
+  "module_2": {
+    "pdf_table_extraction": true,
+    "enhanced_ocr": true,
+    "merged_modal_cleanup": true,
+    "docx_table_extraction": true,
+    "structure_identification": true
+  },
+  "module_3": {
+    "llm_validator_creation": true,
+    "confidence_filtering": true,
+    "zero_retention_logging": true,
+    "enhanced_validator": true,
+    "cross_requirement_consistency": true,
+    "similarity_analysis": true
+  },
+  "suggestion": {
+    "version_history_model": true,
+    "apply_suggestion_logic": true,
+    "undo_logic": true,
+    "defect_status_update": true
+  },
+  "business_rules": {
+    "BR07_file_types": true,
+    "BR08_file_size": true,
+    "BR09_zero_retention": true,
+    "BR10_confidence": true,
+    "BR14_state_consistency": true,
+    "BR15_undo_log": true
+  },
+  "overall_rate": 100.0,
+  "tests_passed": 21,
+  "total_tests": 21
+}

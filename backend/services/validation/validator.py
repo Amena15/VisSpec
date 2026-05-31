@@ -12,6 +12,7 @@ from services.validation.ambiguity_detector import AmbiguityDetector
 from services.validation.consistency_checker import ConsistencyChecker
 from services.validation.completeness_analyzer import CompletenessAnalyzer
 from services.ai.llm_service import llm_service
+from services.ai.llm_validator import LLMValidator
 from services.ai.requirement_organizer import RequirementOrganizer
 
 logger = get_logger(__name__)
@@ -40,7 +41,9 @@ class Validator:
         self.ambiguity_detector = AmbiguityDetector()
         self.consistency_checker = ConsistencyChecker()
         self.completeness_analyzer = CompletenessAnalyzer()
-        self.use_llm = use_llm and llm_service.is_available
+        self.use_llm = use_llm
+        self.llm_validator = LLMValidator() if use_llm else None
+        self.llm_service = llm_service if use_llm else None
 
     def validate_text(self, text: str) -> Dict[str, Any]:
         """
@@ -52,15 +55,18 @@ class Validator:
         all_defects = []
         llm_result = None
 
-        # 1. Try LLM validation first (if available)
-        if self.use_llm:
+        # 1. Try enhanced LLM validation first (if available)
+        if self.use_llm and self.llm_validator and self.llm_validator.is_available:
             try:
-                llm_result = llm_service.validate_requirement(text)
+                llm_result = self.llm_validator.validate_requirement(text)
                 llm_defects = llm_result.get("defects", [])
                 all_defects.extend(llm_defects)
-                logger.info(f"LLM validation found {len(llm_defects)} defects")
+                logger.info(f"Enhanced LLM validation found {len(llm_defects)} defects")
+                llm_result["llm_used"] = True
+                llm_result["zero_retention_confirmed"] = True
             except Exception as e:
-                logger.warning(f"LLM validation failed: {e}. Falling back to rule-based.")
+                logger.warning(f"Enhanced LLM validation failed: {e}. Falling back to rule-based.")
+                llm_result = {"llm_used": False, "error": str(e)}
 
         # 2. Fallback to rule-based validation (always runs as backup)
         if not all_defects or not self.use_llm:

@@ -1,0 +1,43 @@
+{
+  "Module 2 Requirements": {
+    "REQ_04_upload": false,
+    "REQ_05_extraction": true,
+    "REQ_06_structure": true,
+    "REQ_07_deletion": false,
+    "pdf_table_extraction": true,
+    "enhanced_ocr": true,
+    "merged_modal_cleanup": true,
+    "docx_table_extraction": true,
+    "file_validation": true,
+    "storage_quota": true,
+    "cascade_deletion": true
+  },
+  "Module 3 Requirements": {
+    "REQ_08_ambiguity": true,
+    "REQ_09_inconsistency": true,
+    "REQ_10_classification": true,
+    "llm_validation": true,
+    "rule_based_validation": true,
+    "confidence_filtering": true,
+    "zero_retention": true,
+    "suggestion_application": false,
+    "undo_functionality": false,
+    "quality_score": true,
+    "cross_requirement": true
+  },
+  "Business Rules": {
+    "BR07_file_types": true,
+    "BR08_file_size": true,
+    "BR09_zero_retention": true,
+    "BR10_confidence": true,
+    "BR14_state_consistency": true,
+    "BR15_undo_log": true
+  },
+  "Frontend Integration": {
+    "validation_components": true,
+    "api_integration": true,
+    "suggestion_workflow": false,
+    "undo_workflow": false,
+    "validation_display": false
+  }
+}

@@ -88,6 +88,18 @@ class PredictiveAnalyzer:
 
         logger.info("PredictiveAnalyzer initialized with Section 4.8.1 weights and scikit-learn MinMaxScaler")
 
+    def analyze(self, text: str) -> PredictiveResult:
+        """
+        Main analysis method - returns PredictiveResult object.
+        
+        Args:
+            text: Requirements text to analyze
+            
+        Returns:
+            PredictiveResult with all fields required by REQ_14, REQ_15, REQ_10
+        """
+        return self._analyze(text)
+
     def analyze_text(self, text: str) -> Dict[str, any]:
         """
         Main entry point - backward compatible interface.

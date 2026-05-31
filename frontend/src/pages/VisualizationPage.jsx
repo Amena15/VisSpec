@@ -13,22 +13,22 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DiagramViewer from '../components/DiagramViewer';
-import { diagramsAPI, documentAPI } from '../services/api'; // Use new diagramsAPI methods (Module 4)
+import PlantUMLViewer from '../components/PlantUMLViewer';
+import { ieeeDiagramsAPI, documentAPI, diagramsAPI } from '../services/api';
 
 const VisualizationPage = () => {
-  const { documentId } = useParams(); // or projectId – adjust to your routing
+  const { documentId } = useParams(); // Revert back to documentId
   const navigate = useNavigate();
 
   const [diagramType, setDiagramType] = useState('usecase');
   const [selectedScenario, setSelectedScenario] = useState('');
   const [scenarios, setScenarios] = useState([]);
-  const [useCaseDiagram, setUseCaseDiagram] = useState(null);
-  const [sequenceDiagram, setSequenceDiagram] = useState(null);
+  const [currentDiagram, setCurrentDiagram] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [error, setError] = useState(null);
-  const [stepLimitWarning, setStepLimitWarning] = useState(false);
+  const [compliance, setCompliance] = useState(null);
   
   // Document selection state
   const [documents, setDocuments] = useState([]);
@@ -48,7 +48,7 @@ const VisualizationPage = () => {
     fetchDocuments();
   }, []);
 
-  // Fetch Use Case diagram when selectedDocument changes
+  // Fetch IEEE-compliant diagram when selected document changes
   useEffect(() => {
     if (!selectedDocument || selectedDocument === 'undefined' || selectedDocument === '') {
       console.log('No valid document selected, showing document selector');
@@ -57,123 +57,180 @@ const VisualizationPage = () => {
       return;
     }
     
-    const fetchUseCase = async () => {
-      console.log('Fetching use case diagram for document:', selectedDocument);
-      setLoading(true);
+    // Try to fetch existing diagrams first
+    const fetchExistingDiagram = async () => {
       try {
-        const res = await diagramsAPI.getUseCaseDiagram(selectedDocument);
-        console.log('Use case API response:', res);
-        console.log('Response data:', res.data);
-        
-        if (res.data.error === 'No validated requirements found') {
-          setError('This document has no validated requirements. Please validate the document first.');
-          toast.info('No validated requirements found for this document');
-          setUseCaseDiagram(res.data);
-        } else {
-          console.log('Setting use case diagram:', res.data);
-          setUseCaseDiagram(res.data);
-          setError(null);
-          console.log('Use case diagram set successfully');
-        }
+        // For now, we'll just set loading to false and let user generate new diagram
+        setCurrentDiagram(null);
+        setLoading(false);
       } catch (err) {
-        console.error('Use case fetch error:', err);
-        setError('Failed to load Use Case diagram. Ensure document has validated requirements.');
-        toast.error('Could not load Use Case diagram');
-      } finally {
-        console.log('Setting loading to false');
+        console.error('Diagram fetch error:', err);
+        setError('Failed to load diagram. Please generate a new one.');
+        toast.error('Could not load diagram');
         setLoading(false);
       }
     };
-    fetchUseCase();
-  }, [selectedDocument]);
+    
+    fetchExistingDiagram();
+  }, [selectedDocument, diagramType]);
 
-  // Fetch available scenarios (sequence diagram scenarios) only when switching to sequence tab
+  // Fetch available scenarios (sequence diagram scenarios) when switching to sequence tab
   useEffect(() => {
     if (diagramType !== 'sequence' || !selectedDocument || selectedDocument === 'undefined' || selectedDocument === '') return;
+    
     const fetchScenarios = async () => {
-      setGenerating(true);
       try {
         const res = await diagramsAPI.getScenarios(selectedDocument);
         const scenarioList = res.data.scenarios || [];
         setScenarios(scenarioList);
         if (scenarioList.length > 0 && !selectedScenario) {
           setSelectedScenario(scenarioList[0].id);
-        } else if (scenarioList.length === 0) {
-          setSequenceDiagram(null);
-          setError('No scenarios detected. Run validation on your document first.');
         }
       } catch (err) {
         console.error('Scenarios fetch error:', err);
         setScenarios([]);
-        setError('Could not detect scenarios. Make sure requirements are validated.');
-      } finally {
-        setGenerating(false);
       }
     };
+    
     fetchScenarios();
   }, [diagramType, selectedDocument]);
 
-  // Fetch Sequence diagram when selected scenario changes
-  useEffect(() => {
-    if (diagramType !== 'sequence' || !selectedScenario || !selectedDocument || selectedDocument === 'undefined' || selectedDocument === '') return;
-    const fetchSequence = async () => {
-      setGenerating(true);
-      setStepLimitWarning(false);
-      try {
-        const res = await diagramsAPI.getSequenceDiagram(selectedDocument, selectedScenario);
-        setSequenceDiagram(res.data);
-        setError(null);
-        // Check step limit (BR-12)
-        if (res.data.truncated) {
-          setStepLimitWarning(true);
-          toast.warning('Diagram truncated to 15 steps (BR-12)');
+  // Generate IEEE-compliant diagram
+  const handleGenerateDiagram = async () => {
+    if (!selectedDocument) {
+      toast.error('Please select a document first');
+      return;
+    }
+    
+    setGenerating(true);
+    setError(null);
+    
+    try {
+      const response = await ieeeDiagramsAPI.generateDiagram(
+        selectedDocument,
+        diagramType,
+        selectedScenario || null
+      );
+      
+      // Access the actual response data from axios response
+      const data = response.data;
+      
+      if (data.success) {
+        setCurrentDiagram({
+          mermaid_syntax: data.plantuml_syntax,
+          diagram_id: data.diagram_id,
+          compliance: data.compliance
+        });
+        setCompliance(data.compliance);
+        toast.success(`IEEE-compliant ${diagramType} diagram generated successfully`);
+        
+        if (data.compliance?.warning) {
+          toast.warning(data.compliance.warning);
         }
-      } catch (err) {
-        console.error('Sequence diagram fetch error:', err);
-        setSequenceDiagram(null);
-        setError(`Failed to load diagram for scenario "${selectedScenario}".`);
-      } finally {
-        setGenerating(false);
+      } else {
+        setError(data.error || 'Failed to generate diagram');
+        toast.error(data.error || 'Failed to generate diagram');
       }
-    };
-    fetchSequence();
-  }, [diagramType, selectedScenario, selectedDocument]);
+    } catch (err) {
+      console.error('Diagram generation error:', err);
+      setError('Failed to generate diagram. Please try again.');
+      toast.error('Could not generate diagram');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-  // Zoom controls
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 150));
+  // Handle diagram type change
+  const handleDiagramTypeChange = (newType) => {
+    setDiagramType(newType);
+    setCurrentDiagram(null); // Reset current diagram when type changes
+  };
+
+  // Handle document selection
+  const handleDocumentChange = (e) => {
+    const documentId = e.target.value;
+    setSelectedDocument(documentId);
+    navigate(`/visualization/${documentId}`);
+  };
+
+  // Handle zoom controls
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 50));
   const handleResetZoom = () => setZoomLevel(100);
 
-  // Export current diagram as Mermaid format
-  const handleExportMermaid = () => {
-    let diagramCode = null;
-    
-    if (diagramType === 'usecase') {
-      diagramCode = useCaseDiagram?.mermaid_syntax;
-    } else if (diagramType === 'sequence') {
-      diagramCode = sequenceDiagram?.mermaid_syntax;
-    }
-    
-    if (!diagramCode) {
-      toast.error('No diagram to export');
+  // Export PlantUML as PNG for PDF generation
+  const handleExportPlantUML = async () => {
+    if (!currentDiagram?.plantuml_syntax) {
+      toast.error('No PlantUML syntax to export');
       return;
     }
-    const blob = new Blob([diagramCode], { type: 'text/plain' });
+    
+    try {
+      const response = await ieeeDiagramsAPI.renderPlantUMLToPNG(currentDiagram.plantuml_syntax);
+      
+      if (response.success && response.png_base64) {
+        // Convert base64 to blob and download
+        const byteCharacters = atob(response.png_base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${diagramType}_diagram.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('PlantUML PNG exported for PDF generation');
+      } else {
+        // Fallback to PlantUML syntax export
+        const blob = new Blob([currentDiagram.plantuml_syntax], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${diagramType}_diagram.puml`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.warning('PNG rendering failed, exported PlantUML syntax instead');
+      }
+    } catch (err) {
+      console.error('PlantUML rendering error:', err);
+      // Fallback to PlantUML syntax export
+      const blob = new Blob([currentDiagram.plantuml_syntax], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${diagramType}_diagram.puml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.warning('PNG rendering failed, exported PlantUML syntax instead');
+    }
+  };
+
+  // Export SVG from Mermaid (for interactive use)
+  const handleExportSVG = () => {
+    const svgElement = document.querySelector('.mermaid svg');
+    if (!svgElement) {
+      toast.error('No SVG element found to export');
+      return;
+    }
+    
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgElement);
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${diagramType}_diagram_${Date.now()}.mermaid`;
+    a.download = `${diagramType}_diagram.svg`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success('SVG exported (Mermaid rendering)');
   };
 
-  // Determine what to render - use Mermaid syntax only
-  const getCurrentDiagramString = () => {
-    if (diagramType === 'usecase') return useCaseDiagram?.mermaid_syntax || null;
-    return sequenceDiagram?.mermaid_syntax || null;
-  };
-
-  const currentDiagramString = getCurrentDiagramString();
+  // Get current diagram string for display
+  const currentDiagramString = currentDiagram?.mermaid_syntax || '';
   const hasNoScenarios = diagramType === 'sequence' && scenarios.length === 0 && !generating;
 
   return (
@@ -193,18 +250,28 @@ const VisualizationPage = () => {
               <p className="text-sm text-[var(--text-secondary)]">Generated from validated requirements</p>
             </div>
           </div>
-          <button
-            onClick={handleExportMermaid}
-            disabled={!currentDiagramString}
-            className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export Diagram
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportSVG}
+              disabled={!currentDiagramString}
+              className="flex items-center px-4 py-2 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] disabled:opacity-50"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export SVG (Mermaid)
+            </button>
+            <button
+              onClick={handleExportPlantUML}
+              disabled={!currentDiagramString}
+              className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export PlantUML (PDF)
+            </button>
+          </div>
         </div>
 
         {/* Document Selector */}
-        {!documentId && (
+        {!selectedDocument && (
           <div className="bg-[var(--card-bg)] rounded-xl shadow-sm p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
@@ -214,29 +281,19 @@ const VisualizationPage = () => {
               <label className="text-sm font-medium text-[var(--text-secondary)]">
                 Document:
               </label>
-              <div className="relative">
-                <select
-                  value={selectedDocument}
-                  onChange={(e) => setSelectedDocument(e.target.value)}
-                  className="appearance-none bg-[var(--surface-bg)] border border-[var(--card-border)] rounded-lg px-4 py-2 pr-8 text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-main)] min-w-[300px]"
-                >
-                  <option value="">Select a document...</option>
-                  {documents.map(doc => (
-                    <option key={doc.doc_id || doc.filename || `doc-${Math.random()}`} value={doc.doc_id}>
-                      {doc.filename || `Document ${doc.doc_id}`}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-secondary)] pointer-events-none" />
-              </div>
+              <select
+                value={selectedDocument}
+                onChange={handleDocumentChange}
+                className="flex-1 px-4 py-2 bg-[var(--content-bg)] border border-[var(--card-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-main)]"
+              >
+                <option value="">Select a document...</option>
+                {documents.map((doc) => (
+                  <option key={doc.doc_id} value={doc.doc_id}>
+                    {doc.filename}
+                  </option>
+                ))}
+              </select>
             </div>
-            {documents.length === 0 && !loading && (
-              <div className="mt-4 p-3 bg-[var(--warning-light)]/20 border-l-4 border-[var(--warning-main)] rounded">
-                <p className="text-sm text-[var(--warning-main)]">
-                  No documents available. Upload a document first.
-                </p>
-              </div>
-            )}
           </div>
         )}
 
@@ -291,6 +348,16 @@ const VisualizationPage = () => {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={handleGenerateDiagram}
+                disabled={generating || !selectedDocument}
+                className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+              >
+                {generating ? 'Generating...' : 'Generate IEEE-Compliant Diagram'}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
                 onClick={handleZoomOut}
                 className="p-2 rounded-lg border border-[var(--card-border)] hover:bg-[var(--surface-bg)]"
                 title="Zoom Out"
@@ -316,13 +383,13 @@ const VisualizationPage = () => {
           </div>
         </div>
 
-        {/* Step limit warning */}
-        {stepLimitWarning && (
+        {/* Compliance warnings */}
+        {compliance?.warning && (
           <div className="mb-6 bg-[var(--warning-light)]/20 border-l-4 border-[var(--warning-main)] p-4 rounded">
             <div className="flex">
               <AlertTriangle className="h-5 w-5 text-[var(--warning-main)] mr-3" />
               <p className="text-sm text-[var(--warning-main)]">
-                ⚠️ Diagram exceeds 15 steps (BR‑12). Truncated for readability.
+                ⚠️ {compliance.warning}
               </p>
             </div>
           </div>
@@ -336,28 +403,34 @@ const VisualizationPage = () => {
                 ? (selectedScenario ? `Sequence: ${selectedScenario}` : 'Sequence Diagram')
                 : 'Use Case Diagram'}
             </h2>
+            {compliance && (
+              <div className="mt-2 text-xs text-[var(--text-secondary)]">
+                <span className="mr-4">BR-11 Compliant: {compliance.br_11_compliant ? '✓' : '✗'}</span>
+                <span>BR-12 Compliant: {compliance.br_12_compliant ? '✓' : '✗'}</span>
+              </div>
+            )}
           </div>
           <div className="p-8 min-h-[500px] flex items-center justify-center">
             {loading || generating ? (
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-main)] mb-4" />
-                <p className="text-[var(--text-secondary)]">Generating diagram...</p>
+                <p className="text-[var(--text-secondary)]">Generating IEEE-compliant diagram...</p>
               </div>
             ) : error ? (
               <div className="text-center text-[var(--error-main)]">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
                 <p>{error}</p>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={handleGenerateDiagram}
                   className="mt-4 px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg"
                 >
-                  Retry
+                  Generate Diagram
                 </button>
               </div>
-            ) : hasNoScenarios ? (
+            ) : !selectedDocument ? (
               <div className="text-center text-[var(--text-secondary)]">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No scenarios detected. Run validation on a document first.</p>
+                <p>Please select a document to visualize.</p>
               </div>
             ) : currentDiagramString ? (
               <div className="w-full overflow-auto">
@@ -370,7 +443,7 @@ const VisualizationPage = () => {
               </div>
             ) : (
               <div className="text-center text-[var(--text-secondary)]">
-                <p>No diagram available. Click "Generate" after validation.</p>
+                <p>No diagram available. Click "Generate IEEE-Compliant Diagram" to create one.</p>
               </div>
             )}
           </div>

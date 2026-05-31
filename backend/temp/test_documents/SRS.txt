@@ -1,0 +1,23 @@
+1. INTRODUCTION
+BR-07 File upload accepts only .pdf, .docx, .txt
+The system shall validate uploaded files to accept only PDF, DOCX, and TXT formats.
+
+BR-08 Maximum file size enforced: 10MB
+The system shall reject files larger than 10 megabytes during upload.
+
+2. FUNCTIONAL REQUIREMENTS
+2.1 Document Parsing
+The system shall use PyMuPDF for PDF text extraction preserving structure.
+The system shall use python-docx for DOCX extraction.
+The system shall provide OCR fallback for scanned PDFs returning error message.
+
+2.2 Structure Identification
+The system shall identify headers, requirement IDs (BR-##), and body text.
+
+3. STORAGE
+The system shall store extracted_text in PostgreSQL with status 'Ready for Analysis' and calculated word_count.
+
+4. DELETION
+The system shall permanently delete document and cascade to requirements, validation_results tables.
+
+Word count test: this document has approximately 150 words.

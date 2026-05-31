@@ -78,7 +78,12 @@ export const useDashboardData = () => {
 
   // Calculate statistics from data
   const calculateStats = useCallback((docs, projs) => {
-    const completedDocs = docs.filter(d => d.status === 'completed' || d.status === 'Analyzed & Organized').length;
+    const completedDocs = docs.filter(d => 
+      d.status === 'completed' || 
+      d.status === 'Analyzed & Organized' ||
+      d.status === 'Validated - Issues Found' ||
+      d.status === 'Validated - Minor Issues'
+    ).length;
     const avgQualityScore = docs.length > 0 
       ? Math.round(docs.reduce((sum, doc) => sum + (doc.qualityScore || 0), 0) / docs.length)
       : 0;

@@ -3,7 +3,13 @@ import io
 import re
 from typing import Dict, Any, Optional, List, Tuple
 
-from services.ai.text_cleaner import TextCleaner
+try:
+    from services.ai.text_cleaner import TextCleaner
+except ImportError:
+    TextCleaner = None
+
+# Import enhanced parser
+from services.document.parser_enhanced import EnhancedDocumentParser
 
 
 def _collapse_repeated_word_token(match: re.Match) -> str:
@@ -57,24 +63,69 @@ class DocumentParser:
     ]
 
     def parse_pdf(self, file_content: bytes, filename: str) -> Dict[str, Any]:
-        """Parse a PDF file and extract text, page count, metadata."""
+        """Parse a PDF file and extract text with structure and table extraction."""
+        import fitz
+        import io
+        
+        doc = fitz.open(stream=io.BytesIO(file_content), filetype="pdf")
+        
+        result = {
+            "filename": filename,
+            "file_extension": "pdf",
+            "text": "",
+            "page_count": len(doc),
+            "word_count": 0,
+            "is_scanned_pdf": 0,
+            "extracted_author": "",
+            "extracted_version": "",
+            "tables_found": 0,
+            "table_rows_extracted": 0,
+        }
+        
         try:
-            import fitz  # PyMuPDF
-            doc = fitz.open(stream=file_content, filetype="pdf")
-            text = ""
-            for page in doc:
-                text += page.get_text()
-
-            result = {
-                "filename": filename,
-                "file_extension": "pdf",
-                "text": text,
-                "page_count": len(doc),
-                "word_count": len(text.split()),
-                "is_scanned_pdf": self._detect_scanned(doc),
-                "extracted_author": doc.metadata.get("author", ""),
-                "extracted_version": doc.metadata.get("modDate", ""),
-            }
+            # Extract text from each page with structure preservation
+            full_text = ""
+            
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                
+                # Get text with layout information
+                text = page.get_text()
+                
+                # Add page separator for structure preservation
+                if text.strip():
+                    full_text += text + "\n\n"
+            
+            # Extract table content using camelot-py (Phase 2.1)
+            table_text = self._extract_pdf_tables(doc)
+            if table_text:
+                full_text += "\n\n" + table_text
+                result["tables_found"] = len([page for page in doc if self._page_has_tables(page)])
+                result["table_rows_extracted"] = len(table_text.split('\n'))
+                logger.info(f"Extracted content from {result['tables_found']} table pages")
+            
+            # Check if PDF is scanned (very little text)
+            if self._detect_scanned(doc):
+                result["is_scanned_pdf"] = 1
+                # Try enhanced OCR as fallback (Phase 2.2)
+                ocr_text = self._attempt_enhanced_ocr(doc)
+                if ocr_text:
+                    full_text = ocr_text
+                else:
+                    result["error"] = "No text detected in scanned PDF. OCR failed. Please use a text-based PDF or convert the document to text format."
+            
+            # Apply cleanup for merged modal verbs
+            cleaned_text = self._cleanup_merged_modals(full_text)
+            
+            result["extracted_text"] = cleaned_text
+            result["text"] = cleaned_text
+            result["word_count"] = len(cleaned_text.split())
+            
+            # Extract metadata
+            metadata = doc.metadata
+            result["extracted_author"] = metadata.get("author", "")
+            result["extracted_version"] = str(metadata.get("creationDate", ""))
+            
             doc.close()
             return result
         except ImportError:
@@ -83,21 +134,48 @@ class DocumentParser:
             return {"error": str(e)}
 
     def parse_docx(self, file_content: bytes, filename: str) -> Dict[str, Any]:
-        """Parse a DOCX file and extract text and metadata."""
+        """Parse a DOCX file and extract text and metadata including table content."""
         try:
             from docx import Document
             doc = Document(io.BytesIO(file_content))
-            text = "\n".join(p.text for p in doc.paragraphs)
+            
+            # Extract paragraph text
+            paragraph_text = "\n".join(p.text for p in doc.paragraphs)
+            
+            # Extract table content (this is where functional requirements often are)
+            table_text = []
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = []
+                    for cell in row.cells:
+                        cell_text = cell.text.strip()
+                        if cell_text:
+                            row_text.append(cell_text)
+                    if row_text:
+                        # Process each cell as a potential requirement
+                        for cell_text in row_text:
+                            if len(cell_text.strip()) > 5:  # Skip very short cells
+                                table_text.append(cell_text.strip())
+                        # Also keep the combined row for context
+                        table_text.append(" | ".join(row_text))
+            
+            # Combine paragraph and table text
+            all_text = paragraph_text + "\n\n" + "\n".join(table_text)
+            
+            # Apply basic cleanup for merged modal verbs
+            cleaned_text = self._cleanup_merged_modals(all_text)
 
             return {
                 "filename": filename,
                 "file_extension": "docx",
-                "text": text,
+                "text": cleaned_text,
                 "page_count": None,  # DOCX doesn't have fixed pages
-                "word_count": len(text.split()),
+                "word_count": len(cleaned_text.split()),
                 "is_scanned_pdf": 0,
                 "extracted_author": doc.core_properties.author or "",
                 "extracted_version": str(doc.core_properties.revision or ""),
+                "tables_found": len(doc.tables),
+                "table_rows_extracted": sum(len(table.rows) for table in doc.tables),
             }
         except ImportError:
             return {"error": "python-docx not installed. Run: pip install python-docx"}
@@ -140,6 +218,189 @@ class DocumentParser:
         """Detect if a PDF is scanned (contains images but little text)."""
         total_text = sum(len(page.get_text().strip()) for page in pdf_doc)
         return 1 if total_text < 100 else 0
+    
+    def _cleanup_merged_modals(self, text: str) -> str:
+        """Clean up merged modal verbs like 'shallshould', 'shallwill', etc."""
+        if not text:
+            return text
+        
+        # Common merged modal patterns
+        merged_patterns = {
+            'shallshould': 'shall',
+            'shallwill': 'shall',
+            'shallmust': 'shall',
+            'shouldwill': 'should',
+            'shouldmust': 'should',
+            'willmust': 'will',
+            'mayshall': 'may',
+            'canshall': 'can',
+            'mustshould': 'must',
+            'mustwill': 'must',
+        }
+        
+        # Apply replacements
+        cleaned_text = text
+        for merged, correct in merged_patterns.items():
+            cleaned_text = cleaned_text.replace(merged, correct)
+        
+        # Only remove exact duplicates with no space in between (like 'shallshall')
+        # Don't remove legitimate modal verbs
+        cleaned_text = re.sub(r'(shall|must|should|will|may|can)\1', r'\1', cleaned_text)
+        
+        return cleaned_text
+    
+    def _extract_pdf_tables(self, pdf_doc) -> str:
+        """Extract table content from PDF using camelot-py (Phase 2.1)."""
+        try:
+            import camelot
+            import io
+            import pandas as pd
+            
+            table_text = []
+            tables_found = 0
+            
+            for page_num in range(len(pdf_doc)):
+                try:
+                    # Extract tables from current page
+                    tables = camelot.read_pdf(io.BytesIO(pdf_doc.write()), pages=str(page_num + 1))
+                    
+                    if tables:
+                        tables_found += len(tables)
+                        logger.info(f"Found {len(tables)} tables on page {page_num + 1}")
+                        
+                        for table in tables:
+                            # Convert table to structured text
+                            table_df = table.df
+                            
+                            # Process each row
+                            for _, row in table_df.iterrows():
+                                # Skip empty rows
+                                if row.isna().all():
+                                    continue
+                                
+                                # Clean and join cell content
+                                row_text = []
+                                for cell in row:
+                                    if pd.notna(cell) and str(cell).strip():
+                                        row_text.append(str(cell).strip())
+                                
+                                if row_text:
+                                    # Join cells with | separator for requirement extraction
+                                    table_text.append(" | ".join(row_text))
+                    
+                except Exception as e:
+                    logger.debug(f"Could not extract tables from page {page_num + 1}: {e}")
+                    continue
+            
+            if table_text:
+                logger.info(f"Extracted {len(table_text)} table rows from {tables_found} tables")
+                return "\n".join(table_text)
+            
+            return ""
+            
+        except ImportError:
+            logger.warning("camelot-py not installed. PDF table extraction disabled.")
+            return ""
+        except Exception as e:
+            logger.error(f"PDF table extraction failed: {e}")
+            return ""
+
+    def _page_has_tables(self, page) -> bool:
+        """Check if a PDF page contains table-like structures."""
+        try:
+            # Simple heuristic: look for repeated tabular patterns
+            text = page.get_text()
+            lines = text.split('\n')
+            
+            # Look for lines with multiple tab-separated or space-separated columns
+            tabular_lines = 0
+            for line in lines:
+                if line.strip():
+                    # Check for patterns suggesting table structure
+                    if (line.count('\t') >= 2 or 
+                        len(line.split()) >= 4 or
+                        any(char in line for char in ['|', '├', '┤', '┬', '┴'])):
+                        tabular_lines += 1
+            
+            return tabular_lines >= 3  # At least 3 tabular lines suggest a table
+            
+        except Exception:
+            return False
+
+    def _attempt_enhanced_ocr(self, pdf_doc) -> Optional[str]:
+        """Enhanced OCR for scanned PDFs with multiple strategies (Phase 2.2)."""
+        try:
+            import pytesseract
+            from PIL import Image
+            import io
+            
+            all_text = []
+            ocr_used = False
+            
+            for page_num, page in enumerate(pdf_doc):
+                page_text = ""
+                
+                # Strategy 1: Try with PSM 6 (uniform block of text)
+                try:
+                    pix = page.get_pixmap()
+                    img_data = pix.tobytes("png")
+                    image = Image.open(io.BytesIO(img_data))
+                    
+                    text = pytesseract.image_to_string(
+                        image, 
+                        lang='eng',
+                        config='--psm 6'
+                    )
+                    
+                    if text.strip() and len(text.strip()) > 20:
+                        page_text = text
+                        ocr_used = True
+                        logger.debug(f"Page {page_num + 1}: OCR PSM 6 successful")
+                
+                except Exception as e:
+                    logger.debug(f"Page {page_num + 1}: OCR PSM 6 failed: {e}")
+                
+                # Strategy 2: Try with PSM 3 if first attempt failed
+                if not page_text.strip():
+                    try:
+                        pix = page.get_pixmap()
+                        img_data = pix.tobytes("png")
+                        image = Image.open(io.BytesIO(img_data))
+                        
+                        text = pytesseract.image_to_string(
+                            image,
+                            lang='eng', 
+                            config='--psm 3'
+                        )
+                        
+                        if text.strip() and len(text.strip()) > 20:
+                            page_text = text
+                            ocr_used = True
+                            logger.debug(f"Page {page_num + 1}: OCR PSM 3 successful")
+                    
+                    except Exception as e:
+                        logger.debug(f"Page {page_num + 1}: OCR PSM 3 failed: {e}")
+                
+                if page_text.strip():
+                    all_text.append(page_text)
+            
+            if ocr_used:
+                combined_text = "\n\n".join(all_text)
+                logger.info(f"Enhanced OCR extracted {len(combined_text.split())} words from {len(pdf_doc)} pages")
+                return combined_text
+            
+            return None
+            
+        except ImportError:
+            logger.warning("pytesseract not installed. OCR functionality disabled.")
+            return None
+        except Exception as e:
+            logger.error(f"Enhanced OCR failed: {e}")
+            return None
+
+    def _attempt_ocr(self, pdf_doc) -> Optional[str]:
+        """Legacy OCR method - delegates to enhanced OCR."""
+        return self._attempt_enhanced_ocr(pdf_doc)
 
     def identify_structure(self, text: str) -> List[Dict[str, Any]]:
         """
@@ -212,121 +473,21 @@ class DocumentParser:
 
     def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
         """
-        Extract requirements from text using improved patterns.
-        Properly identifies individual requirement statements.
-        Supports multi-line requirements (accumulates until period followed by newline).
+        Enhanced requirement extraction for professional quality.
+        Focuses on complete sentences and proper requirement identification.
         """
         if not text:
             return []
         
-        lines = text.split('\n')
-        requirements = []
-        seq = 0
-        current_requirement = None
+        # Use enhanced parser for better quality
+        enhanced_parser = EnhancedDocumentParser()
         
-        # Requirement identification patterns - more precise
-        req_patterns = [
-            # Numbered list items with modal verbs (e.g., "1. The system shall...")
-            r'^\s*\d+[\.\)]\s*(?:The\s+system|The\s+application|Users?|Doctor|Patient|Admin|Chemist|Lab|System|User|[A-Z][a-z]*)\s+(?:shall|must|should|will|may)\s+',
-            
-            # System requirements with modal verbs
-            r'\bThe\s+system\s+(?:shall|must|should|will|may)\s+',
-            r'\bThe\s+application\s+(?:shall|must|should|will|may)\s+',
-            r'\bUsers?\s+(?:shall|must|should|will|may)\s+',
-            
-            # General requirements with modal verbs
-            r'\b(?:shall|must|should|will|may)\s+',
-            
-            # Requirements with actors/subjects
-            r'\b(?:Doctor|Patient|Admin|Chemist|Lab|System|User)\s+(?:shall|must|should|will|may)\s+',
-            
-            # Requirements with clear subjects
-            r'\b[A-Z][a-z]*\s+(?:shall|must|should|will|may)\s+',
-        ]
+        # Clean text first
+        cleaned_text = self.sanitize_text(text)
         
-        # Non-requirement patterns to skip
-        skip_patterns = [
-            # Document structure
-            r'^(?:\d+\.?\s*)?(?:Introduction|Overview|Summary|Conclusion|Contents?|Table\s+\d+|Figure\s+\d+|Appendix\s+[A-Z]?)\b',
-            r'^[A-Z][A-Z\s]+$',
-            r'^\s*[=-]{3,}\s*$',
-            r'^\s*\d+\.\s*$',
-            
-            # Lists and references
-            r'^\s*[-•*]\s*',
-            r'^\s*\d+\)\s*',
-            r'^BR-\d+|FR-\d+|NFR-\d+|UC-\d+',
-            
-            # Meta descriptions
-            r'^(?:This\s+document|The\s+following|For\s+this|Word\s+count)',
-            r'^\s*(?:All\s+data|Full\s+system|The\s+system|The\s+codebase)',
-            
-            # Code/configuration patterns
-            r'^\s*(def |class |import |from |function |var |let |const )',
-        ]
+        # Extract requirements with enhanced quality
+        requirements = enhanced_parser.extract_requirements(cleaned_text)
         
-        for line in lines:
-            line_stripped = line.strip()
-            
-            # Skip empty lines
-            if not line_stripped:
-                # If we have a current requirement being built, save it
-                if current_requirement:
-                    self._finalize_requirement(current_requirement, requirements, seq)
-                    seq += 1
-                    current_requirement = None
-                continue
-            
-            # Skip very short lines (unless we're building a multi-line requirement)
-            if len(line_stripped) < 8 and not current_requirement:
-                continue
-            
-            # Skip non-requirement patterns
-            should_skip = False
-            for pattern in skip_patterns:
-                if re.search(pattern, line_stripped, re.IGNORECASE):
-                    should_skip = True
-                    break
-            
-            if should_skip and not current_requirement:
-                continue
-            
-            # Check if line starts a new requirement
-            is_requirement_start = False
-            for pattern in req_patterns:
-                if re.search(pattern, line_stripped, re.IGNORECASE):
-                    is_requirement_start = True
-                    break
-            
-            if is_requirement_start:
-                # Save previous requirement if exists
-                if current_requirement:
-                    self._finalize_requirement(current_requirement, requirements, seq)
-                    seq += 1
-                
-                # Start new requirement
-                current_requirement = {
-                    "text": line_stripped,
-                    "line_count": 1
-                }
-            elif current_requirement:
-                # Continue building multi-line requirement
-                current_requirement["text"] += " " + line_stripped
-                current_requirement["line_count"] += 1
-                
-                # Check if this line ends with a period (end of requirement)
-                if line_stripped.endswith('.'):
-                    self._finalize_requirement(current_requirement, requirements, seq)
-                    seq += 1
-                    current_requirement = None
-            else:
-                # Line doesn't match requirement patterns and we're not building one
-                continue
-
-        # Save any remaining requirement
-        if current_requirement:
-            self._finalize_requirement(current_requirement, requirements, seq)
-
         return requirements
     
     def _finalize_requirement(self, req_data: Dict[str, Any], requirements: List[Dict[str, Any]], seq: int):
@@ -360,7 +521,11 @@ class DocumentParser:
         text = re.sub(r'\b(\w+)(?:\s+\1)+\b', r'\1', text, flags=re.IGNORECASE)
         
         # Modal verbs jammed without space (e.g. shallwill) — \b between modals does not match
-        text = TextCleaner.fix_concatenated_modals(text)
+        try:
+            text = TextCleaner.fix_concatenated_modals(text)
+        except Exception as e:
+            # If TextCleaner fails, use simple regex fallback
+            text = re.sub(r'(shall|must|should|will|may|can)(shall|must|should|will|may|can)', r'\1', text, flags=re.IGNORECASE)
         
         # Handle concatenated duplicates (willwill -> will); skip digit-only tokens (preserves 25,000)
         text = re.sub(r'\b(\w+)(\1)+\b', _collapse_repeated_word_token, text, flags=re.IGNORECASE)

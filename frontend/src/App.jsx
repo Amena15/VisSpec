@@ -4,8 +4,13 @@ import { jwtDecode } from 'jwt-decode';
 import { Toaster } from 'sonner';
 
 import LoginPage from './pages/LoginPage';
+import DebugLoginRequest from './pages/DebugLoginRequest';
 import AnalystDashboard from './pages/AnalystDashboard';
 import SupervisorDashboard from './pages/SupervisorDashboard';
+import SupervisorReview from './pages/SupervisorReview';
+import SupervisorReports from './pages/SupervisorReports';
+import SupervisorReviewQueue from './pages/SupervisorReviewQueue';
+
 import DocumentAnalysis from './pages/DocumentAnalysis';
 import DocumentUpload from './pages/DocumentUpload';
 import MockAnalysis from './pages/MockAnalysis';
@@ -46,18 +51,25 @@ function App() {
 
   const handleLogin = (token) => {
     localStorage.setItem('token', token);
+
+    // IMPORTANT: token may be slightly different shape depending on backend.
+    // We store exactly what jwtDecode reads so ProtectedRoute can work immediately.
     const decoded = jwtDecode(token);
+
     setCurrentUser(decoded);
-    
+
     // Redirect to appropriate dashboard based on user role
     let redirectPath = '/dashboard';
-    if (decoded.role === 'developer' || decoded.role === 'student' || decoded.role === 'analyst') {
+    const role = decoded?.role;
+    if (role === 'developer' || role === 'student' || role === 'analyst') {
       redirectPath = '/analyst';
-    } else if (decoded.role === 'supervisor') {
+    } else if (role === 'supervisor') {
       redirectPath = '/supervisor';
     }
-    
-    window.location.href = redirectPath;
+
+    // Avoid full reload; keep React router state stable.
+    window.history.pushState({}, '', redirectPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   const handleLogout = () => {
@@ -67,7 +79,20 @@ function App() {
 
   // Protected route component
   const ProtectedRoute = ({ children, allowedRoles }) => {
+    // If currentUser isn't set yet, try to recover from token.
     if (!currentUser) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          if (decoded?.exp && decoded.exp * 1000 > Date.now()) {
+            // Keep it local; App-level state update is async so just render children.
+            return children;
+          }
+        } catch (e) {
+          // ignore, fall through to redirect
+        }
+      }
       return <Navigate to="/login" replace />;
     }
 
@@ -102,6 +127,10 @@ function App() {
               </div>
             </div>}
         />
+        <Route
+          path="/debug-login"
+          element={<div className="h-screen w-screen bg-[var(--content-bg)] overflow-hidden"><DebugLoginRequest /></div>}
+        />
 
         <Route element={
           <ProtectedRoute>
@@ -111,6 +140,10 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/analyst" element={<AnalystDashboard />} />
           <Route path="/supervisor" element={<SupervisorDashboard />} />
+          <Route path="/supervisor/review/:project_id" element={<SupervisorReview />} />
+          <Route path="/supervisor/reports" element={<SupervisorReports />} />
+          <Route path="/supervisor/review-queue" element={<SupervisorReviewQueue />} />
+
           <Route path="/analysis" element={<DocumentUpload />} />
           <Route path="/analysis-results" element={<AnalysisResults />} />
           <Route path="/analysis-results/:id" element={<AnalysisResults />} />

@@ -402,6 +402,12 @@ const AnalysisResults = () => {
     return document.status;
   }, [document, validation]);
 
+  // The backend auto-organizes requirements on upload for some flows,
+  // but for historical data we still need a manual action.
+  // The UI previously hid the button when validation existed.
+  const canOrganizeRequirements = Boolean(document?.doc_id);
+
+
   const highlightText = (text, req) => {
     if (!text) return text;
     
@@ -510,18 +516,41 @@ const AnalysisResults = () => {
                   </button>
                 </>
               )}
-              {/* Organization is now automatic when document loads */}
               {hasValidation && (
                 <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
                   <Download className="h-4 w-4 mr-2" /> Export Report
                 </button>
               )}
+
+              {/* Always show organize requirements for historical/dirty data */}
+              {(canOrganizeRequirements && !isValidating) && (
+                <button
+                  onClick={handleEnrichRequirements}
+                  disabled={isEnriching}
+                  className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                    isEnriching
+                      ? 'bg-[var(--surface-bg)] text-[var(--text-secondary)] cursor-not-allowed'
+                      : 'bg-[var(--primary-main)] text-white hover:bg-[var(--primary-hover)]'
+                  }`}
+                >
+                  {isEnriching ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4 mr-2" />
+                  )}
+                  Organize Requirements
+                </button>
+              )}
+
               {!hasValidation && !isValidating && (
-                <button onClick={handleRunValidation}
-                  className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+                <button
+                  onClick={handleRunValidation}
+                  className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
+                >
                   <Play className="h-4 w-4 mr-2" /> Run Validation
                 </button>
               )}
+
               {isValidating && (
                 <button disabled className="flex items-center px-4 py-2 bg-[var(--surface-bg)] text-[var(--text-secondary)] rounded-lg cursor-not-allowed">
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...

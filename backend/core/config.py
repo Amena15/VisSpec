@@ -2,6 +2,7 @@
 Environment configuration management.
 Loads settings from .env file with sensible defaults using Pydantic Settings.
 """
+from pathlib import Path
 from pydantic_settings import BaseSettings
 
 
@@ -15,7 +16,10 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Database
-    DATABASE_URL: str = "postgresql://localhost/vispec # Override in .env"
+    # IMPORTANT: keep this as a valid connection string (no inline comments)
+    # Override via .env for real credentials.
+    # NOTE: keep defaults only for local dev; real values should come from backend/.env
+    DATABASE_URL: str = "postgresql+asyncpg://vispec:vispec123@localhost:5432/vispec"
 
     # Security
     SECRET_KEY: str = "vispec_secret_key_for_development_purpose_only"
@@ -44,7 +48,8 @@ class Settings(BaseSettings):
     REPORT_WATERMARK: str = "VisSpec"
 
     class Config:
-        env_file = ".env"
+        # Load the backend-local .env reliably (so DATABASE_URL overrides defaults)
+        env_file = str(Path(__file__).resolve().parent.parent / ".env")
         env_file_encoding = "utf-8"
         case_sensitive = True
 

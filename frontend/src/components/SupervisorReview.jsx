@@ -1,71 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, MessageSquare, Clock, User, FileText, AlertTriangle, ArrowLeft, Shield, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { handleReviewClick } from '../utils/reviewHandler';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/api';
+import { toast } from 'sonner';
 
-const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
+const SupervisorReview = () => {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
   const [reviewDecision, setReviewDecision] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+  const [projectData, setProjectData] = useState(null);
+  const [requirements, setRequirements] = useState([]);
+  const [metrics, setMetrics] = useState(null);
+
+  useEffect(() => {
+    const loadProjectData = async () => {
+      try {
+        const response = await apiClient.get(`/api/supervisor/review/${projectId}`);
+        setProjectData(response.data.project);
+        setRequirements(response.data.traceability || []);
+        setMetrics(response.data.metrics);
+      } catch (error) {
+        console.error('Failed to load project data:', error);
+        toast.error('Failed to load project data');
+      }
+    };
+
+    if (projectId) {
+      loadProjectData();
+    }
+  }, [projectId]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewDecision) {
-      alert('Please select a review decision');
+      toast.error('Please select a review decision');
       return;
     }
 
     setLoading(true);
     try {
-      // In a real app, this would call the backend API
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onReviewSubmit({
+      const response = await apiClient.post(`/api/supervisor/review/${projectId}`, {
         decision: reviewDecision,
-        feedback: feedback,
-        timestamp: new Date().toISOString(),
-        reviewer: 'supervisor@example.com' // Would come from current user context
+        comments: feedback
       });
+      
+      toast.success('Review submitted successfully');
+      navigate('/supervisor/dashboard');
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert('Failed to submit review. Please try again.');
+      toast.error('Failed to submit review. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Sample requirements data (in a real app, this would come from props)
-  const sampleRequirements = [
-    {
-      id: 'REQ-001',
-      text: 'The system shall allow users to register with a unique username and password.',
-      status: 'valid',
-      defects: []
-    },
-    {
-      id: 'REQ-002', 
-      text: 'The system shall provide secure authentication using industry-standard protocols.',
-      status: 'defective',
-      defects: [{ type: 'ambiguity', description: 'Vague term "industry-standard protocols" needs clarification' }]
-    },
-    {
-      id: 'REQ-003',
-      text: 'The system shall log all user activities for audit purposes.',
-      status: 'defective', 
-      defects: [
-        { type: 'incompleteness', description: 'Does not specify retention period for audit logs' },
-        { type: 'ambiguity', description: 'Unclear what constitutes "all user activities"' }
-      ]
-    }
-  ];
+  if (!projectData) {
+    return (
+      <div className="min-h-screen bg-[var(--content-bg)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-main)]"></div>
+          <p className="mt-4 text-[var(--text-secondary)]">Loading project data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const qualityScore = metrics?.quality_score || 0;
+  const totalDefects = requirements.reduce((sum, req) => sum + (req.defect_count || 0), 0);
+  const validRequirements = requirements.filter(req => req.validation_status === 'passed').length;
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={onBack}
+          onClick={() => navigate('/supervisor/dashboard')}
           className="flex items-center text-[var(--neutral-500)] hover:text-[var(--neutral-900)] mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -75,17 +86,17 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
         <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--neutral-900)]">{project?.title || 'Project Title'}</h1>
+              <h1 className="text-2xl font-bold text-[var(--neutral-900)]">{projectData.name}</h1>
               <div className="flex items-center mt-2 text-sm text-[var(--neutral-500)]">
                 <User className="w-4 h-4 mr-2" />
-                <span>Submitted by: {project?.author || 'Student Name'}</span>
+                <span>Project ID: {projectData.project_id}</span>
                 <Clock className="w-4 h-4 ml-4 mr-2" />
-                <span>{project?.submittedAt || 'Just now'}</span>
+                <span>Status: {projectData.status}</span>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-[var(--neutral-500)]">Validation Score</div>
-              <div className="text-2xl font-bold text-[var(--success-main)]">{project?.score || '78'}%</div>
+              <div className="text-sm text-[var(--neutral-500)]">Quality Score</div>
+              <div className="text-2xl font-bold text-[var(--success-main)]">{qualityScore.toFixed(1)}%</div>
             </div>
           </div>
         </div>
@@ -98,11 +109,11 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
             <h2 className="text-lg font-semibold text-[var(--neutral-900)] mb-4">Requirements Review</h2>
 
             <div className="space-y-4">
-              {sampleRequirements.map((req, index) => (
+              {requirements.map((req) => (
                 <div
-                  key={req.id}
+                  key={req.req_id}
                   className={`p-4 rounded-lg border ${
-                    req.status === 'valid'
+                    req.validation_status === 'passed'
                       ? 'border-[var(--success-light)] bg-[var(--success-light)]/30'
                       : 'border-[var(--error-light)] bg-[var(--error-light)]/30'
                   }`}
@@ -110,13 +121,13 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
-                        <span className="font-medium text-[var(--neutral-900)] mr-3">{req.id}</span>
+                        <span className="font-medium text-[var(--neutral-900)] mr-3">{req.identifier}</span>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          req.status === 'valid'
+                          req.validation_status === 'passed'
                             ? 'bg-[var(--success-light)] text-[var(--success-hover)]'
                             : 'bg-[var(--error-light)] text-[var(--error-hover)]'
                         }`}>
-                          {req.status === 'valid' ? (
+                          {req.validation_status === 'passed' ? (
                             <>
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Valid
@@ -124,7 +135,7 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
                           ) : (
                             <>
                               <AlertTriangle className="w-3 h-3 mr-1" />
-                              Defective
+                              {req.validation_status}
                             </>
                           )}
                         </span>
@@ -132,7 +143,7 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
 
                       <p className="text-sm text-[var(--neutral-700)] mb-3">{req.text}</p>
 
-                      {req.defects.length > 0 && (
+                      {req.defects && req.defects.length > 0 && (
                         <div className="space-y-2">
                           {req.defects.map((defect, idx) => (
                             <div key={idx} className="bg-[var(--card-bg)] rounded p-2 border border-[var(--card-border)]">
@@ -149,7 +160,7 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
 
                     {/* Add Note button - visible to supervisors */}
                     <Link
-                      to={`/traceability/${project?.id}`}
+                      to={`/traceability/${projectData.project_id}`}
                       className="ml-4 p-2 text-[var(--primary-main)] hover:bg-[var(--primary-50)] rounded"
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -176,8 +187,8 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
                   <label className="flex items-center">
                     <input
                       type="radio"
-                      value="approve"
-                      checked={reviewDecision === 'approve'}
+                      value="approved"
+                      checked={reviewDecision === 'approved'}
                       onChange={(e) => setReviewDecision(e.target.value)}
                       className="mr-3"
                     />
@@ -188,25 +199,13 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
                   <label className="flex items-center">
                     <input
                       type="radio"
-                      value="request_changes"
-                      checked={reviewDecision === 'request_changes'}
+                      value="changes_requested"
+                      checked={reviewDecision === 'changes_requested'}
                       onChange={(e) => setReviewDecision(e.target.value)}
                       className="mr-3"
                     />
                     <XCircle className="w-4 h-4 text-[var(--warning-main)] mr-2" />
                     <span>Request Changes</span>
-                  </label>
-
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      value="reject"
-                      checked={reviewDecision === 'reject'}
-                      onChange={(e) => setReviewDecision(e.target.value)}
-                      className="mr-3"
-                    />
-                    <AlertTriangle className="w-4 h-4 text-[var(--error-main)] mr-2" />
-                    <span>Reject</span>
                   </label>
                 </div>
               </div>
@@ -248,19 +247,23 @@ const SupervisorReview = ({ project, onReviewSubmit, onBack }) => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-[var(--neutral-500)]">Total Requirements:</span>
-                <span className="text-sm font-medium">15</span>
+                <span className="text-sm font-medium">{requirements.length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[var(--neutral-500)]">Valid Requirements:</span>
-                <span className="text-sm font-medium text-[var(--success-main)]">12</span>
+                <span className="text-sm font-medium text-[var(--success-main)]">{validRequirements}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[var(--neutral-500)]">Defective Requirements:</span>
-                <span className="text-sm font-medium text-[var(--error-main)]">3</span>
+                <span className="text-sm font-medium text-[var(--error-main)]">{requirements.length - validRequirements}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-[var(--neutral-500)]">Total Defects:</span>
+                <span className="text-sm font-medium text-[var(--error-main)]">{totalDefects}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[var(--neutral-500)]">Quality Score:</span>
-                <span className="text-sm font-medium">{project?.score || '78'}%</span>
+                <span className="text-sm font-medium">{qualityScore.toFixed(1)}%</span>
               </div>
             </div>
           </div>

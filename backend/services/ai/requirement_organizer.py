@@ -15,13 +15,17 @@ the HTTP upload request to prevent timeouts).
 """
 import json
 import re
+import logging
 from typing import Dict, List, Any, Optional
 
-from core.logging import get_logger
+try:
+    from core.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    logger = logging.getLogger(__name__)
+
 from services.ai.llm_service import llm_service
 from services.ai.text_cleaner import TextCleaner
-
-logger = get_logger(__name__)
 
 
 class RequirementOrganizer:

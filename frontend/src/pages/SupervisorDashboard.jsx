@@ -14,8 +14,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { handleReviewClick } from '../utils/reviewHandler';
-import { userAPI, documentAPI } from '../services/api';
+import { apiClient } from '../services/api';
 import { toast } from 'sonner';
 
 // Helper function to get color based on score
@@ -26,6 +25,7 @@ const getScoreColor = (score) => {
 };
 
 const SupervisorDashboard = () => {
+  // Existing state
   const [projects, setProjects] = useState([]);
   const [stats, setStats] = useState({
     totalProjects: 0,
@@ -42,38 +42,38 @@ const SupervisorDashboard = () => {
   useEffect(() => {
     const loadSupervisorData = async () => {
       try {
-        // Load all users and their projects
-        const usersResponse = await userAPI.getAll();
-        const documentsResponse = await documentAPI.getAll();
-        
-        const users = usersResponse.data || [];
-        const documents = documentsResponse.data || [];
-        
-        // Create project list from documents with user info
-        const projects = documents.map(doc => {
-          const user = users.find(u => u.id === doc.user_id);
-          return {
-            id: doc.id,
-            title: doc.filename || `Document ${doc.id}`,
-            developer: user?.username || 'Unknown',
-            submittedAt: doc.uploaded_at,
-            lastReviewed: doc.updated_at,
-            status: doc.status || 'pending',
-            qualityScore: doc.quality_score || 0,
-            complexity: doc.complexity || 'Medium',
-            defects: doc.defect_count || 0,
-            comments: doc.comments || 'No comments'
-          };
-        });
+        // Load dashboard data
+        const [projectsRes, metricsRes] = await Promise.all([
+          apiClient.get('/api/supervisor/dashboard'),
+          apiClient.get('/api/supervisor/metrics')
+        ]);
 
-        setProjects(projects);
+        const projectsFromApi = projectsRes.data || [];
+        const metricsData = metricsRes.data || {};
 
-        // Calculate stats
+        const normalized = projectsFromApi.map((p) => ({
+          id: p.project_id,
+          title: p.name,
+          developer: p.owner,
+          ownerEmail: null,
+          submittedAt: p.last_updated,
+          lastReviewed: null,
+          status: p.review_status || 'not_reviewed',
+          qualityScore: p.quality_score ?? 0,
+          complexity: 'N/A',
+          defects: p.defect_count ?? 0,
+          comments: null,
+          priority: 'medium',
+        }));
+
+        setProjects(normalized);
+
+        // Use metrics from API for accurate stats
         setStats({
-          totalProjects: projects.length,
-          pendingReviews: projects.filter(p => p.status === 'pending').length,
-          approvedProjects: projects.filter(p => p.status === 'approved').length,
-          rejectedProjects: projects.filter(p => p.status === 'rejected').length
+          totalProjects: metricsData.total_projects || normalized.length,
+          pendingReviews: metricsData.review_status_counts?.not_reviewed || 0,
+          approvedProjects: metricsData.review_status_counts?.approved || 0,
+          rejectedProjects: metricsData.review_status_counts?.changes_requested || 0,
         });
       } catch (error) {
         console.error('Failed to load supervisor data:', error);
@@ -86,18 +86,18 @@ const SupervisorDashboard = () => {
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'pending': return 'bg-[var(--warning-light)] text-[var(--warning-hover)]';
+      case 'not_reviewed': return 'bg-[var(--warning-light)] text-[var(--warning-hover)]';
       case 'approved': return 'bg-[var(--success-light)] text-[var(--success-hover)]';
-      case 'rejected': return 'bg-[var(--error-light)] text-[var(--error-hover)]';
+      case 'changes_requested': return 'bg-[var(--error-light)] text-[var(--error-hover)]';
       default: return 'bg-[var(--surface-bg)] text-[var(--neutral-700)]';
     }
   };
 
   const getStatusIcon = (status) => {
     switch(status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'not_reviewed': return <Clock className="w-4 h-4" />;
       case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'rejected': return <X className="w-4 h-4" />;
+      case 'changes_requested': return <X className="w-4 h-4" />;
       default: return <AlertTriangle className="w-4 h-4" />;
     }
   };
@@ -105,20 +105,15 @@ const SupervisorDashboard = () => {
   // Filter projects based on active tab
   const filteredProjects = projects.filter(project => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'pending') return project.status === 'not_reviewed';
     return project.status === activeTab;
   });
 
   return (
-    <div className="min-h-screen bg-[var(--content-bg)]">
-      <div className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">Supervisor Dashboard</h1>
-            <p className="text-[var(--text-secondary)] mt-2">Review and validate developer projects</p>
-          </div>
+  <div className="py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Stats Cards */}
+      {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
             <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
               <div className="flex items-center">
@@ -169,33 +164,34 @@ const SupervisorDashboard = () => {
             </div>
           </div>
 
-          {/* Simplified Tabs - Only essential ones */}
+          {/* Projects Section with Clean Filter */}
           <div className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-[var(--card-border)]">
+            <div className="px-6 py-4 border-b border-[var(--card-border)] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Projects</h2>
-            </div>
-            
-            <div className="flex border-b border-[var(--card-border)]">
-              <button
-                onClick={() => setActiveTab('pending')}
-                className={`px-6 py-4 text-sm font-medium ${
-                  activeTab === 'pending'
-                    ? 'text-[var(--primary-main)] border-b-2 border-[var(--primary-main)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                Pending Reviews ({stats.pendingReviews})
-              </button>
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-6 py-4 text-sm font-medium ${
-                  activeTab === 'all'
-                    ? 'text-[var(--primary-main)] border-b-2 border-[var(--primary-main)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                All Projects
-              </button>
+              
+              {/* Filter Buttons */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === 'pending'
+                      ? 'bg-[var(--primary-main)] text-white'
+                      : 'bg-[var(--surface-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  Pending ({stats.pendingReviews})
+                </button>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === 'all'
+                      ? 'bg-[var(--primary-main)] text-white'
+                      : 'bg-[var(--surface-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  All Projects
+                </button>
+              </div>
             </div>
           </div>
 
@@ -271,7 +267,7 @@ const SupervisorDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <Link
-                          to={`/traceability/${project.id}`}
+                          to={`/supervisor/review/${project.id}`}
                           className="text-[var(--primary-main)] hover:text-[var(--primary-hover)] flex items-center"
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -404,7 +400,6 @@ const SupervisorDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

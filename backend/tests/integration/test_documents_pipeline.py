@@ -2,6 +2,7 @@
 import requests
 import os
 import json
+import sys
 
 BASE_URL = 'http://localhost:8000'
 
@@ -42,7 +43,8 @@ print('Response:', safe_response(login_resp))
 print()
 if login_resp.status_code != 200:
     print('Login failed.')
-    exit(1)
+    print('Integration test cannot continue without authentication.')
+    sys.exit(1)
 
 token_resp = login_resp.json()
 s.headers['Authorization'] = 'Bearer ' + token_resp['access_token']
@@ -57,7 +59,7 @@ print('Response:', safe_response(proj_resp))
 print()
 if proj_resp.status_code != 201:
     print('Project creation failed.')
-    exit(1)
+    sys.exit(1)
 
 project_id = proj_resp.json()['project_id']
 print('Project ID:', project_id)

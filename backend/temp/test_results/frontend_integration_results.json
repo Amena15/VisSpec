@@ -1,0 +1,43 @@
+{
+  "Backend Health": {
+    "status": true
+  },
+  "Frontend Availability": {
+    "status": false
+  },
+  "API Endpoints": {
+    "documents": false,
+    "validation": false,
+    "analysis": false,
+    "projects": false,
+    "users": false
+  },
+  "Document Upload Workflow": {
+    "status": true
+  },
+  "Validation Workflow": {
+    "status": false
+  },
+  "Suggestion Application": {
+    "status": false
+  },
+  "Business Rules Compliance": {
+    "BR07_file_types": true,
+    "BR08_file_size": true,
+    "BR09_zero_retention": true,
+    "BR10_confidence": true,
+    "BR14_state_consistency": true,
+    "BR15_undo_log": true
+  },
+  "Enhanced Features": {
+    "pdf_table_extraction": true,
+    "enhanced_ocr": true,
+    "merged_modal_cleanup": true,
+    "llm_validation": true,
+    "cross_requirement_consistency": true,
+    "version_history": true
+  },
+  "Database Migration": {
+    "status": true
+  }
+}

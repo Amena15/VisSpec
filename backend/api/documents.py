@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
 
 from models.user import User
@@ -27,6 +28,12 @@ from utils.security import get_current_active_user
 from config.database import get_db
 from core.config import settings
 from core.logging import get_logger
+
+# Import TextCleaner with fallback
+try:
+    from services.ai.text_cleaner import TextCleaner
+except ImportError:
+    TextCleaner = None
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 logger = get_logger(__name__)
@@ -51,7 +58,7 @@ async def upload_document(
     project_id: str,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Upload a requirement document (PDF, DOCX, or TXT).
@@ -161,50 +168,56 @@ async def upload_document(
     # Generate document ID early for logging purposes
     doc_id = str(uuid.uuid4())
     
-    from services.ai.text_cleaner import TextCleaner
-    # Clean full extracted text first (merged modals, etc.) so requirement extraction sees correct tokens
+    # Extract requirements using enhanced parser for better quality and speed
+    logger.info(f"Extracting requirements from document {filename}", extra={"doc_id": doc_id, "doc_filename": filename})
+    
     try:
-        extracted_text = TextCleaner.clean_requirement_text(extracted_text)
+        requirements = parser.extract_requirements(extracted_text)
+        requirements_count = len(requirements)
+        
+        # Add warning if no requirements found
+        if requirements_count == 0:
+            logger.warning(
+                f"No clear requirements found in document {filename}. "
+                f"Document may not contain modal verbs (shall, must, should, will, may). "
+                f"Word count: {word_count}",
+                extra={"doc_id": doc_id, "doc_filename": filename, "word_count": word_count}
+            )
+        
+        logger.info(f"Successfully extracted {requirements_count} requirements", extra={"doc_id": doc_id, "req_count": requirements_count})
+        
     except Exception as e:
-        logger.warning(f"Pre-extract text clean skipped: {e}", extra={"doc_id": doc_id})
-    
-    # Extract requirements
-    requirements = parser.extract_requirements(extracted_text)
-    requirements_count = len(requirements)
-    
-    # Add warning if no requirements found
-    if requirements_count == 0:
-        logger.warning(
-            f"No clear requirements found in document {filename}. "
-            f"Document may not contain modal verbs (shall, must, should, will, may). "
-            f"Word count: {word_count}",
-            extra={"doc_id": doc_id, "doc_filename": filename, "word_count": word_count}
+        logger.error(f"Error extracting requirements: {e}", extra={"doc_id": doc_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Failed to extract requirements: {str(e)}"
         )
     
-    # Apply text cleaning to fix repeated words (willwill -> will, etc.)
-    try:
-        logger.info(f"Applying text cleaning to {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
+    # Apply text cleaning only if needed (optimized for speed)
+    if TextCleaner and requirements_count > 0:
+        try:
+            logger.info(f"Applying text cleaning to {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
+            
+            # Clean requirements batch
+            cleaned_requirements = TextCleaner.clean_requirements_batch(requirements)
+            requirements = cleaned_requirements
+            
+            # Also clean the main document text (idempotent if already cleaned)
+            cleaned_extracted_text = TextCleaner.clean_requirement_text(extracted_text)
+            
+            # Log cleaning results
+            if cleaned_extracted_text != extracted_text:
+                logger.info("Document text was cleaned during upload")
+                logger.debug(f"Original length: {len(extracted_text)}, Cleaned length: {len(cleaned_extracted_text)}")
+            
+            extracted_text = cleaned_extracted_text
+            
+            logger.info(f"Text cleaning completed successfully for {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
         
-        # Clean requirements batch
-        cleaned_requirements = TextCleaner.clean_requirements_batch(requirements)
-        requirements = cleaned_requirements
-        
-        # Also clean the main document text (idempotent if already cleaned)
-        cleaned_extracted_text = TextCleaner.clean_requirement_text(extracted_text)
-        
-        # Log cleaning results
-        if cleaned_extracted_text != extracted_text:
-            logger.info("Document text was cleaned during upload")
-            logger.debug(f"Original length: {len(extracted_text)}, Cleaned length: {len(cleaned_extracted_text)}")
-        
-        extracted_text = cleaned_extracted_text
-        
-        logger.info(f"Text cleaning completed successfully for {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
-        
-    except Exception as e:
-        logger.error(f"Text cleaning failed during upload: {e}")
-        # Continue with original requirements if cleaning fails
-        logger.warning("Proceeding with original text due to cleaning failure")
+        except Exception as e:
+            logger.error(f"Text cleaning failed during upload: {e}")
+            # Continue with original requirements if cleaning fails
+            logger.warning("Proceeding with original text due to cleaning failure")
     
     # Identify logical sections
     sections = parser.identify_structure(extracted_text)
@@ -234,12 +247,12 @@ async def upload_document(
     )
     
     # Save document to database
-    db.add(document)
-    db.commit()
+    await db.add(document)
+    await db.commit()
     
     # Update user storage usage
     current_user.storage_used_bytes = new_usage
-    db.commit()
+    await db.commit()
     
     # Save requirements to database
     for i, req in enumerate(requirements):
@@ -258,14 +271,15 @@ async def upload_document(
             sequence_order=req.get("sequence_order", i),
             section_header=req.get("section_header", ""),
         )
-        db.add(requirement)
+        await db.add(requirement)
     
-    db.commit()
+    await db.commit()
     
     # Auto-organize requirements for new document (professional flow)
     try:
         logger.info("Auto-organizing requirements for new document", extra={"doc_id": doc_id})
-        req_objects = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
+        result = await db.execute(select(Requirement).filter(Requirement.doc_id == doc_id))
+        req_objects = result.scalars().all()
         raw_reqs = []
         for r in req_objects:
             raw_reqs.append({
@@ -278,8 +292,12 @@ async def upload_document(
                 "sequence_order": r.sequence_order,
             })
         from services.ai.requirement_organizer import requirement_organizer
-        from services.ai.text_cleaner import TextCleaner
-        cleaned_reqs = TextCleaner.clean_requirements_batch(raw_reqs)
+        
+        # Use global TextCleaner import
+        if TextCleaner:
+            cleaned_reqs = TextCleaner.clean_requirements_batch(raw_reqs)
+        else:
+            cleaned_reqs = raw_reqs  # Fallback if TextCleaner not available
         full_text = extracted_text
         # Use LLM for enrichment when API key is present, otherwise rule-based
         use_llm = bool(settings.GROQ_API_KEY)
@@ -299,18 +317,19 @@ async def upload_document(
             r.modal_verbs_json = json.dumps(enriched.get('modal_verbs', []))
             r.vague_terms_json = json.dumps(enriched.get('vague_terms', []))
             updated += 1
-        db.commit()
+            await db.commit()
         logger.info(f"Auto-organized {updated} requirements", extra={"doc_id": doc_id, "updated_count": updated})
     except Exception as e:
         logger.warning(f"Auto-organize failed: {e} - manual fix available", extra={"doc_id": doc_id, "error": str(e)})
     
     # Update project status to 'ready' after successful document processing
     try:
-        project = db.query(Project).filter(Project.project_id == project_id).first()
+        result = await db.execute(select(Project).filter(Project.project_id == project_id))
+        project = result.scalar_one_or_none()
         if project:
             project.status = "ready"
             project.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            db.commit()
+            await db.commit()
             logger.info(f"Updated project {project_id} status to 'ready' after document processing", extra={"project_id": project_id, "doc_id": doc_id})
     except Exception as e:
         logger.warning(f"Failed to update project status: {e}", extra={"project_id": project_id, "doc_id": doc_id, "error": str(e)})
@@ -332,17 +351,20 @@ async def upload_document(
 
 
 @router.get("/", response_model=List[DocumentSummary])
-def list_documents(
+async def list_documents(
     project_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """List all documents for the authenticated user, optionally filtered by project."""
     try:
         # Get documents directly without complex joins first
-        docs = db.query(RequirementDocument).filter(
-            RequirementDocument.uploaded_by == current_user.user_id
-        ).order_by(RequirementDocument.upload_date.desc()).all()
+        result = await db.execute(
+            select(RequirementDocument).filter(
+                RequirementDocument.uploaded_by == current_user.user_id
+            ).order_by(RequirementDocument.upload_date.desc())
+        )
+        docs = result.scalars().all()
 
         result = []
         for d in docs:
@@ -379,7 +401,7 @@ def list_documents(
                         try:
                             latest_validation.defect_count = 0
                             latest_validation.overall_score = 100.0
-                            db.commit()
+                            await db.commit()
                             logger.info(f"Fixed validation session {latest_validation.validation_id} for document {d.doc_id}")
                         except Exception as fix_error:
                             logger.error(f"Failed to fix validation session: {fix_error}")
@@ -434,17 +456,20 @@ def list_documents(
 
 
 @router.get("/{doc_id}")
-def get_document(
+async def get_document(
     doc_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get a single document with its extracted requirements."""
     try:
         # Simplified query to avoid SQLAlchemy errors
-        doc = db.query(RequirementDocument).filter(
-            RequirementDocument.doc_id == doc_id
-        ).first()
+        result = await db.execute(
+            select(RequirementDocument).filter(
+                RequirementDocument.doc_id == doc_id
+            )
+        )
+        doc = result.scalar_one_or_none()
         
         if not doc:
             raise HTTPException(
@@ -473,16 +498,19 @@ def get_document(
             )
             sections_data = []
         
-        # Get requirements for this document
-        requirements = db.query(Requirement).filter(
-            Requirement.doc_id == doc_id
-        ).order_by(Requirement.sequence_order).all()
-        
+        # Get requirements for this document (AsyncSession => use select/execute)
+        req_result = await db.execute(
+            select(Requirement)
+            .filter(Requirement.doc_id == doc_id)
+            .order_by(Requirement.sequence_order)
+        )
+        requirements = req_result.scalars().all()
+
         print(f"DEBUG: Found {len(requirements)} requirements for document {doc_id}")
-        
+
         for i, req in enumerate(requirements[:3]):
             print(f"DEBUG: Req {i+1}: {req.original_text[:50]}...")
-        
+
         # Format requirements for response
         req_list = []
         import json
@@ -491,7 +519,7 @@ def get_document(
             actors = []
             modal_verbs = []
             vague_terms = []
-            
+
             try:
                 if req.actors_json:
                     actors = json.loads(req.actors_json)
@@ -501,7 +529,7 @@ def get_document(
                     vague_terms = json.loads(req.vague_terms_json)
             except json.JSONDecodeError:
                 pass
-            
+
             req_list.append({
                 "req_id": req.req_id,
                 "req_identifier": str(req.req_identifier) if req.req_identifier else "",
@@ -605,39 +633,48 @@ def get_document(
         }
 
 @router.post("/enrich-document/{doc_id}")
-async def enrich_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
+async def enrich_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db)):
     """Manually trigger enrichment for existing document"""
     try:
         # Get document
-        doc = db.query(RequirementDocument).filter(RequirementDocument.doc_id == doc_id).first()
+        result = await db.execute(
+            select(RequirementDocument).filter(RequirementDocument.doc_id == doc_id)
+        )
+        doc = result.scalar_one_or_none()
         if not doc:
             raise HTTPException(404, "Document not found")
         
         # Get requirements
-        requirements = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
+        result = await db.execute(
+            select(Requirement).filter(Requirement.doc_id == doc_id)
+        )
+        requirements = result.scalars().all()
         
         if not requirements:
             return {"message": "No requirements found to enrich"}
         
         # Apply enrichment
         from services.ai.requirement_organizer import requirement_organizer
-        from services.ai.text_cleaner import TextCleaner
         
         # Create requirement objects for enrichment
         req_objects = []
+        
         for req in requirements:
             req_objects.append({
                 "req_id": req.req_id,
-                "doc_id": req.doc_id,
-                "project_id": req.project_id,
                 "req_identifier": req.req_identifier,
+                "section_header": req.section_header,
                 "original_text": req.original_text,
                 "current_text": req.current_text,
                 "word_count": req.word_count,
                 "sequence_order": req.sequence_order,
             })
         
-        cleaned_requirements = TextCleaner.clean_requirements_batch(req_objects)
+        # Use global TextCleaner import
+        if TextCleaner:
+            cleaned_requirements = TextCleaner.clean_requirements_batch(req_objects)
+        else:
+            cleaned_requirements = req_objects  # Fallback if TextCleaner not available
         full_text = doc.content or doc.extracted_text or ""
         # Use LLM for enrichment when API key is present, otherwise rule-based
         use_llm = bool(settings.GROQ_API_KEY)
@@ -677,11 +714,12 @@ async def enrich_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
         
         # Commit changes and verify
         try:
-            db.commit()
+            await db.commit()
             print(f"Successfully committed {updated_count} requirements")
             
             # Verify the update by checking the first requirement
-            first_req = db.query(Requirement).filter(Requirement.doc_id == doc_id).first()
+            result = await db.execute(select(Requirement).filter(Requirement.doc_id == doc_id))
+            first_req = result.scalar_one_or_none()
             if first_req:
                 print(f"Verification - First requirement after commit:")
                 print(f"  - Category: {first_req.category}")
@@ -690,7 +728,7 @@ async def enrich_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
             
         except Exception as commit_error:
             print(f"Commit failed: {commit_error}")
-            db.rollback()
+            await db.rollback()
             raise HTTPException(500, f"Database commit failed: {str(commit_error)}")
         
         return {
@@ -700,29 +738,37 @@ async def enrich_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
         }
         
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(500, f"Error enriching document: {str(e)}")
 
 
 @router.post("/fix-document/{doc_id}")
-async def fix_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
+async def fix_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db)):
     """Fix existing document with repeated words and uncategorized requirements"""
     try:
         # Get document
-        doc = db.query(RequirementDocument).filter(RequirementDocument.doc_id == doc_id).first()
+        result = await db.execute(
+            select(RequirementDocument).filter(RequirementDocument.doc_id == doc_id)
+        )
+        doc = result.scalar_one_or_none()
         if not doc:
             raise HTTPException(404, "Document not found")
         
         # Get requirements
-        requirements = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
+        result = await db.execute(
+            select(Requirement).filter(Requirement.doc_id == doc_id)
+        )
+        requirements = result.scalars().all()
         
-        # Apply text cleaning
-        from services.ai.text_cleaner import TextCleaner
-        cleaner = TextCleaner()
+        # Apply text cleaning using global import
+        if TextCleaner:
+            cleaner = TextCleaner()
+        else:
+            cleaner = None  # Fallback if TextCleaner not available
         updated_count = 0
         
         for req in requirements:
-            if req.original_text:
+            if req.original_text and cleaner:
                 cleaned_text = cleaner.clean_requirement_text(req.original_text)
                 if cleaned_text != req.original_text:
                     req.original_text = cleaned_text
@@ -777,7 +823,7 @@ async def fix_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
                 req.modal_verbs_json = json.dumps(modal_verbs) if modal_verbs else req.modal_verbs_json
                 req.vague_terms_json = json.dumps(vague_terms) if vague_terms else req.vague_terms_json
         
-        db.commit()
+            await db.commit()
         
         return {
             "message": "Document fixed successfully",
@@ -792,10 +838,10 @@ async def fix_document_endpoint(doc_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{doc_id}", response_model=DocumentDeleteResponse)
-def delete_document(
+async def delete_document(
     doc_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Permanently delete a document and all associated analysis data.
@@ -820,14 +866,15 @@ def delete_document(
 
     # Refund storage quota
     if doc.file_size_bytes:
-        user = db.query(User).filter(User.user_id == current_user.user_id).first()
+        result = await db.execute(select(User).filter(User.user_id == current_user.user_id))
+        user = result.scalar_one_or_none()
         if user:
             user.storage_used_bytes = max(0, user.storage_used_bytes - doc.file_size_bytes)
-            db.commit()
+            await db.commit()
 
     # SQLAlchemy cascade handles deletion of requirements, validation_sessions, defects
-    db.delete(doc)
-    db.commit()
+    await db.delete(doc)
+    await db.commit()
 
     return DocumentDeleteResponse(
         message="Document and all associated data permanently deleted",
@@ -842,7 +889,7 @@ async def add_traceability_note(
     doc_id: str,
     note_data: dict,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Add a traceability note to a document/requirement.
@@ -850,15 +897,13 @@ async def add_traceability_note(
     """
     try:
         # Verify document exists and user has access
-        doc = (
-            db.query(RequirementDocument)
-            .join(Project)
-            .filter(
+        result = await db.execute(
+            select(RequirementDocument).join(Project).filter(
                 RequirementDocument.doc_id == doc_id,
                 Project.owner_id == current_user.user_id,
             )
-            .first()
         )
+        doc = result.scalar_one_or_none()
         if not doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
@@ -896,9 +941,9 @@ async def add_traceability_note(
             created_at=_now_iso()
         )
         
-        db.add(note)
-        db.commit()
-        db.refresh(note)
+        await db.add(note)
+        await db.commit()
+        await db.refresh(note)
         
         return {
             "message": "Traceability note added successfully",
