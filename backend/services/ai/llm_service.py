@@ -8,9 +8,10 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from core.config import settings
-from core.logging import get_logger
-from services.ai.prompts import (
+from backend.core.config import settings
+from backend.core.logging import get_logger
+from backend.services.ai.prompts import (
+
     AMBIGUITY_DETECTION_PROMPT,
     CLASSIFICATION_PROMPT,
     ENTITY_EXTRACTION_PROMPT,
@@ -19,8 +20,9 @@ from services.ai.prompts import (
     REQUIREMENT_EXTRACTION_PROMPT,
     VALIDATION_PROMPT,
 )
-from services.ai.response_parser import ResponseParser
-from services.ai.retry_handler import retry_handler
+from backend.services.ai.response_parser import ResponseParser
+from backend.services.ai.retry_handler import retry_handler
+
 
 logger = get_logger(__name__)
 

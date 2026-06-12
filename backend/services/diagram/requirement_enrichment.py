@@ -17,8 +17,8 @@ import hashlib
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 
-from services.ai.llm_service import GroqLLMService
-from core.logging import get_logger
+from backend.services.ai.llm_service import GroqLLMService
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

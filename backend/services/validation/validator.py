@@ -6,14 +6,14 @@ import time
 from typing import List, Dict, Any, Optional
 import difflib
 
-from core.config import settings
-from core.logging import get_logger
-from services.validation.ambiguity_detector import AmbiguityDetector
-from services.validation.consistency_checker import ConsistencyChecker
-from services.validation.completeness_analyzer import CompletenessAnalyzer
-from services.ai.llm_service import llm_service
-from services.ai.llm_validator import LLMValidator
-from services.ai.requirement_organizer import RequirementOrganizer
+from backend.core.config import settings
+from backend.core.logging import get_logger
+from backend.services.validation.ambiguity_detector import AmbiguityDetector
+from backend.services.validation.consistency_checker import ConsistencyChecker
+from backend.services.validation.completeness_analyzer import CompletenessAnalyzer
+from backend.services.ai.llm_service import llm_service
+from backend.services.ai.llm_validator import LLMValidator
+from backend.services.ai.requirement_organizer import RequirementOrganizer
 
 logger = get_logger(__name__)
 

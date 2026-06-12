@@ -4,18 +4,18 @@ Implements endpoints for Use Case and Sequence diagram generation from validated
 Strictly adheres to BR-11 (no hallucinated actors) and BR-12 (max 15 steps per sequence).
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from datetime import datetime
 import re
 from typing import List, Dict, Any
 
-from models.user import User
-from models.document import RequirementDocument
-from services.visualization.visualizer import Visualizer
-from services.ai.semantic_analyzer import SemanticAnalyzer
-from utils.security import get_current_active_user
-from config.database import get_db
+from backend.models.user import User
+from backend.models.document import RequirementDocument
+from backend.services.visualization.visualizer import Visualizer
+from backend.services.ai.semantic_analyzer import SemanticAnalyzer
+from backend.utils.security import get_current_active_user
+from backend.config.database import get_db
 
 router = APIRouter()
 
@@ -23,10 +23,12 @@ router = APIRouter()
 visualizer = Visualizer()
 semantic_analyzer = SemanticAnalyzer()
 
+
 @router.get("/usecase/{document_id}")
-def get_usecase_diagram(
+async def get_usecase_diagram(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get Use Case diagram for a specific document.
@@ -43,9 +45,10 @@ def get_usecase_diagram(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             return {
                 "mermaid_syntax": "",
                 "title": "No Validated Requirements",
@@ -57,7 +60,7 @@ def get_usecase_diagram(
             }
         
         # Combine all requirement texts
-        combined_text = " ".join([row[1] if row[1] else row[0] for row in result])
+        combined_text = " ".join([row[1] if row[1] else row[0] for row in rows])
         
         # Extract actors using spaCy NER (BR-11 compliance)
         actors = _extract_actors_ner(combined_text)
@@ -90,9 +93,10 @@ def get_usecase_diagram(
 
 
 @router.get("/scenarios/{document_id}")
-def get_scenarios(
+async def get_scenarios(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get available scenarios for sequence diagrams from validated requirements.
@@ -108,13 +112,14 @@ def get_scenarios(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             return {"scenarios": []}
         
         # Combine all requirement texts
-        combined_text = " ".join([row[1] if row[1] else row[0] for row in result])
+        combined_text = " ".join([row[1] if row[1] else row[0] for row in rows])
         
         # Extract scenarios using keyword matching
         scenarios = _extract_scenarios_keyword_matching(combined_text)
@@ -129,10 +134,11 @@ def get_scenarios(
 
 
 @router.get("/sequence/{document_id}")
-def get_sequence_diagram(
+async def get_sequence_diagram(
     document_id: str,
     scenario: str = Query(..., description="Scenario ID for sequence diagram"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get Sequence diagram for a specific document and scenario.
@@ -148,9 +154,10 @@ def get_sequence_diagram(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             return {
                 "mermaid_syntax": "",
                 "title": "No Validated Requirements",
@@ -162,7 +169,7 @@ def get_sequence_diagram(
             }
         
         # Combine all requirement texts
-        combined_text = " ".join([row[1] if row[1] else row[0] for row in result])
+        combined_text = " ".join([row[1] if row[1] else row[0] for row in rows])
         
         # Generate sequence diagram for specific scenario
         sequence_data = _generate_sequence_diagram(combined_text, scenario)
@@ -201,6 +208,7 @@ def get_sequence_diagram(
 
 
 # Helper Functions for BR-11 Compliance (No Hallucinated Actors)
+# (These remain unchanged - they are pure Python, no DB interaction.)
 
 def _extract_actors_ner(text: str) -> List[str]:
     """

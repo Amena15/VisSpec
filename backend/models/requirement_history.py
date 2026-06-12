@@ -1,13 +1,14 @@
 """Requirement version history model for BR-15 compliance."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid
+from datetime import datetime, timezone
 
+def _now_dt():
+    return datetime.now(timezone.utc)
 
 class RequirementVersionHistory(Base):
-    """Tracks all text changes to requirements for undo/redo functionality (BR-15)."""
-    
     __tablename__ = "requirement_version_history"
 
     version_id = Column(String, primary_key=True, default=_uuid)
@@ -19,7 +20,7 @@ class RequirementVersionHistory(Base):
     change_reason = Column(String(255), nullable=True)
     changed_by = Column(String, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
     change_type = Column(String(50), nullable=False, default="suggestion_applied")
-    created_at = Column(DateTime, nullable=False, default=_now, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_now_dt)
 
     # Relationships
     requirement = relationship("Requirement", back_populates="version_history")

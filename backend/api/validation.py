@@ -7,20 +7,21 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Dict, Any
 
-from models.user import User
-from models.project import Project
-from models.document import RequirementDocument
-from models.requirement import Requirement
-from models.validation import ValidationSession, Defect
-from utils.security import get_current_active_user
-from config.database import get_db
-from services.validation.validator import Validator
-from core.config import settings
-from core.logging import get_logger
-from schemas.validation import (
+from backend.models.user import User
+from backend.models.project import Project
+from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
+from backend.models.validation import ValidationSession, Defect
+from backend.utils.security import get_current_active_user
+from backend.config.database import get_db
+from backend.services.validation.validator import Validator
+from backend.core.config import settings
+from backend.core.logging import get_logger
+from backend.schemas.validation import (
     ValidationRequest,
     ValidationResponse,
     DefectResponse,
@@ -36,11 +37,21 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _safe_json_loads(value, default=None):
+    """Safely load JSON string, returning default on failure."""
+    if not value:
+        return default if default is not None else []
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return default if default is not None else []
+
+
 @router.post("/validate", response_model=ValidationResponse)
-def validate_requirements(
+async def validate_requirements(
     request: ValidationRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Run the full validation pipeline on raw requirements text.
@@ -67,10 +78,10 @@ def validate_requirements(
 
 
 @router.post("/validate-document")
-def validate_document(
+async def validate_document(
     request: DocumentValidationRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Run validation on an uploaded document by doc_id.
@@ -82,9 +93,9 @@ def validate_document(
         # ------------------------------------------------------------------
         # 1. Verify document exists and user has access (simplified)
         # ------------------------------------------------------------------
-        doc = db.query(RequirementDocument).filter(
-            RequirementDocument.doc_id == request.doc_id
-        ).first()
+        stmt = select(RequirementDocument).where(RequirementDocument.doc_id == request.doc_id)
+        result = await db.execute(stmt)
+        doc = result.scalar_one_or_none()
         
         if not doc:
             raise HTTPException(
@@ -118,7 +129,15 @@ def validate_document(
         }
 
     # Get requirements for the document
-    requirements = doc.requirements
+    # Use select and execute, but requirements is a relationship; we need to access doc.requirements
+    # Since we have the doc object from above, we can access its .requirements attribute.
+    # However, with async, the relationship may not be loaded. To avoid lazy loading errors,
+    # we either use selectinload upfront or fetch requirements separately.
+    # The original code uses doc.requirements (lazy load). We'll fetch explicitly.
+    req_stmt = select(Requirement).where(Requirement.doc_id == request.doc_id)
+    req_result = await db.execute(req_stmt)
+    requirements = req_result.scalars().all()
+
     if not requirements:
         logger.warning(
             f"No requirements found for document {request.doc_id}. "
@@ -156,7 +175,7 @@ def validate_document(
         validation_date=now,
     )
     db.add(val_session)
-    db.commit()
+    await db.commit()
 
     # ------------------------------------------------------------------
     # 3. Determine if requirements are enriched and run appropriate validator
@@ -189,7 +208,7 @@ def validate_document(
         # Automatic retry (max 1 retry as per UC_05 A1)
         try:
             val_session.api_retries = 1
-            db.commit()
+            await db.commit()
             validator = Validator(use_llm=True)
             if is_enriched:
                 req_contexts = []
@@ -211,7 +230,7 @@ def validate_document(
             logger.error(f"Validation retry also failed: {e2}")
             val_session.status = "failed"
             val_session.error_message = "Analysis service is currently busy. Please try again in a few minutes."
-            db.commit()
+            await db.commit()
             return DocumentValidationResponse(
                 validation_id=validation_id,
                 doc_id=request.doc_id,
@@ -324,7 +343,7 @@ def validate_document(
     else:
         doc.status = "Validated - Issues Found"
     
-    db.commit()
+    await db.commit()
 
     # ------------------------------------------------------------------
     # 8. Build response
@@ -351,12 +370,14 @@ def validate_document(
 @router.post("/test-validation-no-auth/{doc_id}")
 async def test_validation_no_auth(
     doc_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Test endpoint to verify validation status updates without authentication"""
     try:
         # Get requirements for this document
-        requirements = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
+        stmt = select(Requirement).where(Requirement.doc_id == doc_id)
+        result = await db.execute(stmt)
+        requirements = result.scalars().all()
         
         if not requirements:
             return {"error": "No requirements found"}
@@ -373,12 +394,14 @@ async def test_validation_no_auth(
             updated_count += 1
         
         # Update document status
-        from models.document import RequirementDocument
-        doc = db.query(RequirementDocument).filter(RequirementDocument.doc_id == doc_id).first()
+        from backend.models.document import RequirementDocument
+        stmt_doc = select(RequirementDocument).where(RequirementDocument.doc_id == doc_id)
+        doc_result = await db.execute(stmt_doc)
+        doc = doc_result.scalar_one_or_none()
         if doc:
             doc.status = "Validated - Test"
         
-        db.commit()
+        await db.commit()
         
         return {
             "message": f"Test validation status updated for {updated_count} requirements",
@@ -388,7 +411,7 @@ async def test_validation_no_auth(
         }
         
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         return {"error": str(e)}
 
 
@@ -396,12 +419,14 @@ async def test_validation_no_auth(
 async def test_validation_status(
     doc_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Test endpoint to verify validation status updates"""
     try:
         # Get requirements for this document
-        requirements = db.query(Requirement).filter(Requirement.doc_id == doc_id).all()
+        stmt = select(Requirement).where(Requirement.doc_id == doc_id)
+        result = await db.execute(stmt)
+        requirements = result.scalars().all()
         
         if not requirements:
             return {"error": "No requirements found"}
@@ -417,7 +442,7 @@ async def test_validation_status(
                 req.validation_status = "failed"
             updated_count += 1
         
-        db.commit()
+        await db.commit()
         
         return {
             "message": f"Test validation status updated for {updated_count} requirements",
@@ -426,15 +451,15 @@ async def test_validation_status(
         }
         
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         return {"error": str(e)}
 
 
 @router.post("/validate-batch", response_model=Dict[str, Any])
-def validate_batch_requirements(
+async def validate_batch_requirements(
     request: dict,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Validate multiple requirements texts at once.
@@ -460,19 +485,19 @@ def validate_batch_requirements(
 
 
 @router.get("/validation-results/{doc_id}")
-def get_validation_results(
+async def get_validation_results(
     doc_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Retrieve validation results for a document, including defects with proper requirement linking.
     """
     try:
         # Simplified query to avoid SQLAlchemy errors
-        doc = db.query(RequirementDocument).filter(
-            RequirementDocument.doc_id == doc_id
-        ).first()
+        stmt = select(RequirementDocument).where(RequirementDocument.doc_id == doc_id)
+        result = await db.execute(stmt)
+        doc = result.scalar_one_or_none()
         
         if not doc:
             raise HTTPException(
@@ -506,13 +531,16 @@ def get_validation_results(
         }
 
     # Get the latest validation session for this document
-    val_session = (
-        db.query(ValidationSession)
-        .filter(ValidationSession.doc_id == doc_id)
-        .order_by(ValidationSession.validation_date.desc())
-        .first()
-    )
+    stmt_val = select(ValidationSession).where(ValidationSession.doc_id == doc_id).order_by(ValidationSession.validation_date.desc())
+    val_result = await db.execute(stmt_val)
+    val_session = val_result.scalar_one_or_none()
     
+    # Get requirements count for this document
+    req_stmt = select(Requirement).where(Requirement.doc_id == doc_id)
+    req_result = await db.execute(req_stmt)
+    requirements_list = req_result.scalars().all()
+    req_count = len(requirements_list)
+
     if not val_session:
         return DocumentValidationResponse(
             validation_id="",
@@ -521,7 +549,7 @@ def get_validation_results(
             status="pending",
             overall_score=None,
             total_defects=0,
-            total_requirements=len(doc.requirements),
+            total_requirements=req_count,
             defects_by_type={},
             defects_by_severity={},
             defects=[],
@@ -531,7 +559,7 @@ def get_validation_results(
         )
 
     # Data consistency check: if no requirements but validation session has defects, fix it
-    if len(doc.requirements) == 0 and val_session and val_session.defect_count > 0:
+    if req_count == 0 and val_session and val_session.defect_count > 0:
         logger.warning(
             f"Data inconsistency for document {doc_id}: "
             f"{val_session.defect_count} defects but 0 requirements. "
@@ -542,7 +570,7 @@ def get_validation_results(
         val_session.defect_count = 0
         val_session.overall_score = 100.0
         val_session.status = "completed"
-        db.commit()
+        await db.commit()
         # Return a clean response (no defects)
         return DocumentValidationResponse(
             validation_id=val_session.validation_id,
@@ -561,18 +589,20 @@ def get_validation_results(
         )
 
     # Get defects for this validation session with requirement details
-    defects = (
-        db.query(Defect, Requirement)
+    # Using select with join
+    stmt_defects = (
+        select(Defect, Requirement)
         .join(Requirement, Defect.req_id == Requirement.req_id, isouter=True)
-        .filter(Defect.validation_id == val_session.validation_id)
-        .all()
+        .where(Defect.validation_id == val_session.validation_id)
     )
+    defect_rows = await db.execute(stmt_defects)
+    defect_requirement_pairs = defect_rows.all()
 
     defect_responses = []
     defects_by_type = {}
     defects_by_severity = {}
 
-    for defect, requirement in defects:
+    for defect, requirement in defect_requirement_pairs:
         defect_type = defect.defect_type
         severity = defect.severity
         
@@ -599,7 +629,7 @@ def get_validation_results(
         status=val_session.status,
         overall_score=val_session.overall_score,
         total_defects=len(defect_responses),
-        total_requirements=len(doc.requirements),
+        total_requirements=req_count,
         defects_by_type=defects_by_type,
         defects_by_severity=defects_by_severity,
         defects=defect_responses,
@@ -607,13 +637,3 @@ def get_validation_results(
         processing_time_ms=val_session.processing_time_ms,
         perfect_score=len(defect_responses) == 0,
     )
-
-
-def _safe_json_loads(value, default=None):
-    """Safely load JSON string, returning default on failure."""
-    if not value:
-        return default if default is not None else []
-    try:
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError):
-        return default if default is not None else []

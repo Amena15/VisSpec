@@ -5,7 +5,7 @@ Uses spaCy NLP + rule-based heuristics to find vague terms, pronouns, and subjec
 import re
 from typing import List, Dict, Any
 
-from core.logging import get_logger
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

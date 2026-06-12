@@ -5,7 +5,7 @@ Checks whether requirements contain all necessary components for a well-formed s
 import re
 from typing import List, Dict, Any
 
-from core.logging import get_logger
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,12 +1,14 @@
 """Validation session and defect models."""
 from sqlalchemy import Column, String, Integer, Float, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
 
 
 class ValidationSession(Base):
     __tablename__ = "validation_sessions"
+    __table_args__ = {"extend_existing": True}
 
     validation_id = Column(String, primary_key=True, default=_uuid)
     project_id = Column(String, ForeignKey("projects.project_id", ondelete="CASCADE"), nullable=False, index=True)
@@ -27,20 +29,20 @@ class ValidationSession(Base):
     validation_date = Column(String, nullable=False, default=_now, index=True)
     error_message = Column(Text, nullable=True)
 
-    project = relationship("Project", back_populates="validation_sessions")
-    document = relationship("RequirementDocument", back_populates="validation_sessions")
-    triggered_by_user = relationship("User", back_populates="validation_sessions")
-    defects = relationship("Defect", back_populates="validation_session", cascade="all, delete-orphan")
-    diagrams = relationship("Diagram", back_populates="validation_session", cascade="all, delete-orphan")
-    ai_prompt_logs = relationship("AIPromptLog", back_populates="validation_session", cascade="all, delete-orphan")
-    metrics = relationship("ProjectMetrics", back_populates="validation_session", uselist=False, cascade="all, delete-orphan")
-    traceability_matrix = relationship("TraceabilityMatrix", back_populates="validation_session", cascade="all, delete-orphan")
-    review_audits = relationship("ReviewAudit", back_populates="validation_session", cascade="all, delete-orphan")
-    export_reports = relationship("ExportReport", back_populates="validation_session", cascade="all, delete-orphan")
-
+    project = relationship("backend.models.project.Project", back_populates="validation_sessions")
+    document = relationship("backend.models.document.RequirementDocument", back_populates="validation_sessions")
+    triggered_by_user = relationship("backend.models.user.User", back_populates="validation_sessions")
+    defects = relationship("backend.models.validation.Defect", back_populates="validation_session", cascade="all, delete-orphan")
+    diagrams = relationship("backend.models.diagram.Diagram", back_populates="validation_session", cascade="all, delete-orphan")
+    ai_prompt_logs = relationship("backend.models.auxiliary.AIPromptLog", back_populates="validation_session", cascade="all, delete-orphan")
+    metrics = relationship("backend.models.metrics.ProjectMetrics", back_populates="validation_session", uselist=False, cascade="all, delete-orphan")
+    traceability_matrix = relationship("backend.models.traceability.TraceabilityMatrix", back_populates="validation_session", cascade="all, delete-orphan")
+    review_audits = relationship("backend.models.review.ReviewAudit", back_populates="validation_session", cascade="all, delete-orphan")
+    export_reports = relationship("ExportReport", back_populates="validation_session")
 
 class Defect(Base):
     __tablename__ = "defects"
+    __table_args__ = {"extend_existing": True}
 
     defect_id = Column(String, primary_key=True, default=_uuid)
     validation_id = Column(String, ForeignKey("validation_sessions.validation_id", ondelete="CASCADE"), nullable=False, index=True)

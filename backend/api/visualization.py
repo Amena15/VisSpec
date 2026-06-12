@@ -1,25 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, text
 from datetime import datetime
 import uuid
 
-from models.user import User
-from models.document import RequirementDocument
-from schemas.visualization import VisualizationRequest, VisualizationResponse
-from services.visualization.visualizer import Visualizer
-from utils.security import get_current_active_user
-from config.database import get_db
+from backend.models.user import User
+from backend.models.document import RequirementDocument
+from backend.schemas.visualization import VisualizationRequest, VisualizationResponse
+from backend.services.visualization.visualizer import Visualizer
+from backend.utils.security import get_current_active_user
+from backend.config.database import get_db
+
 
 router = APIRouter()
 
 # Initialize visualization service
 visualizer = Visualizer()
 
+
 @router.get("/usecase/{document_id}")
-def get_usecase_diagram(
+async def get_usecase_diagram(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get Use Case diagram for a specific document.
@@ -27,10 +29,12 @@ def get_usecase_diagram(
     """
     try:
         # Get document with validated requirements
-        document = db.query(RequirementDocument).filter(
+        stmt = select(RequirementDocument).where(
             RequirementDocument.doc_id == document_id,
             RequirementDocument.uploaded_by == "test-user"
-        ).first()
+        )
+        result = await db.execute(stmt)
+        document = result.scalar_one_or_none()
         
         if not document:
             # Return mock data for testing purposes
@@ -67,16 +71,17 @@ def get_usecase_diagram(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No validated requirements found for this document"
             )
         
         # Combine all requirement texts
-        combined_text = " ".join([row[0] for row in result])
+        combined_text = " ".join([row[0] for row in rows])
         
         # Generate use case diagram (both Mermaid and PlantUML)
         diagram_result = visualizer.generate_visualization(combined_text, 'usecase')
@@ -101,19 +106,21 @@ def get_usecase_diagram(
 
 
 @router.get("/scenarios/{document_id}")
-def get_scenarios(
+async def get_scenarios(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get available scenarios for sequence diagrams from validated requirements.
     """
     try:
         # Get document
-        document = db.query(RequirementDocument).filter(
+        stmt = select(RequirementDocument).where(
             RequirementDocument.doc_id == document_id,
             RequirementDocument.uploaded_by == "test-user"
-        ).first()
+        )
+        result = await db.execute(stmt)
+        document = result.scalar_one_or_none()
         
         if not document:
             # Return mock data for testing purposes
@@ -155,13 +162,14 @@ def get_scenarios(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             return {"scenarios": []}
         
         # Combine all requirement texts
-        combined_text = " ".join([row[0] for row in result])
+        combined_text = " ".join([row[0] for row in rows])
         
         # Generate scenarios using semantic analyzer
         semantic = visualizer.semantic_analyzer.analyze_text(combined_text)
@@ -191,20 +199,22 @@ def get_scenarios(
 
 
 @router.get("/sequence/{document_id}")
-def get_sequence_diagram(
+async def get_sequence_diagram(
     document_id: str,
     scenario: str = Query(..., description="Scenario ID for sequence diagram"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get Sequence diagram for a specific document and scenario.
     """
     try:
         # Get document
-        document = db.query(RequirementDocument).filter(
+        stmt = select(RequirementDocument).where(
             RequirementDocument.doc_id == document_id,
             RequirementDocument.uploaded_by == "test-user"
-        ).first()
+        )
+        result = await db.execute(stmt)
+        document = result.scalar_one_or_none()
         
         if not document:
             # Return mock data for testing purposes
@@ -252,16 +262,17 @@ def get_sequence_diagram(
             ORDER BY created_at
         """)
         
-        result = db.execute(requirements_query, {"doc_id": document_id}).fetchall()
+        result = await db.execute(requirements_query, {"doc_id": document_id})
+        rows = result.fetchall()
         
-        if not result:
+        if not rows:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No validated requirements found for this document"
             )
         
         # Combine all requirement texts
-        combined_text = " ".join([row[0] for row in result])
+        combined_text = " ".join([row[0] for row in rows])
         
         # Generate sequence diagram (both Mermaid and PlantUML)
         diagram_result = visualizer.generate_visualization(combined_text, 'sequence')

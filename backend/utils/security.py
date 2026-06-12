@@ -7,9 +7,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from config.database import get_db
-from core.config import settings
-from models.user import User, UserRole
+from backend.config.database import get_db
+from backend.core.config import settings
+from backend.models.user import User, UserRole
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()

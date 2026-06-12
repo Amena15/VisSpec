@@ -7,7 +7,8 @@ import re
 import logging
 import sys
 from typing import Any, Dict, Optional
-from core.logging import get_logger
+from backend.core.logging import get_logger
+
 
 logger = get_logger(__name__)
 

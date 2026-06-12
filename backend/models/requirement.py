@@ -1,12 +1,14 @@
 """Requirement model."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey, Float
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
 
 
 class Requirement(Base):
     __tablename__ = "requirements"
+    __table_args__ = {"extend_existing": True}
 
     req_id = Column(String, primary_key=True, default=_uuid)
     doc_id = Column(String, ForeignKey("requirement_documents.doc_id", ondelete="CASCADE"), nullable=False, index=True)
@@ -27,9 +29,14 @@ class Requirement(Base):
     sequence_order = Column(Integer, nullable=False, default=0)
     created_at = Column(String, nullable=False, default=_now)
 
-    document = relationship("RequirementDocument", back_populates="requirements")
+    document = relationship("backend.models.document.RequirementDocument", back_populates="requirements", foreign_keys=[doc_id])
     project = relationship("Project")
     defects = relationship("Defect", back_populates="requirement", cascade="all, delete-orphan")
     diagram_elements = relationship("DiagramElement", back_populates="source_requirement", cascade="all, delete-orphan")
     traceability_matrix = relationship("TraceabilityMatrix", back_populates="requirement", cascade="all, delete-orphan")
     traceability_notes = relationship("TraceabilityNote", back_populates="requirement", cascade="all, delete-orphan")
+    version_history = relationship(
+        "backend.models.requirement_history.RequirementVersionHistory",
+        back_populates="requirement",
+        cascade="all, delete-orphan"
+    )

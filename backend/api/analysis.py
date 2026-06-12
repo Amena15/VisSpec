@@ -11,15 +11,16 @@ import traceback
 from datetime import datetime, timezone
 from pydantic import BaseModel
 
-from models.user import User
-from models.document import RequirementDocument
-from models.requirement import Requirement
-from models.project import Project
-from config.database import get_db
-from utils.security import get_current_active_user
-from services.ai.requirement_organizer import requirement_organizer
-from services.ai.text_cleaner import TextCleaner
-from core.logging import get_logger
+from backend.models.user import User
+from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
+from backend.models.project import Project
+from backend.config.database import get_db
+from backend.utils.security import get_current_active_user
+from backend.services.ai.requirement_organizer import requirement_organizer
+from backend.services.ai.text_cleaner import TextCleaner
+from backend.core.logging import get_logger
+
 
 # Pydantic models for request/response
 class ApplySuggestionRequest(BaseModel):
@@ -384,9 +385,10 @@ def apply_suggestion(
         # Create version history entry
         try:
             # Import version history model
-            from models.validation import RequirementVersionHistory
+            from backend.models.validation import RequirementVersionHistory
             
             version_entry = RequirementVersionHistory(
+
                 req_id=request.req_id,
                 doc_id=req.doc_id,
                 project_id=req.project_id,

@@ -1,12 +1,14 @@
 """TraceabilityMatrix and TraceabilityNote models."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
 
 
 class TraceabilityMatrix(Base):
     __tablename__ = "traceability_matrix"
+    __table_args__ = {"extend_existing": True}
 
     matrix_id = Column(String, primary_key=True, default=_uuid)
     project_id = Column(String, ForeignKey("projects.project_id", ondelete="CASCADE"), nullable=False, index=True)
@@ -25,6 +27,7 @@ class TraceabilityMatrix(Base):
 
 class TraceabilityNote(Base):
     __tablename__ = "traceability_notes"
+    __table_args__ = {"extend_existing": True}
 
     note_id = Column(String, primary_key=True, default=_uuid)
     req_id = Column(String, ForeignKey("requirements.req_id", ondelete="CASCADE"), nullable=False, index=True)

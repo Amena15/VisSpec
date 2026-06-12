@@ -6,7 +6,7 @@ import re
 from typing import List, Dict, Any, Set
 from collections import defaultdict
 
-from core.logging import get_logger
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

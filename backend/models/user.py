@@ -1,7 +1,7 @@
 """User and UserRole model."""
 from sqlalchemy import Column, String, Integer, Float
 from sqlalchemy.orm import relationship
-from config.database import Base
+from backend.config.database import Base
 from enum import Enum as PyEnum
 from passlib.context import CryptContext
 import uuid
@@ -25,6 +25,8 @@ class UserRole(PyEnum):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"extend_existing": True}
+
 
     user_id = Column(String, primary_key=True, default=_uuid)
     email = Column(String, unique=True, nullable=False, index=True)

@@ -4,8 +4,9 @@ Retry handler with exponential backoff for Groq API calls.
 import time
 import random
 from typing import Callable, Any, Optional
-from core.config import settings
-from core.logging import get_logger
+from backend.core.config import settings
+from backend.core.logging import get_logger
+
 
 logger = get_logger(__name__)
 

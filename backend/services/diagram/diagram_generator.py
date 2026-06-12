@@ -15,15 +15,15 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from services.diagram.requirement_enrichment import RequirementEnrichmentService
-from services.diagram.usecase_mapper import UseCaseMapper
-from services.diagram.sequence_mapper import SequenceMapper
-from services.diagram.activity_mapper import ActivityMapper
-from services.diagram.plantuml_generator import PlantUMLGenerator
-from models.diagram import Diagram, DiagramElement
-from models.requirement import Requirement
-from models.validation import ValidationSession
-from core.logging import get_logger
+from backend.services.diagram.requirement_enrichment import RequirementEnrichmentService
+from backend.services.diagram.usecase_mapper import UseCaseMapper
+from backend.services.diagram.sequence_mapper import SequenceMapper
+from backend.services.diagram.activity_mapper import ActivityMapper
+from backend.services.diagram.plantuml_generator import PlantUMLGenerator
+from backend.models.diagram import Diagram, DiagramElement
+from backend.models.requirement import Requirement
+from backend.models.validation import ValidationSession
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

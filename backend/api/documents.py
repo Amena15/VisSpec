@@ -8,30 +8,31 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 
-from models.user import User
-from models.project import Project
-from models.document import RequirementDocument
-from models.requirement import Requirement
-from schemas.document import (
+from backend.models.user import User
+from backend.models.project import Project
+from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
+from backend.schemas.document import (
     DocumentUploadResponse,
     DocumentSummary,
     DocumentDetail,
     DocumentDeleteResponse,
 )
-from services.document.parser import DocumentParser
-from utils.security import get_current_active_user
-from config.database import get_db
-from core.config import settings
-from core.logging import get_logger
+from backend.services.document.parser import DocumentParser
+from backend.utils.security import get_current_active_user
+from backend.config.database import get_db
+from backend.core.config import settings
+from backend.core.logging import get_logger
 
 # Import TextCleaner with fallback
 try:
-    from services.ai.text_cleaner import TextCleaner
+    from backend.services.ai.text_cleaner import TextCleaner
 except ImportError:
     TextCleaner = None
 
@@ -247,7 +248,7 @@ async def upload_document(
     )
     
     # Save document to database
-    await db.add(document)
+    db.add(document)
     await db.commit()
     
     # Update user storage usage
@@ -271,14 +272,14 @@ async def upload_document(
             sequence_order=req.get("sequence_order", i),
             section_header=req.get("section_header", ""),
         )
-        await db.add(requirement)
+        db.add(requirement)
     
     await db.commit()
     
     # Auto-organize requirements for new document (professional flow)
     try:
         logger.info("Auto-organizing requirements for new document", extra={"doc_id": doc_id})
-        result = await db.execute(select(Requirement).filter(Requirement.doc_id == doc_id))
+        result = await db.execute(select(Requirement).where(Requirement.doc_id == doc_id))
         req_objects = result.scalars().all()
         raw_reqs = []
         for r in req_objects:
@@ -317,14 +318,14 @@ async def upload_document(
             r.modal_verbs_json = json.dumps(enriched.get('modal_verbs', []))
             r.vague_terms_json = json.dumps(enriched.get('vague_terms', []))
             updated += 1
-            await db.commit()
+        await db.commit()
         logger.info(f"Auto-organized {updated} requirements", extra={"doc_id": doc_id, "updated_count": updated})
     except Exception as e:
         logger.warning(f"Auto-organize failed: {e} - manual fix available", extra={"doc_id": doc_id, "error": str(e)})
     
     # Update project status to 'ready' after successful document processing
     try:
-        result = await db.execute(select(Project).filter(Project.project_id == project_id))
+        result = await db.execute(select(Project).where(Project.project_id == project_id))
         project = result.scalar_one_or_none()
         if project:
             project.status = "ready"
@@ -405,7 +406,7 @@ async def list_documents(
                             logger.info(f"Fixed validation session {latest_validation.validation_id} for document {d.doc_id}")
                         except Exception as fix_error:
                             logger.error(f"Failed to fix validation session: {fix_error}")
-                            db.rollback()
+                            await db.rollback()
                 else:
                     # Fallback: calculate from requirements if no validation sessions exist
                     if d.requirements:
@@ -549,8 +550,6 @@ async def get_document(
                 "upload_date": req.created_at,  # Add creation date for frontend display
             })
         
-        from fastapi import Response
-        
         response_data = {
             "doc_id": doc_id,
             "project_id": doc.project_id,
@@ -632,6 +631,7 @@ async def get_document(
             "requirements": [],
         }
 
+
 @router.post("/enrich-document/{doc_id}")
 async def enrich_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db)):
     """Manually trigger enrichment for existing document"""
@@ -658,7 +658,6 @@ async def enrich_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_d
         
         # Create requirement objects for enrichment
         req_objects = []
-        
         for req in requirements:
             req_objects.append({
                 "req_id": req.req_id,
@@ -793,7 +792,7 @@ async def fix_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db))
                 "sequence_order": req.sequence_order,
             })
         
-        cleaned_requirements = cleaner.clean_requirements_batch(req_objects)
+        cleaned_requirements = cleaner.clean_requirements_batch(req_objects) if cleaner else req_objects
         full_text = "\n\n".join(req["original_text"] for req in cleaned_requirements)
         # Use LLM for enrichment when API key is present, otherwise rule-based
         use_llm = bool(settings.GROQ_API_KEY)
@@ -823,7 +822,7 @@ async def fix_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db))
                 req.modal_verbs_json = json.dumps(modal_verbs) if modal_verbs else req.modal_verbs_json
                 req.vague_terms_json = json.dumps(vague_terms) if vague_terms else req.vague_terms_json
         
-            await db.commit()
+        await db.commit()
         
         return {
             "message": "Document fixed successfully",
@@ -833,7 +832,7 @@ async def fix_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db))
         }
         
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(500, f"Error fixing document: {str(e)}")
 
 
@@ -847,15 +846,18 @@ async def delete_document(
     Permanently delete a document and all associated analysis data.
     Implements REQ_07: Project Data Management (GDPR Right to be Forgotten).
     """
-    doc = (
-        db.query(RequirementDocument)
-        .join(Project)
-        .filter(
+    # Load document with relationships needed for counting
+    stmt = (
+        select(RequirementDocument)
+        .where(
             RequirementDocument.doc_id == doc_id,
-            Project.owner_id == current_user.user_id,
+            RequirementDocument.uploaded_by == current_user.user_id,
         )
-        .first()
+        .options(selectinload(RequirementDocument.requirements))
+        .options(selectinload(RequirementDocument.validation_sessions))
     )
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
@@ -866,8 +868,8 @@ async def delete_document(
 
     # Refund storage quota
     if doc.file_size_bytes:
-        result = await db.execute(select(User).filter(User.user_id == current_user.user_id))
-        user = result.scalar_one_or_none()
+        user_result = await db.execute(select(User).filter(User.user_id == current_user.user_id))
+        user = user_result.scalar_one_or_none()
         if user:
             user.storage_used_bytes = max(0, user.storage_used_bytes - doc.file_size_bytes)
             await db.commit()
@@ -897,12 +899,15 @@ async def add_traceability_note(
     """
     try:
         # Verify document exists and user has access
-        result = await db.execute(
-            select(RequirementDocument).join(Project).filter(
+        stmt = (
+            select(RequirementDocument)
+            .join(Project)
+            .where(
                 RequirementDocument.doc_id == doc_id,
                 Project.owner_id == current_user.user_id,
             )
         )
+        result = await db.execute(stmt)
         doc = result.scalar_one_or_none()
         if not doc:
             raise HTTPException(
@@ -918,11 +923,12 @@ async def add_traceability_note(
             )
         
         # Verify requirement exists in the document
-        req = db.query(Requirement).filter(
+        req_stmt = select(Requirement).where(
             Requirement.req_id == req_id,
             Requirement.doc_id == doc_id
-        ).first()
-        
+        )
+        req_result = await db.execute(req_stmt)
+        req = req_result.scalar_one_or_none()
         if not req:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
@@ -941,7 +947,7 @@ async def add_traceability_note(
             created_at=_now_iso()
         )
         
-        await db.add(note)
+        db.add(note)
         await db.commit()
         await db.refresh(note)
         

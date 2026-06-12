@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Set
 from datetime import datetime
 
 import spacy
-from services.ai.semantic_analyzer import SemanticAnalyzer
+from backend.services.ai.semantic_analyzer import SemanticAnalyzer
 
 
 def _normalize_actor(name: str) -> str:

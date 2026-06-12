@@ -7,8 +7,9 @@ from sqlalchemy import Column, String, Integer, Text, Boolean, ForeignKey, DateT
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 
-from config.database import Base
-from models.user import _uuid
+from backend.config.database import Base
+from backend.models.user import _uuid
+
 
 
 def _now():

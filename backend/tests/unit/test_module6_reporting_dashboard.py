@@ -229,7 +229,8 @@ class TestModule6ReportingDashboard:
                 assert mock_requirement.current_text == "The system shall process requests within 200ms."
                 
                 # Verify defect status was updated
-                assert mock_defect.status == "Resolved""
+                assert mock_defect.status == "Resolved"
+
                 
                 # Verify database commit was called
                 mock_db.commit.assert_called()

@@ -1,8 +1,9 @@
 """Diagram and DiagramElement models."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
 
 
 class Diagram(Base):

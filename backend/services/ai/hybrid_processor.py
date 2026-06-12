@@ -7,11 +7,11 @@ Orchestrates local preprocessing with cloud AI processing for optimal performanc
 import json
 import re
 from typing import Dict, List, Any, Optional
-from core.logging import get_logger
-from services.document.parser import DocumentParser
-from services.ai.local_processor import local_processor
-from services.ai.llm_service import llm_service
-from services.ai.requirement_organizer import requirement_organizer
+from backend.core.logging import get_logger
+from backend.services.document.parser import DocumentParser
+from backend.services.ai.local_processor import local_processor
+from backend.services.ai.llm_service import llm_service
+from backend.services.ai.requirement_organizer import requirement_organizer
 
 logger = get_logger(__name__)
 

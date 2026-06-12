@@ -4,18 +4,19 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
-from models.user import User
-from models.project import Project
-from models.requirement import Requirement
-from models.document import RequirementDocument
-from models.validation import Defect
-from models.traceability import TraceabilityNote
-from utils.security import get_current_active_user
-from config.database import get_db
-from core.logging import get_logger
+from backend.models.user import User
+from backend.models.project import Project
+from backend.models.requirement import Requirement
+from backend.models.document import RequirementDocument
+from backend.models.validation import Defect
+from backend.models.traceability import TraceabilityNote
+from backend.utils.security import get_current_active_user
+from backend.config.database import get_db
+from backend.core.logging import get_logger
 
 router = APIRouter(prefix="/api/traceability", tags=["traceability"])
 logger = get_logger(__name__)
@@ -132,12 +133,8 @@ def _determine_complexity(requirement_text: str) -> str:
 async def get_traceability(
     project_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """
-    Get traceability data for all requirements in a project.
-    Implements REQ_18: Requirements Traceability Matrix.
-    """
     """
     Get traceability data for all requirements in a project.
     Implements REQ_18: Requirements Traceability Matrix.
@@ -147,9 +144,9 @@ async def get_traceability(
         logger.info(f"User {current_user.user_id} requesting traceability for project {project_id}")
         
         # Verify project exists first
-        project = db.query(Project).filter(
-            Project.project_id == project_id
-        ).first()
+        stmt = select(Project).where(Project.project_id == project_id)
+        result = await db.execute(stmt)
+        project = result.scalar_one_or_none()
         
         if not project:
             logger.warning(f"Project {project_id} not found in database")
@@ -169,9 +166,9 @@ async def get_traceability(
         logger.info(f"Access granted: User {current_user.user_id} accessing project {project.name}")
         
         # Get all requirements for the project
-        requirements = db.query(Requirement).filter(
-            Requirement.project_id == project_id
-        ).all()
+        stmt = select(Requirement).where(Requirement.project_id == project_id)
+        result = await db.execute(stmt)
+        requirements = result.scalars().all()
         
         logger.info(f"Found {len(requirements)} requirements for project {project_id}")
         
@@ -179,9 +176,9 @@ async def get_traceability(
         
         for req in requirements:
             # Get defects for this requirement
-            defects = db.query(Defect).filter(
-                Defect.req_id == req.req_id
-            ).all()
+            stmt_defects = select(Defect).where(Defect.req_id == req.req_id)
+            defects_result = await db.execute(stmt_defects)
+            defects = defects_result.scalars().all()
             
             # Determine validation status
             validation_status = _determine_validation_status(req.req_id, defects)
@@ -193,9 +190,9 @@ async def get_traceability(
             complexity = _determine_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
-            note = db.query(TraceabilityNote).filter(
-                TraceabilityNote.req_id == req.req_id
-            ).order_by(TraceabilityNote.created_at.desc()).first()
+            stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
+            note_result = await db.execute(stmt_note)
+            note = note_result.scalar_one_or_none()
             
             note_data = None
             if note:
@@ -245,7 +242,7 @@ async def get_traceability(
 async def get_document_traceability(
     doc_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get traceability data for a specific document.
@@ -256,9 +253,9 @@ async def get_document_traceability(
         logger.info(f"User {current_user.user_id} requesting traceability for document {doc_id}")
         
         # Verify document exists and user has access
-        document = db.query(RequirementDocument).filter(
-            RequirementDocument.doc_id == doc_id
-        ).first()
+        stmt = select(RequirementDocument).where(RequirementDocument.doc_id == doc_id)
+        result = await db.execute(stmt)
+        document = result.scalar_one_or_none()
         
         if not document:
             logger.warning(f"Document {doc_id} not found in database")
@@ -268,9 +265,9 @@ async def get_document_traceability(
             )
         
         # Check if user has access (through project ownership)
-        project = db.query(Project).filter(
-            Project.project_id == document.project_id
-        ).first()
+        stmt_project = select(Project).where(Project.project_id == document.project_id)
+        project_result = await db.execute(stmt_project)
+        project = project_result.scalar_one_or_none()
         
         if not project or project.owner_id != current_user.user_id:
             logger.warning(f"User {current_user.user_id} does not have access to document {doc_id} (project {document.project_id})")
@@ -282,9 +279,9 @@ async def get_document_traceability(
         logger.info(f"Access granted: User {current_user.user_id} accessing document {doc_id}")
         
         # Get requirements for this document only
-        requirements = db.query(Requirement).filter(
-            Requirement.doc_id == doc_id
-        ).all()
+        stmt_reqs = select(Requirement).where(Requirement.doc_id == doc_id)
+        reqs_result = await db.execute(stmt_reqs)
+        requirements = reqs_result.scalars().all()
         
         logger.info(f"Found {len(requirements)} requirements for document {doc_id}")
         
@@ -292,9 +289,9 @@ async def get_document_traceability(
         
         for req in requirements:
             # Get defects for this requirement
-            defects = db.query(Defect).filter(
-                Defect.req_id == req.req_id
-            ).all()
+            stmt_defects = select(Defect).where(Defect.req_id == req.req_id)
+            defects_result = await db.execute(stmt_defects)
+            defects = defects_result.scalars().all()
             
             # Determine validation status
             validation_status = _determine_validation_status(req.req_id, defects)
@@ -306,9 +303,9 @@ async def get_document_traceability(
             complexity = _determine_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
-            note = db.query(TraceabilityNote).filter(
-                TraceabilityNote.req_id == req.req_id
-            ).order_by(TraceabilityNote.created_at.desc()).first()
+            stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
+            note_result = await db.execute(stmt_note)
+            note = note_result.scalar_one_or_none()
             
             note_data = None
             if note:
@@ -358,7 +355,7 @@ async def get_document_traceability(
 async def save_traceability_note(
     note_data: NoteRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Save or update a note for a requirement.
@@ -367,9 +364,9 @@ async def save_traceability_note(
     try:
         # Verify requirement exists
         logger.info(f"Looking for requirement with req_id: {note_data.req_id}")
-        requirement = db.query(Requirement).filter(
-            Requirement.req_id == note_data.req_id
-        ).first()
+        stmt = select(Requirement).where(Requirement.req_id == note_data.req_id)
+        result = await db.execute(stmt)
+        requirement = result.scalar_one_or_none()
         
         logger.info(f"Found requirement: {requirement is not None}")
         if requirement:
@@ -378,7 +375,9 @@ async def save_traceability_note(
         if not requirement:
             logger.error(f"Requirement not found with req_id: {note_data.req_id}")
             # List all available requirements for debugging
-            all_reqs = db.query(Requirement).all()
+            all_reqs_stmt = select(Requirement)
+            all_reqs_result = await db.execute(all_reqs_stmt)
+            all_reqs = all_reqs_result.scalars().all()
             logger.info(f"Available requirements in database: {[r.req_id for r in all_reqs[:10]]}")  # First 10
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -386,17 +385,19 @@ async def save_traceability_note(
             )
         
         # Check if note already exists for this requirement
-        existing_note = db.query(TraceabilityNote).filter(
-            TraceabilityNote.req_id == note_data.req_id
-        ).first()
-        
+        stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == note_data.req_id)
+        note_result = await db.execute(stmt_note)
+        existing_note = note_result.scalar_one_or_none()
+
         if existing_note:
             # Update existing note
             existing_note.content = note_data.content
+            # NOTE: TraceabilityNote model only has created_at.
+            # Treat it as the last-updated timestamp for backward compatibility.
             existing_note.created_at = datetime.now(timezone.utc)
-            db.commit()
-            db.refresh(existing_note)
-            
+            await db.commit()
+            await db.refresh(existing_note)
+
             return NoteResponse(
                 success=True,
                 note_id=existing_note.note_id,
@@ -415,8 +416,8 @@ async def save_traceability_note(
             )
             
             db.add(note)
-            db.commit()
-            db.refresh(note)
+            await db.commit()
+            await db.refresh(note)
             
             return NoteResponse(
                 success=True,
@@ -435,7 +436,7 @@ async def save_traceability_note(
         logger.error(f"Requirement project_id: {requirement.project_id if requirement else 'None'}")
         import traceback
         logger.error(f"Full traceback: {traceback.format_exc()}")
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save note: {str(e)}"
@@ -446,17 +447,19 @@ async def save_traceability_note(
 async def delete_traceability_note(
     note_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Delete a traceability note.
     """
     try:
         # Get note and verify ownership
-        note = db.query(TraceabilityNote).filter(
+        stmt = select(TraceabilityNote).where(
             TraceabilityNote.note_id == note_id,
             TraceabilityNote.created_by == current_user.user_id
-        ).first()
+        )
+        result = await db.execute(stmt)
+        note = result.scalar_one_or_none()
         
         if not note:
             raise HTTPException(
@@ -465,8 +468,8 @@ async def delete_traceability_note(
             )
         
         # Delete note
-        db.delete(note)
-        db.commit()
+        await db.delete(note)
+        await db.commit()
         
         return NoteResponse(
             success=True,
@@ -479,7 +482,7 @@ async def delete_traceability_note(
         raise
     except Exception as e:
         logger.error(f"Error deleting traceability note: {e}")
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete note"

@@ -1,8 +1,9 @@
 """Project model."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
 
 
 class Project(Base):
@@ -19,12 +20,12 @@ class Project(Base):
     created_at = Column(String, nullable=False, default=_now)
     updated_at = Column(String, nullable=False, default=_now, onupdate=_now)
 
-    owner = relationship("User", back_populates="projects")
-    documents = relationship("RequirementDocument", back_populates="project", cascade="all, delete-orphan")
-    validation_sessions = relationship("ValidationSession", back_populates="project", cascade="all, delete-orphan")
-    diagrams = relationship("Diagram", back_populates="project", cascade="all, delete-orphan")
-    metrics = relationship("ProjectMetrics", back_populates="project", uselist=False, cascade="all, delete-orphan")
-    traceability_matrix = relationship("TraceabilityMatrix", back_populates="project", cascade="all, delete-orphan")
-    traceability_notes = relationship("TraceabilityNote", back_populates="project", cascade="all, delete-orphan")
-    review_audits = relationship("ReviewAudit", back_populates="project", cascade="all, delete-orphan")
-    export_reports = relationship("ExportReport", back_populates="project", cascade="all, delete-orphan")
+    owner = relationship("backend.models.user.User", back_populates="projects")
+    documents = relationship("backend.models.document.RequirementDocument", back_populates="project", cascade="all, delete-orphan")
+    validation_sessions = relationship("backend.models.validation.ValidationSession", back_populates="project", cascade="all, delete-orphan")
+    diagrams = relationship("backend.models.diagram.Diagram", back_populates="project", cascade="all, delete-orphan")
+    metrics = relationship("backend.models.metrics.ProjectMetrics", back_populates="project", uselist=False, cascade="all, delete-orphan")
+    traceability_matrix = relationship("backend.models.traceability.TraceabilityMatrix", back_populates="project", cascade="all, delete-orphan")
+    traceability_notes = relationship("backend.models.traceability.TraceabilityNote", back_populates="project", cascade="all, delete-orphan")
+    review_audits = relationship("backend.models.review.ReviewAudit", back_populates="project", cascade="all, delete-orphan")
+    export_reports = relationship("backend.models.auxiliary.ExportReport", back_populates="project", cascade="all, delete-orphan")

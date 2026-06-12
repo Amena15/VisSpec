@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
 
-from models.user import User, UserRole
-from schemas.user import UserResponse, UserUpdate
-from utils.security import get_current_active_user, require_role
-from config.database import get_db
+from backend.models.user import User, UserRole
+from backend.schemas.user import UserResponse, UserUpdate
+from backend.utils.security import get_current_active_user, require_role
+from backend.config.database import get_db
 
 from pydantic import BaseModel
 
@@ -22,7 +23,7 @@ user_settings_store = {}
 
 
 @router.get("/settings")
-def get_user_settings(current_user: User = Depends(get_current_active_user)):
+async def get_user_settings(current_user: User = Depends(get_current_active_user)):
     user_id = current_user.user_id
     if user_id not in user_settings_store:
         return {
@@ -36,7 +37,7 @@ def get_user_settings(current_user: User = Depends(get_current_active_user)):
 
 
 @router.put("/settings")
-def update_user_settings(
+async def update_user_settings(
     settings: UserSettings,
     current_user: User = Depends(get_current_active_user)
 ):
@@ -46,13 +47,15 @@ def update_user_settings(
 
 
 @router.get("/", response_model=List[UserResponse])
-def get_users(
+async def get_users(
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    users = db.query(User).offset(skip).limit(limit).all()
+    stmt = select(User).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    users = result.scalars().all()
     return [
         UserResponse(
             user_id=u.user_id,
@@ -67,12 +70,14 @@ def get_users(
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(
+async def get_user(
     user_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    user = db.query(User).filter(User.user_id == user_id).first()
+    stmt = select(User).where(User.user_id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -94,13 +99,15 @@ def get_user(
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(
+async def update_user(
     user_id: str,
     user_update: UserUpdate,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    user = db.query(User).filter(User.user_id == user_id).first()
+    stmt = select(User).where(User.user_id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -112,8 +119,8 @@ def update_user(
     if user_update.role is not None:
         user.role = user_update.role.value
 
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
     return UserResponse(
         user_id=user.user_id,
@@ -126,12 +133,14 @@ def update_user(
 
 
 @router.delete("/{user_id}")
-def delete_user(
+async def delete_user(
     user_id: str,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    user = db.query(User).filter(User.user_id == user_id).first()
+    stmt = select(User).where(User.user_id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -142,7 +151,7 @@ def delete_user(
             detail="Cannot delete your own account"
         )
 
-    db.delete(user)
-    db.commit()
+    await db.delete(user)
+    await db.commit()
 
     return {"message": "User deleted successfully"}

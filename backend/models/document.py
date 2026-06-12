@@ -1,12 +1,18 @@
 """RequirementDocument model."""
 from sqlalchemy import Column, String, Integer, Text, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship
-from config.database import Base
-from models.user import _uuid, _now
+from backend.config.database import Base
+from backend.models.user import _uuid, _now
+
+# Ensure relationships using string targets do not create duplicate ORM classes
+# when modules are imported via different sys.path roots.
+
+
 
 
 class RequirementDocument(Base):
     __tablename__ = "requirement_documents"
+    __table_args__ = {"extend_existing": True}
 
     doc_id = Column(String, primary_key=True, default=_uuid)
     project_id = Column(String, ForeignKey("projects.project_id", ondelete="CASCADE"), nullable=False, index=True)
@@ -26,7 +32,7 @@ class RequirementDocument(Base):
     extracted_text = Column(Text, nullable=True)  # Sanitized text for full-text search indexing
     upload_date = Column(String, nullable=False, default=_now)
 
-    project = relationship("Project", back_populates="documents")
-    uploader = relationship("User", back_populates="uploaded_documents")
-    requirements = relationship("Requirement", back_populates="document", cascade="all, delete-orphan")
-    validation_sessions = relationship("ValidationSession", back_populates="document", cascade="all, delete-orphan")
+    project = relationship("backend.models.project.Project", back_populates="documents")
+    uploader = relationship("backend.models.user.User", back_populates="uploaded_documents")
+    requirements = relationship("Requirement", back_populates="document", cascade="all, delete-orphan", foreign_keys="Requirement.doc_id")
+    validation_sessions = relationship("backend.models.validation.ValidationSession", back_populates="document", cascade="all, delete-orphan")

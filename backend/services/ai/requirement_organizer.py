@@ -19,13 +19,14 @@ import logging
 from typing import Dict, List, Any, Optional
 
 try:
-    from core.logging import get_logger
+    from backend.core.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     logger = logging.getLogger(__name__)
 
-from services.ai.llm_service import llm_service
-from services.ai.text_cleaner import TextCleaner
+from backend.services.ai.llm_service import llm_service
+from backend.services.ai.text_cleaner import TextCleaner
+
 
 
 class RequirementOrganizer:

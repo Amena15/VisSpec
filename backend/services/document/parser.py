@@ -1,15 +1,19 @@
 """Document parsing service for PDF, DOCX, and TXT files."""
 import io
 import re
+import logging
 from typing import Dict, Any, Optional, List, Tuple
 
+logger = logging.getLogger(__name__)
+
 try:
-    from services.ai.text_cleaner import TextCleaner
+    from backend.services.ai.text_cleaner import TextCleaner
 except ImportError:
     TextCleaner = None
 
+
 # Import enhanced parser
-from services.document.parser_enhanced import EnhancedDocumentParser
+from backend.services.document.parser_enhanced import EnhancedDocumentParser
 
 
 def _collapse_repeated_word_token(match: re.Match) -> str:

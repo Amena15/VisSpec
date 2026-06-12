@@ -1,7 +1,6 @@
 """Document request/response schemas matching RequirementDocument model."""
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
 
 
 class RequirementItem(BaseModel):
@@ -109,41 +108,3 @@ class DocumentDeleteResponse(BaseModel):
     doc_id: str
     deleted_requirements: int = 0
     deleted_validations: int = 0
-
-
-# Legacy schemas kept for backward compatibility
-class Document(BaseModel):
-    id: int
-    title: str
-    content: str
-    user_id: int
-    analysis_result: Optional[str] = None
-    visualization_data: Optional[str] = None
-    is_public: bool = False
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class DocumentUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    is_public: Optional[bool] = None
-
-
-class DocumentResponse(DocumentBase):
-    id: int
-    user_id: int
-    analysis_result: Optional[str] = None
-    visualization_data: Optional[str] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class DocumentInDB(DocumentResponse):
-    hashed_content: Optional[str] = None

@@ -8,8 +8,8 @@ import time
 from typing import Dict, List, Any, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from core.config import settings
-from core.logging import get_logger
+from backend.core.config import settings
+from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 

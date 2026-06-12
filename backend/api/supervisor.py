@@ -18,19 +18,17 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, desc, asc, case, select
 
-
-
-from models.user import User, UserRole
-from models.project import Project
-from models.document import RequirementDocument
-from models.requirement import Requirement
-from models.validation import ValidationSession, Defect
-from models.traceability import TraceabilityMatrix, TraceabilityNote
-from models.metrics import ProjectMetrics
-from models.review import ReviewAudit
-from models.notification import Notification
-from utils.security import get_current_active_user, require_role
-from config.database import get_db
+from backend.models.user import User, UserRole
+from backend.models.project import Project
+from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
+from backend.models.validation import ValidationSession, Defect
+from backend.models.traceability import TraceabilityMatrix, TraceabilityNote
+from backend.models.metrics import ProjectMetrics
+from backend.models.review import ReviewAudit
+from backend.models.notification import Notification
+from backend.utils.security import get_current_active_user, require_role
+from backend.config.database import get_db
 
 router = APIRouter(tags=["supervisor"])
 
@@ -56,19 +54,16 @@ async def _latest_validation_for_project(db: AsyncSession, project_id: str) -> O
     return res.scalars().first()
 
 
-
 @router.get("/dashboard")
 async def supervisor_dashboard(
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
     db: AsyncSession = Depends(get_db),
 ):
-
     """List all projects across all students for supervisor review."""
     result = await db.execute(select(Project).filter(Project.is_deleted == 0))
     projects = result.scalars().all()
 
-
-    result: List[Dict[str, Any]] = []
+    result_list: List[Dict[str, Any]] = []
     for p in projects:
         owner_result = await db.execute(select(User).where(User.user_id == p.owner_id))
         owner = owner_result.scalars().first()
@@ -77,11 +72,10 @@ async def supervisor_dashboard(
         quality_score = None
         defect_count = 0
         if latest_val:
-            # overall_score stored in range 0..100 (see validation API)
             quality_score = latest_val.overall_score
             defect_count = latest_val.defect_count
 
-        result.append(
+        result_list.append(
             {
                 "project_id": p.project_id,
                 "name": p.name,
@@ -93,12 +87,11 @@ async def supervisor_dashboard(
             }
         )
 
-    return result
+    return result_list
 
 
 @router.get("/review/{project_id}")
 async def supervisor_review_view(
-
     project_id: str,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
     db: AsyncSession = Depends(get_db),
@@ -141,7 +134,6 @@ async def supervisor_review_view(
     )
     note_result = await db.execute(note_stmt)
     note_rows = note_result.scalars().all()
-    # Keep latest note per req
     for n in note_rows:
         if n.req_id not in notes_by_req:
             notes_by_req[n.req_id] = n
@@ -155,7 +147,6 @@ async def supervisor_review_view(
         metrics_result = await db.execute(metrics_stmt)
         metrics = metrics_result.scalars().first()
 
-
     traceability = []
     for req in requirements:
         req_defects = defects_by_req.get(req.req_id, [])
@@ -168,10 +159,9 @@ async def supervisor_review_view(
                 validation_status = "warning"
 
         latest_note = notes_by_req.get(req.req_id)
-        # Get source document information
         source_document = documents.get(req.doc_id)
         source_document_name = source_document.filename if source_document else f"Document_{req.doc_id[:8]}"
-        
+
         traceability.append(
             {
                 "req_id": req.req_id,
@@ -242,11 +232,11 @@ async def supervisor_review_view(
 
 
 @router.post("/review/{project_id}")
-def submit_supervisor_review(
+async def submit_supervisor_review(
     project_id: str,
     body: SupervisorReviewDecision,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Submit review decision and create review_audit + notification row (BR-19)."""
     decision = (body.decision or "").strip()
@@ -255,16 +245,17 @@ def submit_supervisor_review(
     if decision not in ("approved", "changes_requested"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid decision")
 
-    project = db.query(Project).filter(Project.project_id == project_id, Project.is_deleted == 0).first()
+    project_result = await db.execute(
+        select(Project).filter(Project.project_id == project_id, Project.is_deleted == 0)
+    )
+    project = project_result.scalars().first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-    # Get latest validation for audit metrics
-    latest_val = _latest_validation_for_project(db, project.project_id)
+    latest_val = await _latest_validation_for_project(db, project.project_id)
     quality_score = latest_val.overall_score if latest_val else None
     defect_count = latest_val.defect_count if latest_val else 0
 
-    # Create ReviewAudit record
     audit = ReviewAudit(
         review_id=str(uuid.uuid4()),
         project_id=project.project_id,
@@ -280,15 +271,9 @@ def submit_supervisor_review(
     )
     db.add(audit)
 
-    # Update project review_status
     project.review_status = decision
-
-    # Update project timestamp
     project.updated_at = _now_iso()
 
-
-
-    # Create notification for the project owner (student)
     notif_type = "review_approved" if decision == "approved" else "review_changes_requested"
     content = comments.strip() if comments else "No comments provided."
 
@@ -303,8 +288,8 @@ def submit_supervisor_review(
     )
     db.add(notification)
 
-    db.commit()
-    db.refresh(notification)
+    await db.commit()
+    await db.refresh(notification)
 
     return {
         "success": True,
@@ -318,25 +303,28 @@ def submit_supervisor_review(
 
 
 @router.get("/review-queue")
-def supervisor_review_queue(
+async def supervisor_review_queue(
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get projects pending review (not_reviewed or changes_requested)."""
-    projects = (
-        db.query(Project)
+    stmt = (
+        select(Project)
         .filter(
             Project.is_deleted == 0,
             Project.review_status.in_(["not_reviewed", "changes_requested"])
         )
         .order_by(Project.updated_at.desc())
-        .all()
     )
+    result = await db.execute(stmt)
+    projects = result.scalars().all()
 
-    result: List[Dict[str, Any]] = []
+    output = []
     for p in projects:
-        owner = db.query(User).filter(User.user_id == p.owner_id).first()
-        latest_val = _latest_validation_for_project(db, p.project_id)
+        owner_stmt = select(User).where(User.user_id == p.owner_id)
+        owner_res = await db.execute(owner_stmt)
+        owner = owner_res.scalars().first()
+        latest_val = await _latest_validation_for_project(db, p.project_id)
 
         quality_score = None
         defect_count = 0
@@ -344,7 +332,16 @@ def supervisor_review_queue(
             quality_score = latest_val.overall_score
             defect_count = latest_val.defect_count
 
-        result.append(
+        priority = "high"
+        if quality_score is not None:
+            if quality_score < 50:
+                priority = "high"
+            elif quality_score < 70:
+                priority = "medium"
+            else:
+                priority = "low"
+
+        output.append(
             {
                 "project_id": p.project_id,
                 "name": p.name,
@@ -355,34 +352,38 @@ def supervisor_review_queue(
                 "status": p.status,
                 "review_status": p.review_status,
                 "last_updated": p.updated_at,
-                "priority": "high" if (quality_score and quality_score < 50) else "medium" if (quality_score and quality_score < 70) else "low",
+                "priority": priority,
             }
         )
-
-    return result
+    return output
 
 
 @router.get("/audit-history/{project_id}")
-def supervisor_audit_history(
+async def supervisor_audit_history(
     project_id: str,
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get review audit history for a project."""
-    project = db.query(Project).filter(Project.project_id == project_id, Project.is_deleted == 0).first()
+    project_stmt = select(Project).where(Project.project_id == project_id, Project.is_deleted == 0)
+    project_res = await db.execute(project_stmt)
+    project = project_res.scalars().first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-    audits = (
-        db.query(ReviewAudit)
-        .filter(ReviewAudit.project_id == project_id)
+    audit_stmt = (
+        select(ReviewAudit)
+        .where(ReviewAudit.project_id == project_id)
         .order_by(ReviewAudit.created_at.desc())
-        .all()
     )
+    audit_res = await db.execute(audit_stmt)
+    audits = audit_res.scalars().all()
 
     result = []
     for audit in audits:
-        supervisor = db.query(User).filter(User.user_id == audit.supervisor_id).first()
+        supervisor_stmt = select(User).where(User.user_id == audit.supervisor_id)
+        supervisor_res = await db.execute(supervisor_stmt)
+        supervisor = supervisor_res.scalars().first()
         result.append(
             {
                 "review_id": audit.review_id,
@@ -411,65 +412,52 @@ async def supervisor_metrics(
     db: AsyncSession = Depends(get_db),
 ):
     """Get overall supervisor dashboard metrics."""
+    total_stmt = select(func.count()).select_from(Project).where(Project.is_deleted == 0)
+    total_projects = (await db.execute(total_stmt)).scalar_one()
 
-    total_projects = (await db.execute(
-        select(func.count()).select_from(Project).where(Project.is_deleted == 0)
-    )).scalar_one()
-
-    # Count by review status
     async def _count_by_status(status_value: str) -> int:
-        return (await db.execute(
-            select(func.count()).select_from(Project).where(
-                Project.is_deleted == 0,
-                Project.review_status == status_value,
-            )
-        )).scalar_one()
+        stmt = select(func.count()).select_from(Project).where(
+            Project.is_deleted == 0,
+            Project.review_status == status_value,
+        )
+        return (await db.execute(stmt)).scalar_one()
 
     not_reviewed = await _count_by_status("not_reviewed")
-
     approved = await _count_by_status("approved")
     changes_requested = await _count_by_status("changes_requested")
 
-    # Quality score distribution
-    projects_with_scores: List[float] = []
-    projects = (await db.execute(
-        select(Project).where(Project.is_deleted == 0)
-    )).scalars().all()
-
+    projects_stmt = select(Project).where(Project.is_deleted == 0)
+    projects_res = await db.execute(projects_stmt)
+    projects = projects_res.scalars().all()
+    scores = []
     for p in projects:
         latest_val = await _latest_validation_for_project(db, p.project_id)
         if latest_val and latest_val.overall_score is not None:
-            projects_with_scores.append(latest_val.overall_score)
+            scores.append(latest_val.overall_score)
+    avg_quality_score = sum(scores) / len(scores) if scores else 0
 
-    avg_quality_score = sum(projects_with_scores) / len(projects_with_scores) if projects_with_scores else 0
-
-    # Recent reviews
-    recent_reviews = (
-        await db.execute(
-            select(ReviewAudit)
-            .order_by(ReviewAudit.created_at.desc())
-            .limit(5)
-        )
-    ).scalars().all()
-
-    recent_reviews_data: List[Dict[str, Any]] = []
+    recent_stmt = select(ReviewAudit).order_by(ReviewAudit.created_at.desc()).limit(5)
+    recent_res = await db.execute(recent_stmt)
+    recent_reviews = recent_res.scalars().all()
+    recent_reviews_data = []
     for review in recent_reviews:
-        project = (await db.execute(
-            select(Project).where(Project.project_id == review.project_id)
-        )).scalars().first()
-
-        supervisor = (await db.execute(
-            select(User).where(User.user_id == review.supervisor_id)
-        )).scalars().first()
-
+        proj_stmt = select(Project).where(Project.project_id == review.project_id)
+        proj_res = await db.execute(proj_stmt)
+        proj = proj_res.scalars().first()
+        sup_stmt = select(User).where(User.user_id == review.supervisor_id)
+        sup_res = await db.execute(sup_stmt)
+        sup = sup_res.scalars().first()
         recent_reviews_data.append(
             {
-                "project_name": project.name if project else "Unknown",
-                "supervisor": supervisor.username if supervisor else "Unknown",
+                "project_name": proj.name if proj else "Unknown",
+                "supervisor": sup.username if sup else "Unknown",
                 "decision": review.decision,
                 "created_at": review.created_at,
             }
         )
+
+    reviewed = approved + changes_requested
+    completion_rate = (reviewed / total_projects * 100) if total_projects > 0 else 0
 
     return {
         "total_projects": total_projects,
@@ -480,23 +468,20 @@ async def supervisor_metrics(
         },
         "average_quality_score": round(avg_quality_score, 2),
         "recent_reviews": recent_reviews_data,
-        "review_completion_rate": round(
-            ((approved + changes_requested) / total_projects * 100) if total_projects > 0 else 0,
-            2,
-        ),
+        "review_completion_rate": round(completion_rate, 2),
     }
 
 
-
-@router.get("/review-audits/{project_id}", response_model=List[dict])
-def get_review_audits(
+@router.get("/review-audits/{project_id}")
+async def get_review_audits(
     project_id: str,
-    current_user: User = Depends(require_role("supervisor")),
-    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get the complete audit trail for a project's reviews."""
-    audits = db.query(ReviewAudit).filter(ReviewAudit.project_id == project_id).order_by(ReviewAudit.created_at.desc()).all()
-    
+    stmt = select(ReviewAudit).where(ReviewAudit.project_id == project_id).order_by(ReviewAudit.created_at.desc())
+    res = await db.execute(stmt)
+    audits = res.scalars().all()
     return [
         {
             "id": audit.review_id,
@@ -512,150 +497,134 @@ def get_review_audits(
     ]
 
 
-@router.get("/reports", response_model=Dict[str, Any])
-def get_supervisor_reports(
+@router.get("/reports")
+async def get_supervisor_reports(
     current_user: User = Depends(require_role(UserRole.SUPERVISOR)),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     search: Optional[str] = Query(None, description="Search by project name or owner email"),
     review_status: Optional[str] = Query(None, description="Filter by review status"),
     min_quality: Optional[int] = Query(None, description="Minimum quality score"),
     max_quality: Optional[int] = Query(None, description="Maximum quality score"),
     page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page")
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
 ):
     """Get aggregated supervisor reports with filtering and pagination."""
-    
-    # Base query for projects with owner information
-    projects_query = (
-        db.query(Project, User)
+    # Base query for projects with owner information (using select)
+    base_stmt = (
+        select(Project, User)
         .join(User, Project.owner_id == User.user_id)
-        .filter(Project.is_deleted == 0)
+        .where(Project.is_deleted == 0)
     )
-    
-    # Apply search filter
+
     if search:
         search_term = f"%{search}%"
-        projects_query = projects_query.filter(
-            (Project.name.ilike(search_term)) |
-            (User.email.ilike(search_term))
+        base_stmt = base_stmt.where(
+            (Project.name.ilike(search_term)) | (User.email.ilike(search_term))
         )
-    
-    # Apply review status filter
     if review_status and review_status != "all":
-        projects_query = projects_query.filter(Project.review_status == review_status)
-    
-    # Get total count for pagination
-    total_count = projects_query.count()
-    
-    # Apply pagination
+        base_stmt = base_stmt.where(Project.review_status == review_status)
+
+    # Get total count
+    count_stmt = select(func.count()).select_from(base_stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar_one()
+
+    # Pagination
     offset = (page - 1) * page_size
-    projects = projects_query.offset(offset).limit(page_size).all()
-    
-    # Get detailed information for each project
+    paginated_stmt = base_stmt.offset(offset).limit(page_size)
+    result = await db.execute(paginated_stmt)
+    rows = result.all()
+
     project_reports = []
     quality_scores = []
     defect_counts = []
     review_status_counts = {"not_reviewed": 0, "approved": 0, "changes_requested": 0}
-    
-    for project, owner in projects:
-        # Get latest validation session
-        latest_validation = (
-            db.query(ValidationSession)
-            .filter(ValidationSession.project_id == project.project_id)
-            .order_by(ValidationSession.validation_date.desc())
-            .first()
-        )
-        
-        # Get project metrics
-        metrics = (
-            db.query(ProjectMetrics)
-            .join(ValidationSession, ProjectMetrics.validation_id == ValidationSession.validation_id)
-            .filter(ValidationSession.project_id == project.project_id)
-            .order_by(ValidationSession.validation_date.desc())
-            .first()
-        )
-        
-        # Get requirement counts
-        req_stats = (
-            db.query(
-                func.count(Requirement.req_id).label('total_requirements'),
-                func.sum(case((Requirement.validation_status == 'failed', 1), else_=0)).label('failed_count')
+
+    for project, owner in rows:
+        latest_val = await _latest_validation_for_project(db, project.project_id)
+        quality = latest_val.overall_score if latest_val else 0
+        defect = latest_val.defect_count if latest_val else 0
+
+        if (min_quality is not None and quality < min_quality) or (max_quality is not None and quality > max_quality):
+            continue
+
+        # Get metrics
+        metrics = None
+        if latest_val:
+            m_stmt = select(ProjectMetrics).where(ProjectMetrics.validation_id == latest_val.validation_id)
+            m_res = await db.execute(m_stmt)
+            metrics = m_res.scalars().first()
+
+        # Requirement stats
+        req_stats_stmt = (
+            select(
+                func.count(Requirement.req_id).label("total_requirements"),
+                func.sum(case((Requirement.validation_status == "failed", 1), else_=0)).label("failed_count"),
             )
-            .filter(Requirement.project_id == project.project_id)
-            .first()
+            .where(Requirement.project_id == project.project_id)
         )
-        
-        # Get defect count
-        defect_count = 0
-        if latest_validation:
-            defect_count = latest_validation.defect_count
-        
-        # Get quality score
-        quality_score = 0
-        if latest_validation:
-            quality_score = latest_validation.overall_score
-        
-        # Apply quality score filters
-        if min_quality is not None and quality_score < min_quality:
-            continue
-        if max_quality is not None and quality_score > max_quality:
-            continue
-        
-        # Collect data for summary
-        quality_scores.append(quality_score)
-        defect_counts.append(defect_count)
-        if project.review_status:
-            review_status_counts[project.review_status] = review_status_counts.get(project.review_status, 0) + 1
-        
-        # Determine complexity level
+        req_stats_res = await db.execute(req_stats_stmt)
+        req_stats = req_stats_res.one()
+
+        # Complexity level
         complexity_level = "Low"
-        if metrics:
+        if metrics and metrics.complexity_score:
             if metrics.complexity_score >= 70:
                 complexity_level = "High"
             elif metrics.complexity_score >= 40:
                 complexity_level = "Medium"
-        
-        # Determine cost index
+
+        # Cost index
         cost_index = "Low"
-        if metrics:
-            if metrics.relative_cost_index >= 70:
-                cost_index = "High"
-            elif metrics.relative_cost_index >= 40:
+        if metrics and metrics.relative_cost_index:
+            try:
+                idx = int(metrics.relative_cost_index)
+                if idx >= 70:
+                    cost_index = "High"
+                elif idx >= 40:
+                    cost_index = "Medium"
+            except (ValueError, TypeError):
                 cost_index = "Medium"
-        
-        project_report = {
-            "project_id": project.project_id,
-            "name": project.name,
-            "owner_email": owner.email,
-            "created_at": project.created_at,
-            "review_status": project.review_status or "not_reviewed",
-            "quality_score": quality_score,
-            "defect_count": defect_count,
-            "total_requirements": req_stats.total_requirements if req_stats else 0,
-            "failed_requirements": req_stats.failed_count if req_stats else 0,
-            "complexity_score": metrics.complexity_score if metrics else 0,
-            "complexity_level": complexity_level,
-            "estimated_weeks": metrics.estimated_weeks if metrics else "Unknown",
-            "cost_index": cost_index,
-            "latest_validation_date": latest_validation.validation_date if latest_validation else None
-        }
-        
-        project_reports.append(project_report)
-    
-    # Calculate summary statistics
+
+        project_reports.append(
+            {
+                "project_id": project.project_id,
+                "name": project.name,
+                "owner_email": owner.email,
+                "created_at": project.created_at,
+                "review_status": project.review_status or "not_reviewed",
+                "quality_score": quality,
+                "defect_count": defect,
+                "total_requirements": req_stats.total_requirements or 0,
+                "failed_requirements": req_stats.failed_count or 0,
+                "complexity_score": metrics.complexity_score if metrics else 0,
+                "complexity_level": complexity_level,
+                "estimated_weeks": metrics.estimated_weeks if metrics else "Unknown",
+                "cost_index": cost_index,
+                "latest_validation_date": latest_val.validation_date if latest_val else None,
+            }
+        )
+
+        quality_scores.append(quality)
+        defect_counts.append(defect)
+        status_key = project.review_status or "not_reviewed"
+        if status_key in review_status_counts:
+            review_status_counts[status_key] += 1
+        else:
+            review_status_counts[status_key] = 1
+
     total_projects = len(project_reports)
-    avg_quality_score = sum(quality_scores) / len(quality_scores) if quality_scores else 0
-    total_defects = sum(defect_counts)
-    
+    avg_quality = sum(quality_scores) / total_projects if total_projects > 0 else 0
+    total_defects_sum = sum(defect_counts)
+
     summary = {
         "total_projects": total_projects,
-        "average_quality_score": round(avg_quality_score, 1),
-        "total_defects": total_defects,
+        "average_quality_score": round(avg_quality, 1),
+        "total_defects": total_defects_sum,
         "approved_projects": review_status_counts.get("approved", 0),
         "pending_review": review_status_counts.get("not_reviewed", 0),
-        "changes_requested": review_status_counts.get("changes_requested", 0)
+        "changes_requested": review_status_counts.get("changes_requested", 0),
     }
-    
+
     return {
         "projects": project_reports,
         "summary": summary,
@@ -663,7 +632,6 @@ def get_supervisor_reports(
             "page": page,
             "page_size": page_size,
             "total_count": total_count,
-            "total_pages": (total_count + page_size - 1) // page_size
-        }
+            "total_pages": (total_count + page_size - 1) // page_size,
+        },
     }
-

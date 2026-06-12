@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
-from datetime import datetime
-from models.user import UserRole
+from backend.models.user import UserRole
 import re
 
 class Token(BaseModel):
@@ -69,5 +68,4 @@ class UserResponse(BaseModel):
     created_at: str
 
     class Config:
-        # Allows converting SQLAlchemy model to Pydantic schema automatically
-        from_attributes = True 
+        from_attributes = True
