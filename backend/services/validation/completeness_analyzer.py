@@ -11,7 +11,10 @@ logger = get_logger(__name__)
 
 # Patterns that indicate well-formed requirements
 SHALL_PATTERN = re.compile(r"\b(shall|must|will|should)\b", re.IGNORECASE)
-ACTOR_PATTERN = re.compile(r"\b(the\s+\w+|system|user|admin|actor)\b", re.IGNORECASE)
+ACTOR_PATTERN = re.compile(
+    r"^(?:the\s+)?[\w-]+(?:\s+[\w-]+){0,4}\s+(?:shall|must|will|should|may)\b",
+    re.IGNORECASE,
+)
 ACTION_PATTERN = re.compile(r"\b(shall|must|will|should)\s+(\w+)", re.IGNORECASE)
 CONDITION_PATTERN = re.compile(r"\b(if|when|unless|while|after|before)\b", re.IGNORECASE)
 
@@ -57,7 +60,7 @@ class CompletenessAnalyzer:
         action_match = ACTION_PATTERN.search(text)
         if action_match:
             action_verb = action_match.group(2)
-            weak_verbs = {"be", "have", "do", "provide", "support", "handle", "manage"}
+            weak_verbs = {"have", "do"}
             if action_verb.lower() in weak_verbs:
                 defects.append({
                     "text": text,
@@ -69,7 +72,7 @@ class CompletenessAnalyzer:
                 })
 
         # Check for missing acceptance criteria
-        if word_count < 10:
+        if word_count < 6:
             # Shortness is more concerning for requirements that should be detailed
             confidence = round(min(0.50 + (10 - word_count) * 0.05, 0.90), 2)
             defects.append({

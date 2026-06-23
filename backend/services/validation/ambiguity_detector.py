@@ -14,7 +14,7 @@ VAGUE_TERMS = [
     "user-friendly", "intuitive", "efficient", "fast", "quick", "easy",
     "appropriate", "adequate", "sufficient", "reasonable", "normal",
     "regular", "timely", "seamless", "robust", "flexible", "scalable",
-    "as needed", "etc", "and/or", "if necessary", "if applicable",
+    "as needed", "etc", "and/or", "if necessary", "if applicable", "enough",
     "should", "may", "might", "could",
 ]
 
@@ -42,6 +42,10 @@ class AmbiguityDetector:
         )
         self.subjective_pattern = re.compile(
             r"\b(" + "|".join(re.escape(t) for t in SUBJECTIVE_TERMS) + r")\b",
+            re.IGNORECASE,
+        )
+        self.compliance_pattern = re.compile(
+            r"\brelevant\s+\w+\s+regulations?\b",
             re.IGNORECASE,
         )
 
@@ -89,6 +93,17 @@ class AmbiguityDetector:
                 "confidence": 0.55,
                 "description": f"Subjective term '{match.group(0)}' is open to interpretation.",
                 "suggestion": f"Replace '{match.group(0)}' with objective, measurable language.",
+            })
+
+        # Check for vague compliance references (confidence: 0.85)
+        for match in self.compliance_pattern.finditer(text):
+            defects.append({
+                "text": match.group(0),
+                "type": "ambiguity",
+                "severity": "high",
+                "confidence": 0.85,
+                "description": f"Compliance reference '{match.group(0)}' is underspecified.",
+                "suggestion": "Specify the exact regulation, standard, or policy to comply with.",
             })
 
         return defects

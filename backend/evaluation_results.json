@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-06-24T00:13:39.727869",
+  "dataset_size": 20,
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "accuracy": 1.0,
+    "specificity": 1.0,
+    "avg_response_time_ms": 0.1
+  },
+  "confusion_matrix": {
+    "true_positives": 10,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_negatives": 10
+  },
+  "benchmark": {
+    "precision_target": 0.843,
+    "recall_target": 0.781,
+    "f1_target": 0.81
+  },
+  "status": {
+    "precision_passed": true,
+    "recall_passed": true,
+    "f1_passed": true,
+    "targets_met": 3
+  },
+  "detailed_results": [
+    {
+      "id": "TC-001",
+      "text": "The system shall be fast and user-friendly.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.3
+    },
+    {
+      "id": "TC-002",
+      "text": "The system must respond within 200 milliseconds.",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-003",
+      "text": "Data retention period should be appropriate.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-004",
+      "text": "System must comply with relevant privacy regulations.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-005",
+      "text": "The system shall lock user accounts after 5 failed login attempts with...",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-006",
+      "text": "The system must notify users via email after account lockout.",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-007",
+      "text": "Passwords must be hashed using Argon2.",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-008",
+      "text": "The system should maybe implement captcha.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-009",
+      "text": "Security features must be adequate.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-010",
+      "text": "The system shall process international wire transfers. The system must...",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-011",
+      "text": "The system must handle many concurrent users. Page load should be quic...",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-012",
+      "text": "The system shall allow users to register with email and password.",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-013",
+      "text": "The system should be reliable and secure.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-014",
+      "text": "The system shall generate daily sales reports in PDF format.",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-015",
+      "text": "Users can add items to shopping cart. The system usually processes pay...",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.8,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-016",
+      "text": "The braking system shall engage within 50 milliseconds when the obstac...",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0
+    },
+    {
+      "id": "TC-017",
+      "text": "The system must sound an alarm immediately. Brake pressure must reach ...",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-018",
+      "text": "The REST API must support GET and POST methods. Endpoints shall return...",
+      "expert": "NO_DEFECT",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-019",
+      "text": "The system should handle many concurrent requests.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1
+    },
+    {
+      "id": "TC-020",
+      "text": "Error messages must be descriptive enough.",
+      "expert": "DEFECT",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1
+    }
+  ]
+}

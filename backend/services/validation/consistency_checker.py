@@ -28,13 +28,17 @@ CONTRADICTIONS = [
 class ConsistencyChecker:
     """Checks for contradictions and inconsistencies across requirements."""
 
+    def _matches_term(self, text: str, term: str) -> bool:
+        """Match a contradiction term as a whole phrase, not a substring."""
+        return bool(re.search(r"\b" + re.escape(term) + r"\b", text))
+
     def check_single(self, text: str) -> List[Dict[str, Any]]:
         """Check a single requirement text for internal contradictions."""
         defects = []
         lower_text = text.lower()
 
         for term_a, term_b in CONTRADICTIONS:
-            if term_a in lower_text and term_b in lower_text:
+            if self._matches_term(lower_text, term_a) and self._matches_term(lower_text, term_b):
                 # Per FYP Report specification: contradiction confidence = 0.90
                 confidence = 0.90
                 defects.append({
@@ -90,7 +94,18 @@ class ConsistencyChecker:
             for i, (b1, idx1) in enumerate(behavior_list):
                 for j, (b2, idx2) in enumerate(behavior_list[i + 1:], i + 1):
                     for term_a, term_b in CONTRADICTIONS:
-                        if term_a in b1 and term_b in b2:
+                        if self._matches_term(b1, term_a) and self._matches_term(b2, term_b):
+                            confidence = 0.90
+                            defects.append({
+                                "text": f"Requirements about '{entity}' (req {idx1+1} and req {idx2+1})",
+                                "type": "inconsistency",
+                                "severity": "high",
+                                "confidence": confidence,
+                                "description": f"Contradictory behaviors for '{entity}': '{b1}' vs '{b2}'.",
+                                "suggestion": f"Reconcile the conflicting requirements for '{entity}'.",
+                                "req_indices": [idx1, idx2]
+                            })
+                        elif self._matches_term(b1, term_b) and self._matches_term(b2, term_a):
                             confidence = 0.90
                             defects.append({
                                 "text": f"Requirements about '{entity}' (req {idx1+1} and req {idx2+1})",

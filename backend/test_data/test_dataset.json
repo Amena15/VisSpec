@@ -1,0 +1,122 @@
+[
+  {
+    "id": "TC-001",
+    "text": "The system shall be fast and user-friendly.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-002",
+    "text": "The system must respond within 200 milliseconds.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-003",
+    "text": "Data retention period should be appropriate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-004",
+    "text": "System must comply with relevant privacy regulations.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-005",
+    "text": "The system shall lock user accounts after 5 failed login attempts within 15 minutes.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-006",
+    "text": "The system must notify users via email after account lockout.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-007",
+    "text": "Passwords must be hashed using Argon2.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-008",
+    "text": "The system should maybe implement captcha.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-009",
+    "text": "Security features must be adequate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-010",
+    "text": "The system shall process international wire transfers. The system must validate recipient bank details against SWIFT database. If validation fails, the system shall notify the user and log the attempt.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-011",
+    "text": "The system must handle many concurrent users. Page load should be quick. Database queries must be optimized.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-012",
+    "text": "The system shall allow users to register with email and password.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-013",
+    "text": "The system should be reliable and secure.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-014",
+    "text": "The system shall generate daily sales reports in PDF format.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-015",
+    "text": "Users can add items to shopping cart. The system usually processes payments quickly.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-016",
+    "text": "The braking system shall engage within 50 milliseconds when the obstacle is detected at 10 meters.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-017",
+    "text": "The system must sound an alarm immediately. Brake pressure must reach 100% within 100 milliseconds.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-018",
+    "text": "The REST API must support GET and POST methods. Endpoints shall return JSON responses.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-019",
+    "text": "The system should handle many concurrent requests.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-020",
+    "text": "Error messages must be descriptive enough.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  }
+]
