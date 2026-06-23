@@ -5,7 +5,7 @@ Strictly adheres to BR-11 (no hallucinated actors) and BR-12 (max 15 steps per s
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, select
 from datetime import datetime
 import re
 from typing import List, Dict, Any
@@ -16,8 +16,10 @@ from backend.services.visualization.visualizer import Visualizer
 from backend.services.ai.semantic_analyzer import SemanticAnalyzer
 from backend.utils.security import get_current_active_user
 from backend.config.database import get_db
+from backend.core.logging import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 # Initialize services
 visualizer = Visualizer()
@@ -36,7 +38,32 @@ async def get_usecase_diagram(
     Enforces BR-11: No hallucinated actors.
     """
     try:
-        # Get validated requirements from database
+        # 1. Verify document access control (ownership)
+        doc_stmt = select(RequirementDocument).where(RequirementDocument.doc_id == document_id)
+        doc_result = await db.execute(doc_stmt)
+        doc = doc_result.scalar_one_or_none()
+        
+        if not doc:
+            logger.warning(
+                "Document not found for diagram generation",
+                extra={"doc_id": document_id, "user_id": current_user.user_id},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found",
+            )
+        
+        if doc.uploaded_by != current_user.user_id:
+            logger.warning(
+                "Unauthorized access attempt to diagram generation",
+                extra={"doc_id": document_id, "user_id": current_user.user_id, "owner_id": doc.uploaded_by},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found",
+            )
+        
+        # 2. Get validated requirements from database
         requirements_query = text("""
             SELECT original_text, current_text 
             FROM requirements 
@@ -86,9 +113,13 @@ async def get_usecase_diagram(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception(
+            "Use case diagram generation failed",
+            extra={"doc_id": document_id, "user_id": current_user.user_id, "error": str(e)},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Use case diagram generation failed: {str(e)}"
+            detail="Use case diagram generation failed. Please try again."
         )
 
 
@@ -103,7 +134,18 @@ async def get_scenarios(
     Uses keyword matching and LLM analysis to identify distinct user journeys.
     """
     try:
-        # Get validated requirements from database
+        # 1. Verify document access control
+        doc_stmt = select(RequirementDocument).where(RequirementDocument.doc_id == document_id)
+        doc_result = await db.execute(doc_stmt)
+        doc = doc_result.scalar_one_or_none()
+        
+        if not doc or doc.uploaded_by != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found",
+            )
+        
+        # 2. Get validated requirements from database
         requirements_query = text("""
             SELECT original_text, current_text 
             FROM requirements 
@@ -126,10 +168,16 @@ async def get_scenarios(
         
         return {"scenarios": scenarios}
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.exception(
+            "Scenario extraction failed",
+            extra={"doc_id": document_id, "user_id": current_user.user_id, "error": str(e)},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scenario extraction failed: {str(e)}"
+            detail="Scenario extraction failed. Please try again."
         )
 
 
@@ -145,7 +193,18 @@ async def get_sequence_diagram(
     Enforces BR-12: Maximum 15 steps per sequence diagram.
     """
     try:
-        # Get validated requirements from database
+        # 1. Verify document access control
+        doc_stmt = select(RequirementDocument).where(RequirementDocument.doc_id == document_id)
+        doc_result = await db.execute(doc_stmt)
+        doc = doc_result.scalar_one_or_none()
+        
+        if not doc or doc.uploaded_by != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found",
+            )
+        
+        # 2. Get validated requirements from database
         requirements_query = text("""
             SELECT original_text, current_text 
             FROM requirements 
@@ -179,6 +238,10 @@ async def get_sequence_diagram(
         truncated = False
         
         if steps > 15:
+            logger.warning(
+                "Sequence diagram truncated to 15 steps (BR-12)",
+                extra={"doc_id": document_id, "scenario": scenario, "original_steps": steps},
+            )
             sequence_data["steps"] = sequence_data["steps"][:15]
             sequence_data["mermaid_syntax"] = _generate_sequence_mermaid(
                 sequence_data["participants"], 
@@ -201,9 +264,13 @@ async def get_sequence_diagram(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception(
+            "Sequence diagram generation failed",
+            extra={"doc_id": document_id, "scenario": scenario, "user_id": current_user.user_id, "error": str(e)},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Sequence diagram generation failed: {str(e)}"
+            detail="Sequence diagram generation failed. Please try again."
         )
 
 

@@ -111,6 +111,10 @@ class TextCleaner:
 
         original_text = text
 
+        # Add this new step to strip markdown (**) and stray slashes
+        text = text.replace('**', '').replace('__', '').replace('`', '')
+        text = text.replace('\\', '')
+        
         # Step 0: Modal + modal with no space (shallwill -> shall will)
         text = cls.fix_concatenated_modals(text)
         

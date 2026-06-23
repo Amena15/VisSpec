@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  test_db:
+    image: postgres:15
+    container_name: visspec_test_db
+    restart: always
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+      POSTGRES_DB: visspec_test
+    ports:
+      - "5433:5432"
+

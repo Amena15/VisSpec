@@ -1,21 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Download,
-  Play
-} from 'lucide-react';
-import PlantUML from 'react-plantuml';
+import React, { useEffect, useRef, useState } from 'react';
 import plantumlEncoder from 'plantuml-encoder';
 
 const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
   const diagramRef = useRef(null);
+  const [plantUMLUrl, setPlantUMLUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [fallbackTried, setFallbackTried] = useState(false);
 
   // Determine if the diagram is PlantUML or Mermaid
-  const isPlantUML = chartString.includes('@startuml') && chartString.includes('@enduml');
+  const isPlantUML = chartString?.includes('@startuml') && chartString?.includes('@enduml');
 
-  // Initialize Mermaid with proper configuration for alignment
+  // Generate PlantUML image URL (with cache busting)
+  useEffect(() => {
+    if (isPlantUML && chartString) {
+      try {
+        const encoded = plantumlEncoder.encode(chartString);
+        // Use planttext.com (more reliable) with cache buster
+        const url = `https://www.planttext.com/api/plantuml/svg/${encoded}?t=${Date.now()}`;
+        setPlantUMLUrl(url);
+        setLoading(true);
+        setError(false);
+        setFallbackTried(false);
+      } catch (err) {
+        console.error('PlantUML encoding error:', err);
+        setError(true);
+        setLoading(false);
+      }
+    }
+  }, [chartString, isPlantUML]);
+
+  // Initialize Mermaid only when NOT PlantUML
   useEffect(() => {
     if (!isPlantUML) {
       const initializeMermaid = async () => {
@@ -28,14 +43,14 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
               startOnLoad: false,
               theme: darkMode ? 'dark' : 'default',
               themeVariables: {
-                primaryColor: '#F7F9FB',       // Background of Actor/Participant boxes
-                primaryTextColor: '#1F2933',   // Text color inside boxes
-                primaryBorderColor: '#4F46E5', // Border color of boxes (Slate Blue)
-                lineColor: '#64748B',          // Color of the arrows/lines
-                secondaryColor: '#E2E8F0',     // Background of the "Alt" loop boxes
-                tertiaryColor: '#FFFFFF',      // Background of the main canvas
-                noteBkgColor: '#FEF3C7',       // Background for Note boxes
-                noteTextColor: '#92400E'       // Text for Note boxes
+                primaryColor: '#F7F9FB',
+                primaryTextColor: '#1F2933',
+                primaryBorderColor: '#4F46E5',
+                lineColor: '#64748B',
+                secondaryColor: '#E2E8F0',
+                tertiaryColor: '#FFFFFF',
+                noteBkgColor: '#FEF3C7',
+                noteTextColor: '#92400E'
               },
               sequence: {
                 diagramMarginX: 50,
@@ -60,160 +75,92 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
           }
         }
       };
-
       initializeMermaid();
     }
-  }, [isPlantUML, darkMode]); // Only initialize once when component mounts
+  }, [isPlantUML, darkMode]);
 
-  // Render the diagram when chartString changes
+  // Render Mermaid diagram when chartString changes (only for non-PlantUML)
   useEffect(() => {
-    if (!isPlantUML) {
+    if (!isPlantUML && chartString) {
       const renderDiagram = async () => {
-        if (diagramRef.current && chartString) {
+        if (diagramRef.current) {
           try {
             const mermaidModule = await import('mermaid');
             const mermaid = mermaidModule.default || mermaidModule;
 
-            // Reinitialize mermaid with the correct theme when darkMode changes
-            mermaid.initialize({
-              startOnLoad: false,
-              theme: darkMode ? 'dark' : 'default',
-              themeVariables: {
-                primaryColor: '#F7F9FB',       // Background of Actor/Participant boxes
-                primaryTextColor: '#1F2933',   // Text color inside boxes
-                primaryBorderColor: '#4F46E5', // Border color of boxes (Slate Blue)
-                lineColor: '#64748B',          // Color of the arrows/lines
-                secondaryColor: '#E2E8F0',     // Background of the "Alt" loop boxes
-                tertiaryColor: '#FFFFFF',      // Background of the main canvas
-                noteBkgColor: '#FEF3C7',       // Background for Note boxes
-                noteTextColor: '#92400E'       // Text for Note boxes
-              },
-              sequence: {
-                diagramMarginX: 50,
-                diagramMarginY: 20,
-                actorMargin: 100,
-                width: 180,
-                height: 80,
-                boxMargin: 15,
-                boxTextMargin: 8,
-                noteMargin: 15,
-                messageMargin: 50,
-                mirrorActors: false,
-                bottomMarginAdj: 1,
-                useMaxWidth: true,
-                rightAngles: false,
-                showSequenceNumbers: true
-              },
-              fontFamily: 'Inter, sans-serif'
-            });
-
-            // Clear the diagram container
             diagramRef.current.innerHTML = '';
-
-            // Generate a unique ID for the diagram
             const diagramId = 'diagram-' + Date.now();
-
-            // Render the diagram to SVG
             const { svg } = await mermaid.render(diagramId, chartString);
-
             diagramRef.current.innerHTML = svg;
           } catch (error) {
             console.error('Error rendering diagram:', error);
-            console.error('Chart string:', chartString); // Debug log
-
-            // Fallback to showing a visual representation of the diagram
             diagramRef.current.innerHTML = `
               <div class="flex flex-col items-center justify-center min-h-[400px] text-center p-4">
-                <div class="inline-block bg-[#E0E7FF] p-4 rounded-lg mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 002-2v6a2 2 0 002-2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 002-2v10m-6 0a2 2 0 002-2h2a2 2 0 012-2v14a2 2 0 01-2-2z" />
+                <div class="inline-block bg-[#E0E7FF] p-4 rounded-full mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h3 class="text-lg font-semibold text-[#1F2933] mb-2">
-                  ${isPlantUML ? 'PlantUML Diagram' : 'Mermaid Diagram'}
-                </h3>
-                <p class="text-[#6B7280] max-w-md">
-                  ${isPlantUML ? 
-                    'PlantUML syntax detected. Check console for details.' : 
-                    'Interactive diagram with zoom, pan, and export features.'}
-                </p>
-                ${error ? `
-                  <div class="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
-                    <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-2">Rendering Error</h4>
-                    <p class="text-sm text-[var(--text-secondary)] mb-2">Error: ${error.message}</p>
-                    <div class="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
-                      <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-2">Diagram Syntax</h4>
-                      <pre class="text-xs text-[var(--text-secondary)] overflow-x-auto whitespace-pre-wrap bg-[var(--content-bg)] p-2 rounded">${chartString}</pre>
-                    </div>
-                  </div>
-                ` : ''}
+                <h3 class="text-lg font-semibold text-[#1F2933] mb-2">Rendering Error</h3>
+                <p class="text-[#6B7280] max-w-md text-sm mb-4">Could not render Mermaid diagram.</p>
               </div>
             `;
           }
         }
       };
-
       renderDiagram();
     }
-  }, [chartString, darkMode, isPlantUML]); // Only re-run when chartString or darkMode changes
+  }, [chartString, isPlantUML]);
 
-  // Function to generate PlantUML image URL
-  const generatePlantUMLImage = (plantUMLCode) => {
-    try {
-      const encoded = plantumlEncoder.encode(plantUMLCode);
-      return `https://www.planttext.com/api/plantuml/svg/${encoded}`;
-    } catch (error) {
-      console.error('Error encoding PlantUML:', error);
-      return '';
+  // Handle PlantUML image load success/failure
+  const handleImageLoad = () => {
+    setLoading(false);
+    setError(false);
+  };
+  const handleImageError = () => {
+    if (!fallbackTried) {
+      setFallbackTried(true);
+      // Fallback: try using plantuml.com as alternative
+      const encoded = plantumlEncoder.encode(chartString);
+      setPlantUMLUrl(`https://www.plantuml.com/plantuml/svg/${encoded}?t=${Date.now()}`);
+      return;
     }
+
+    setLoading(false);
+    setError(true);
   };
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Diagram Canvas */}
-      <div className={`rounded-lg flex-grow flex items-center justify-center ${darkMode ? 'bg-[#1F2937]' : 'bg-white'} border ${darkMode ? 'border-[#374151]' : 'border-[#E5E7EB]'}`}>
+      <div className={`rounded-lg flex-grow flex items-center justify-center overflow-hidden ${darkMode ? 'bg-[#1F2937]' : 'bg-transparent'}`}>
         <div
           ref={diagramRef}
-          className="h-full w-full flex justify-center items-center"
+          className="h-full w-full flex justify-center items-center transition-transform duration-200 ease-out"
           style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'center' }}
         >
-          {/* Render PlantUML or Mermaid based on diagram type */}
-          {isPlantUML && (
-            <div className="mt-4 p-3 bg-[var(--surface-bg)] rounded border border-[var(--card-border)]">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2">PlantUML Diagram Export</h4>
-                <button
-                  onClick={() => {
-                    const encoded = plantumlEncoder.encode(chartString);
-                    window.open(`https://www.planttext.com/api/plantuml/svg/${encoded}`, '_blank');
-                  }}
-                  className="px-3 py-1 bg-[var(--primary-main)] text-white rounded hover:bg-[var(--primary-dark)] transition-colors"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as Image
-                </button>
-              </div>
-              <div className="mt-2">
-                <p className="text-xs text-[var(--text-secondary)] mb-2">PlantUML syntax detected. Check console for details.</p>
-              </div>
-            </div>
-          )}
           {isPlantUML ? (
-            <div className="w-full h-full flex justify-center items-center">
+            <div className="w-full h-full flex justify-center items-center p-8 relative">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+              )}
               <img
-                src={generatePlantUMLImage(chartString)}
-                alt="Use Case Diagram"
+                src={plantUMLUrl}
+                alt="IEEE UML Diagram"
                 className="max-w-full max-h-full object-contain"
-                onError={(e) => {
-                  e.target.onerror = null; // Prevent infinite loop
-                  e.target.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="600" height="400" fill="%23F3F4F6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="16" fill="%236B7280">PlantUML diagram failed to load</text></svg>`;
-                }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                style={{ opacity: loading ? 0.5 : 1 }}
               />
+              {error && (
+                <div className="text-center text-red-600 p-4">
+                  <p>Failed to load PlantUML diagram.</p>
+                  <p className="text-sm text-gray-500">Please export as text or try again.</p>
+                </div>
+              )}
             </div>
-          ) : (
-            // The diagram will be rendered here by Mermaid
-            null
-          )}
+          ) : null}
         </div>
       </div>
     </div>

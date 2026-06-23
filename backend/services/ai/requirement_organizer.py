@@ -294,54 +294,11 @@ class RequirementOrganizer:
     ) -> List[Dict[str, Any]]:
         """
         Main entry point: takes raw requirements and returns fully enriched ones.
-
-        Steps:
-        1. Try professional extraction first (if LLM available)
-        2. Fallback to traditional pipeline if professional extraction fails
-        3. Split compound requirements
-        4. Standardize text format
-        5. Group into modules
-        6. Classify by category (LLM or heuristic)
-        7. Generate semantic IDs (FR/NFR prefix uses category)
-        8. Extract entities (actors, modal verbs, vague terms)
         """
         if not requirements:
             logger.warning("No requirements provided for enrichment")
             return []
 
-        # Try professional extraction first if LLM is available
-        if use_llm and llm_service.is_available:
-            try:
-                import signal
-                from contextlib import contextmanager
-                
-                @contextmanager
-                def timeout(seconds):
-                    def timeout_handler(signum, frame):
-                        raise TimeoutError("LLM enrichment timed out")
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(seconds)
-                    try:
-                        yield
-                    finally:
-                        signal.alarm(0)
-                
-                # Use 30 second timeout for LLM enrichment
-                with timeout(30):
-                    professional_reqs = self.extract_professional_requirements(full_text, use_llm)
-                    if professional_reqs:
-                        logger.info("Using professional extraction results")
-                        # Extract entities for the professional requirements
-                        professional_reqs = self._extract_entities(professional_reqs, use_llm)
-                        return professional_reqs
-                    else:
-                        logger.warning("Professional extraction failed, falling back to traditional pipeline")
-            except TimeoutError:
-                logger.warning("LLM enrichment timed out after 30 seconds, falling back to rule-based enrichment")
-            except Exception as e:
-                logger.warning(f"LLM enrichment failed: {e}, falling back to rule-based enrichment")
-
-        # Traditional pipeline as fallback
         # Step 0: Clean text first (remove repeated words like willwill, shallshall)
         cleaned_requirements = TextCleaner.clean_requirements_batch(requirements)
         
@@ -351,16 +308,16 @@ class RequirementOrganizer:
             split = self._split_compound_requirement(req)
             atomic_reqs.extend(split)
 
-        # Step 3: Group into modules
+        # Step 3: Group into modules (Safely uses LLM while keeping req_id)
         grouped = self._group_by_module(atomic_reqs, full_text, use_llm)
 
-        # Step 4: Classify by category (prefix FR vs NFR depends on this)
+        # Step 4: Classify by category (Safely uses LLM while keeping req_id)
         grouped = self._classify_requirements(grouped, use_llm)
 
         # Step 5: Generate semantic IDs
         grouped = self._generate_semantic_ids(grouped)
 
-        # Step 6: Extract entities
+        # Step 6: Extract entities (Safely uses LLM while keeping req_id)
         grouped = self._extract_entities(grouped, use_llm)
 
         return grouped
@@ -961,15 +918,23 @@ Requirements to group:
 
     @staticmethod
     def _safe_parse_json(text: str) -> Optional[Dict[str, Any]]:
-        """Safely parse JSON from LLM response."""
+        """Safely parse JSON from LLM response, ignoring conversational filler."""
         try:
-            # Remove markdown code blocks
             text = text.strip()
-            if text.startswith("```"):
-                text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-
+            
+            # Use regex to extract everything from the first '{' or '[' to the last '}' or ']'
+            import re
+            match = re.search(r'(\[.*\]|\{.*\})', text, re.DOTALL)
+            
+            if match:
+                clean_json = match.group(0)
+                return json.loads(clean_json)
+            
+            # Fallback if no brackets are found
             return json.loads(text)
-        except json.JSONDecodeError:
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse LLM JSON: {e} | Raw text: {text[:200]}")
             return None
 
 

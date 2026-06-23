@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from backend.models.user import User
 from backend.models.project import Project
@@ -52,6 +52,82 @@ def _safe_json_loads(value: Optional[str], default=None):
         return json.loads(value)
     except (json.JSONDecodeError, TypeError):
         return default if default is not None else []
+
+
+def _count_meaningful_words(text: str) -> int:
+    """Count words with at least 2 alphabetic characters."""
+    words = text.split()
+    return sum(1 for word in words if sum(1 for ch in word if ch.isalpha()) >= 2)
+
+
+def _assess_extraction_quality(
+    *,
+    file_extension: str,
+    extracted_text: str,
+    word_count: int,
+    page_count: Optional[int],
+    parser_scanned_flag: int,
+) -> Dict[str, Any]:
+    """Assess extraction quality and decide whether to reject obviously unreadable uploads."""
+    text = extracted_text or ""
+    stripped = text.strip()
+    effective_pages = max(int(page_count or 1), 1)
+
+    meaningful_word_count = _count_meaningful_words(text)
+    words_per_page = word_count / effective_pages if effective_pages else word_count
+    meaningful_ratio = (meaningful_word_count / word_count) if word_count > 0 else 0.0
+
+    warnings: List[str] = []
+    confidence = "high"
+    reject_upload = False
+
+    is_pdf = file_extension == "pdf"
+    is_scanned_suspected = bool(parser_scanned_flag)
+
+    # Reject only when extraction is clearly unusable.
+    if len(stripped) == 0 or word_count == 0:
+        reject_upload = True
+        confidence = "high"
+        warnings.append("No readable text extracted from document.")
+    elif is_pdf and (parser_scanned_flag == 1 and words_per_page < 8):
+        reject_upload = True
+        confidence = "high"
+        warnings.append("PDF appears scanned and extracted text is insufficient for analysis.")
+    elif is_pdf and words_per_page < 10:
+        is_scanned_suspected = True
+        confidence = "medium"
+        warnings.append("Very low text density detected for PDF; extraction quality may be poor.")
+
+    # Non-fatal quality warnings to make quality visible to users.
+    if word_count > 0 and meaningful_ratio < 0.55:
+        warnings.append("Extracted text appears noisy (low meaningful word ratio).")
+        if confidence == "high":
+            confidence = "medium"
+
+    if word_count > 0 and len(stripped) < max(40, int(word_count * 2.5)):
+        warnings.append("Extracted text may be truncated or overly compressed.")
+        if confidence == "high":
+            confidence = "medium"
+
+    quality_score = 100.0
+    if word_count == 0:
+        quality_score = 0.0
+    else:
+        density_score = min(words_per_page / 40.0, 1.0) * 40.0
+        meaning_score = meaningful_ratio * 50.0
+        length_score = min(len(stripped) / 300.0, 1.0) * 10.0
+        quality_score = round(max(0.0, min(100.0, density_score + meaning_score + length_score)), 1)
+
+    return {
+        "reject_upload": reject_upload,
+        "is_scanned_pdf": 1 if is_scanned_suspected else 0,
+        "warnings": warnings,
+        "quality_score": quality_score,
+        "confidence": confidence,
+        "meaningful_word_count": meaningful_word_count,
+        "words_per_page": round(words_per_page, 2),
+        "meaningful_ratio": round(meaningful_ratio, 3),
+    }
 
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
@@ -157,13 +233,34 @@ async def upload_document(
         )
     
     # ------------------------------------------------------------------
-    # 5. Check for scanned PDF with no readable text (outside try-catch)
+    # 5. Assess extraction quality and scanned-PDF risk
     # ------------------------------------------------------------------
-    is_scanned_pdf = parse_result.get("is_scanned_pdf", 0)
-    if is_scanned_pdf == 1 or len(extracted_text.strip()) < 10:
+    extraction_quality = _assess_extraction_quality(
+        file_extension=ext,
+        extracted_text=extracted_text,
+        word_count=word_count,
+        page_count=page_count,
+        parser_scanned_flag=parse_result.get("is_scanned_pdf", 0),
+    )
+    is_scanned_pdf = extraction_quality["is_scanned_pdf"]
+    quality_warnings = list(extraction_quality["warnings"])
+
+    if extraction_quality["reject_upload"]:
+        logger.warning(
+            "Rejecting upload due to low extraction quality",
+            extra={
+                "filename": filename,
+                "file_extension": ext,
+                "word_count": word_count,
+                "page_count": page_count,
+                "quality_score": extraction_quality["quality_score"],
+                "quality_confidence": extraction_quality["confidence"],
+                "warnings": quality_warnings,
+            },
+        )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No readable text detected. Please upload a searchable PDF with a text layer (not an image-only scanned document)."
+            detail="No usable readable text detected. Please upload a searchable PDF with a text layer or a clearer source document.",
         )
     
     # Generate document ID early for logging purposes
@@ -178,11 +275,34 @@ async def upload_document(
         
         # Add warning if no requirements found
         if requirements_count == 0:
+            extraction_warning = (
+                "No clear requirements were extracted. Document may lack explicit modal verbs "
+                "(shall, must, should, will, may) or extraction quality is low."
+            )
+            quality_warnings.append(extraction_warning)
             logger.warning(
                 f"No clear requirements found in document {filename}. "
                 f"Document may not contain modal verbs (shall, must, should, will, may). "
                 f"Word count: {word_count}",
                 extra={"doc_id": doc_id, "doc_filename": filename, "word_count": word_count}
+            )
+
+        # Quality validation: suspiciously low requirement yield for longer documents.
+        if word_count >= 120 and requirements_count <= 1:
+            low_yield_warning = (
+                "Extraction quality warning: very few requirements detected for a long document. "
+                "Please review extracted requirements before analysis."
+            )
+            quality_warnings.append(low_yield_warning)
+            logger.warning(
+                "Low requirement extraction yield detected",
+                extra={
+                    "doc_id": doc_id,
+                    "doc_filename": filename,
+                    "word_count": word_count,
+                    "requirements_count": requirements_count,
+                    "quality_score": extraction_quality["quality_score"],
+                },
             )
         
         logger.info(f"Successfully extracted {requirements_count} requirements", extra={"doc_id": doc_id, "req_count": requirements_count})
@@ -216,9 +336,17 @@ async def upload_document(
             logger.info(f"Text cleaning completed successfully for {len(requirements)} requirements", extra={"doc_id": doc_id, "req_count": len(requirements)})
         
         except Exception as e:
-            logger.error(f"Text cleaning failed during upload: {e}")
+            logger.error(
+                "Text cleaning failed during upload",
+                extra={"doc_id": doc_id, "doc_filename": filename, "error": str(e)},
+            )
             # Continue with original requirements if cleaning fails
-            logger.warning("Proceeding with original text due to cleaning failure")
+            warning_msg = "Text cleaning failed; proceeding with original extracted text."
+            quality_warnings.append(warning_msg)
+            logger.warning(
+                warning_msg,
+                extra={"doc_id": doc_id, "doc_filename": filename},
+            )
     
     # Identify logical sections
     sections = parser.identify_structure(extracted_text)
@@ -242,7 +370,8 @@ async def upload_document(
         extracted_text=sanitized_text,  # Store extracted text for analysis
         upload_date=datetime.now(timezone.utc),
         uploaded_by=current_user.user_id,
-        is_scanned_pdf=parse_result.get("is_scanned_pdf", 0),
+        is_scanned_pdf=is_scanned_pdf,
+        parse_error=" | ".join(dict.fromkeys(quality_warnings)) if quality_warnings else None,
         extracted_author=parse_result.get("extracted_author"),
         extracted_version=parse_result.get("extracted_version"),
     )
@@ -347,7 +476,9 @@ async def upload_document(
         requirements_found=requirements_count,
         sections_found=sections_titles,
         extracted_text=extracted_text,
-        upload_date=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        upload_date=datetime.now(timezone.utc),
+        extraction_quality_score=extraction_quality["quality_score"],
+        extraction_warnings=list(dict.fromkeys(quality_warnings)),
     )
 
 
@@ -359,11 +490,15 @@ async def list_documents(
 ):
     """List all documents for the authenticated user, optionally filtered by project."""
     try:
-        # Get documents directly without complex joins first
+        # Eager load requirements and validation_sessions to prevent async lazy-loading errors
         result = await db.execute(
-            select(RequirementDocument).filter(
-                RequirementDocument.uploaded_by == current_user.user_id
-            ).order_by(RequirementDocument.upload_date.desc())
+            select(RequirementDocument)
+            .filter(RequirementDocument.uploaded_by == current_user.user_id)
+            .options(
+                selectinload(RequirementDocument.requirements),
+                selectinload(RequirementDocument.validation_sessions)
+            )
+            .order_by(RequirementDocument.upload_date.desc())
         )
         docs = result.scalars().all()
 
@@ -466,70 +601,46 @@ async def get_document(
     try:
         # Simplified query to avoid SQLAlchemy errors
         result = await db.execute(
-            select(RequirementDocument).filter(
-                RequirementDocument.doc_id == doc_id
-            )
+            select(RequirementDocument).filter(RequirementDocument.doc_id == doc_id)
         )
         doc = result.scalar_one_or_none()
         
         if not doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
         
-        # Simple ownership check
         if doc.uploaded_by != current_user.user_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
         
-        # Structure identification must use extracted plain text, not `content` (binary file bytes).
-        # Passing binary PDF/DOCX into identify_structure raises (regex on bytes) and previously
-        # caused the whole endpoint to fall through to the empty stub while validation still worked.
+        from backend.services.document.parser import DocumentParser
         parser = DocumentParser()
         structure_source = (doc.extracted_text or "") if isinstance(doc.extracted_text, str) else ""
         try:
             sections_data = parser.identify_structure(structure_source)
         except Exception as parse_err:
-            logger.warning(
-                "identify_structure failed for doc %s: %s",
-                doc_id,
-                parse_err,
-                extra={"doc_id": doc_id},
-            )
+            logger.warning("identify_structure failed for doc %s: %s", doc_id, parse_err, extra={"doc_id": doc_id})
             sections_data = []
         
-        # Get requirements for this document (AsyncSession => use select/execute)
+        # Get requirements
         req_result = await db.execute(
-            select(Requirement)
-            .filter(Requirement.doc_id == doc_id)
-            .order_by(Requirement.sequence_order)
+            select(Requirement).filter(Requirement.doc_id == doc_id).order_by(Requirement.sequence_order)
         )
         requirements = req_result.scalars().all()
 
         print(f"DEBUG: Found {len(requirements)} requirements for document {doc_id}")
 
-        for i, req in enumerate(requirements[:3]):
-            print(f"DEBUG: Req {i+1}: {req.original_text[:50]}...")
-
-        # Format requirements for response
         req_list = []
         import json
         for req in requirements:
-            # Parse JSON fields
-            actors = []
-            modal_verbs = []
-            vague_terms = []
-
+            actors, modal_verbs, vague_terms = [], [], []
             try:
-                if req.actors_json:
-                    actors = json.loads(req.actors_json)
-                if req.modal_verbs_json:
-                    modal_verbs = json.loads(req.modal_verbs_json)
-                if req.vague_terms_json:
-                    vague_terms = json.loads(req.vague_terms_json)
+                if req.actors_json: actors = json.loads(req.actors_json)
+                if req.modal_verbs_json: modal_verbs = json.loads(req.modal_verbs_json)
+                if req.vague_terms_json: vague_terms = json.loads(req.vague_terms_json)
             except json.JSONDecodeError:
                 pass
+
+            # FOOLPROOF DATE HANDLING: Check if it's a datetime object before calling isoformat
+            req_date = req.created_at.isoformat() if hasattr(req.created_at, 'isoformat') else str(req.created_at) if req.created_at else ""
 
             req_list.append({
                 "req_id": req.req_id,
@@ -538,7 +649,6 @@ async def get_document(
                 "current_text": str(req.current_text) if req.current_text else "",
                 "word_count": req.word_count or 0,
                 "sequence_order": req.sequence_order or 0,
-                # Enriched fields
                 "category": req.category,
                 "module_name": req.module_name,
                 "semantic_id": req.semantic_id,
@@ -547,9 +657,12 @@ async def get_document(
                 "modal_verbs": modal_verbs,
                 "vague_terms": vague_terms,
                 "validation_status": req.validation_status,
-                "upload_date": req.created_at,  # Add creation date for frontend display
+                "upload_date": req_date,
             })
         
+        # FOOLPROOF DATE HANDLING for the document upload date
+        doc_date = doc.upload_date.isoformat() if hasattr(doc.upload_date, 'isoformat') else str(doc.upload_date) if doc.upload_date else ""
+
         response_data = {
             "doc_id": doc_id,
             "project_id": doc.project_id,
@@ -561,7 +674,7 @@ async def get_document(
             "status": doc.status,
             "content": str(doc.content) if doc.content else "",
             "extracted_text": str(doc.extracted_text) if doc.extracted_text else "",
-            "upload_date": doc.upload_date if doc.upload_date else "",
+            "upload_date": doc_date,
             "uploaded_by": doc.uploaded_by,
             "is_scanned_pdf": doc.is_scanned_pdf,
             "extracted_author": doc.extracted_author,
@@ -571,13 +684,9 @@ async def get_document(
             "requirements": req_list,
         }
         
-        # Ensure all data is JSON serializable
         try:
-            import json
-            json_str = json.dumps(response_data)
-            # Add cache-control headers to prevent browser caching
             return Response(
-                content=json_str,
+                content=json.dumps(response_data),
                 headers={
                     "Cache-Control": "no-cache, no-store, must-revalidate",
                     "Pragma": "no-cache",
@@ -587,36 +696,10 @@ async def get_document(
             )
         except (TypeError, ValueError) as json_error:
             print(f"JSON serialization error: {json_error}")
-            # Return minimal safe response
-            safe_response = {
-                "doc_id": doc_id,
-                "project_id": str(doc.project_id) if doc.project_id else "",
-                "filename": str(doc.filename) if doc.filename else "Document",
-                "file_extension": str(doc.file_extension) if doc.file_extension else "txt",
-                "file_size_bytes": int(doc.file_size_bytes) if doc.file_size_bytes else 0,
-                "word_count": int(doc.word_count) if doc.word_count else 0,
-                "page_count": int(doc.page_count) if doc.page_count else 0,
-                "status": str(doc.status) if doc.status else "Ready for Analysis",
-                "content": "",
-                "extracted_text": "",
-                "upload_date": "",
-                "requirements": [],
-            }
-            return Response(
-                content=json.dumps(safe_response),
-                headers={
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                    "Content-Type": "application/json",
-                }
-            )
-        
-    except HTTPException:
-        raise
+            raise
+            
     except Exception as e:
         print(f"Error in get_document: {e}")
-        # Return a minimal working response
         return {
             "doc_id": doc_id,
             "project_id": "",
@@ -630,7 +713,6 @@ async def get_document(
             "upload_date": "",
             "requirements": [],
         }
-
 
 @router.post("/enrich-document/{doc_id}")
 async def enrich_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db)):

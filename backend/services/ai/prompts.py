@@ -11,6 +11,7 @@ CRITICAL DIRECTIVES (YOU MUST OBEY THESE OR FAIL):
 2. THE BAN LIST: You must NEVER output sentences that contain the following boilerplate words: "Figure", "Table", "Section", "Appendix", "This document details", "As shown in", "Sequence Diagram".
 3. THE ATOMIC RULE: You must isolate the core rule. Maximum length is 2 sentences. NEVER output a whole paragraph.
 4. SPLIT COMPOUND RULES: If a paragraph contains multiple "shall" or "must" statements, split them into separate JSON objects.
+5. CLEAN TEXT RULE: You must remove all markdown formatting (like **, ##, `) and stray unicode characters from your output. Provide ONLY plain, professional, readable English.
 
 EXAMPLES OF YOUR TASK:
 Bad Raw Text: "The system must operate 24/7. 4.3 Reliability. Table 63 Business Rules. Section 5 Summary. This document details the software requirement specification."
@@ -237,4 +238,29 @@ Requirements:
 {text}
 
 Diagram type: {diagram_type}
+"""
+
+
+IEEE_USECASE_EXTRACTION_PROMPT = """You are an expert in IEEE 29148 and UML 2.5 standards.
+Extract ONLY structured Use Case mapping data from requirements text.
+
+STRICT RULES:
+1. Actors must represent users or external systems.
+2. Use cases must be actionable system functions.
+3. Associations must map Actor -> UseCase and should cover all listed use cases whenever possible.
+4. Include/extend relations must be output as dependency pairs.
+5. No conversational text, no markdown, no code fences.
+6. Return ONLY valid JSON matching this schema.
+
+JSON SCHEMA:
+{{
+  "actors": ["Actor1", "Actor2"],
+  "use_cases": ["UseCase1", "UseCase2"],
+  "includes": [["BaseUC", "IncludedUC"]],
+  "extends": [["BaseUC", "ExtendingUC"]],
+  "associations": [["Actor", "UseCase"]]
+}}
+
+TEXT:
+{text}
 """

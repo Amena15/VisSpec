@@ -1,7 +1,7 @@
 """Document request/response schemas matching RequirementDocument model."""
 from pydantic import BaseModel, Field
 from typing import Optional, List
-
+from datetime import datetime
 
 class RequirementItem(BaseModel):
     """Individual requirement extracted from a document."""
@@ -53,7 +53,9 @@ class DocumentUploadResponse(BaseModel):
     is_scanned_pdf: int = 0
     requirements_found: int = 0
     sections_found: List[str] = []
-    upload_date: str
+    extraction_quality_score: Optional[float] = None
+    extraction_warnings: List[str] = []
+    upload_date: datetime
 
     class Config:
         from_attributes = True
@@ -71,7 +73,7 @@ class DocumentSummary(BaseModel):
     page_count: Optional[int] = None
     status: str
     requirements_found: int = 0
-    upload_date: str
+    upload_date: datetime
     quality_score: Optional[float] = None
     defect_count: Optional[int] = 0
 
@@ -95,7 +97,7 @@ class DocumentDetail(BaseModel):
     extracted_author: Optional[str] = None
     extracted_version: Optional[str] = None
     malware_scan_passed: int = 0
-    upload_date: str
+    upload_date: datetime
     requirements: List[RequirementItem] = []
 
     class Config:

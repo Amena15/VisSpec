@@ -187,17 +187,34 @@ class DocumentParser:
             return {"error": str(e)}
 
     def parse_txt(self, file_content, filename: str) -> Dict[str, Any]:
-        """Parse a plain text file."""
-        # Handle both bytes and string input
+        """Parse a plain text file (with RTF fallback)."""
         if isinstance(file_content, bytes):
             text = file_content.decode("utf-8", errors="replace")
         else:
             text = str(file_content)
+            
+        # MAC TEXTEDIT HACK: Detect if the TXT file is secretly an RTF file
+        if text.strip().startswith('{\\rtf'):
+            import re
+            # Replace common RTF smart quotes and dashes with plain equivalents
+            text = text.replace("\\'91", "'").replace("\\'92", "'")
+            text = text.replace("\\'93", '"').replace("\\'94", '"')
+            text = text.replace("\\'96", "-").replace("\\'97", "-")
+            
+            # Remove RTF blocks like {\fonttbl...} and {\colortbl...}
+            text = re.sub(r'\{[^{}]*\}', '', text)
+            
+            # Remove RTF control words (e.g., \uc0, \u8209, \cf0, \fs24, \pard)
+            text = re.sub(r'\\[a-z]+\d*(?:-?\d+)? ?', '', text)
+            
+            # Clean up residual slashes and standardize newlines
+            text = text.replace('\\', '')
+            text = re.sub(r'\n+', '\n', text)
         
         return {
             "filename": filename,
             "file_extension": "txt",
-            "text": text,
+            "text": text.strip(),
             "page_count": 1,
             "word_count": len(text.split()),
             "is_scanned_pdf": 0,

@@ -47,6 +47,15 @@ def _safe_json_loads(value, default=None):
         return default if default is not None else []
 
 
+def _ensure_test_routes_enabled() -> None:
+    """Block test-only endpoints unless debug mode is explicitly enabled."""
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Endpoint not found",
+        )
+
+
 @router.post("/validate", response_model=ValidationResponse)
 async def validate_requirements(
     request: ValidationRequest,
@@ -70,10 +79,13 @@ async def validate_requirements(
             llm_used=result["llm_used"],
             processing_time_ms=result["processing_time_ms"],
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.exception("Validation failed for /validate", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Validation failed: {str(e)}",
+            detail="Validation failed. Please try again.",
         )
 
 
@@ -86,47 +98,35 @@ async def validate_document(
     """
     Run validation on an uploaded document by doc_id.
     """
-    try:
-        now = _now_iso()
-        validation_id = str(uuid.uuid4())
+    now = _now_iso()
+    validation_id = str(uuid.uuid4())
 
-        # ------------------------------------------------------------------
-        # 1. Verify document exists and user has access (simplified)
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # 1. Verify document exists and user has access (simplified)
+    # ------------------------------------------------------------------
+    try:
         stmt = select(RequirementDocument).where(RequirementDocument.doc_id == request.doc_id)
         result = await db.execute(stmt)
         doc = result.scalar_one_or_none()
-        
-        if not doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found",
-            )
-        
-        # Simple ownership check
-        if doc.uploaded_by != current_user.user_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found",
-            )
     except Exception as e:
-        print(f"Error in validate_document: {e}")
-        # Return minimal response to avoid breaking frontend
-        return {
-            "validation_id": str(uuid.uuid4()),
-            "doc_id": request.doc_id,
-            "project_id": "",
-            "status": "completed",
-            "overall_score": 100.0,
-            "total_defects": 0,
-            "total_requirements": 0,
-            "defects_by_type": {},
-            "defects_by_severity": {},
-            "defects": [],
-            "llm_used": False,
-            "processing_time_ms": 0,
-            "perfect_score": True,
-        }
+        logger.exception("Database error fetching document for validation", extra={"doc_id": request.doc_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load document for validation.",
+        )
+
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Simple ownership check
+    if doc.uploaded_by != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
 
     # Get requirements for the document
     # Use select and execute, but requirements is a relationship; we need to access doc.requirements
@@ -244,7 +244,7 @@ async def validate_document(
     # 4. Filter defects by confidence threshold (BR-10: > 70%)
     # ------------------------------------------------------------------
     all_defects = result.get("defects", [])
-    filtered_defects = [d for d in all_defects if d.get("confidence", 0) > settings.MIN_CONFIDENCE_THRESHOLD]
+    filtered_defects = [d for d in all_defects if d.get("confidence", 0) >= settings.MIN_CONFIDENCE_THRESHOLD]
     
     # Log warning if defects found but no requirements exist (data inconsistency)
     if filtered_defects and not requirements:
@@ -276,6 +276,14 @@ async def validate_document(
             req_id = validator._find_best_match(d.get("text", ""), [
                 {"req_id": r.req_id, "original_text": r.original_text} for r in requirements
             ])
+
+        # Skip unmapped defects because DB model requires non-null req_id.
+        if not req_id:
+            logger.warning(
+                "Skipping defect without req_id mapping",
+                extra={"validation_id": validation_id, "doc_id": request.doc_id, "defect_type": d.get("type")},
+            )
+            continue
 
         defect = Defect(
             defect_id=str(uuid.uuid4()),
@@ -373,6 +381,7 @@ async def test_validation_no_auth(
     db: AsyncSession = Depends(get_db),
 ):
     """Test endpoint to verify validation status updates without authentication"""
+    _ensure_test_routes_enabled()
     try:
         # Get requirements for this document
         stmt = select(Requirement).where(Requirement.doc_id == doc_id)
@@ -422,6 +431,7 @@ async def test_validation_status(
     db: AsyncSession = Depends(get_db),
 ):
     """Test endpoint to verify validation status updates"""
+    _ensure_test_routes_enabled()
     try:
         # Get requirements for this document
         stmt = select(Requirement).where(Requirement.doc_id == doc_id)
@@ -498,42 +508,31 @@ async def get_validation_results(
         stmt = select(RequirementDocument).where(RequirementDocument.doc_id == doc_id)
         result = await db.execute(stmt)
         doc = result.scalar_one_or_none()
-        
-        if not doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found",
-            )
-        
-        # Simple ownership check
-        if doc.uploaded_by != current_user.user_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found",
-            )
     except Exception as e:
-        print(f"Error in get_validation_results: {e}")
-        # Return minimal response to avoid breaking frontend
-        return {
-            "validation_id": "",
-            "doc_id": doc_id,
-            "project_id": "",
-            "status": "completed",
-            "overall_score": 100.0,
-            "total_defects": 0,
-            "total_requirements": 0,
-            "defects_by_type": {},
-            "defects_by_severity": {},
-            "defects": [],
-            "llm_used": False,
-            "processing_time_ms": 0,
-            "perfect_score": True,
-        }
+        logger.exception("Database error fetching validation results", extra={"doc_id": doc_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch validation results.",
+        )
 
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Simple ownership check
+    if doc.uploaded_by != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Get the latest validation session for this document
     # Get the latest validation session for this document
     stmt_val = select(ValidationSession).where(ValidationSession.doc_id == doc_id).order_by(ValidationSession.validation_date.desc())
     val_result = await db.execute(stmt_val)
-    val_session = val_result.scalar_one_or_none()
+    val_session = val_result.scalars().first() 
     
     # Get requirements count for this document
     req_stmt = select(Requirement).where(Requirement.doc_id == doc_id)

@@ -18,7 +18,7 @@ from backend.utils.security import get_current_active_user
 from backend.config.database import get_db
 from backend.core.logging import get_logger
 
-router = APIRouter(prefix="/api/traceability", tags=["traceability"])
+router = APIRouter()
 logger = get_logger(__name__)
 
 

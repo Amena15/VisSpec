@@ -232,6 +232,14 @@ export const ieeeDiagramsAPI = {
       headers: { 'Content-Type': 'text/plain' }
     });
   },
+
+  renderPlantUMLToSVG: (plantumlSyntax) => {
+    const payload = plantumlSyntax;
+    return apiClient.post('/api/ieee-diagrams/render-plantuml-svg', payload, {
+      headers: { 'Content-Type': 'text/plain' },
+      responseType: 'blob'
+    });
+  },
   
   getProjectDiagrams: (projectId) => {
     return apiClient.get(`/api/ieee-diagrams/project/${projectId}/diagrams`);

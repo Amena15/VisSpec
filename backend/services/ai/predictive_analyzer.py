@@ -88,17 +88,68 @@ class PredictiveAnalyzer:
 
         logger.info("PredictiveAnalyzer initialized with Section 4.8.1 weights and scikit-learn MinMaxScaler")
 
-    def analyze(self, text: str) -> PredictiveResult:
+    def analyze(self, text: str, max_length: int = 50000) -> PredictiveResult:
         """
         Main analysis method - returns PredictiveResult object.
+        Input validation included (HIGH SECURITY).
         
         Args:
             text: Requirements text to analyze
+            max_length: Maximum allowed text length (default 50KB)
             
         Returns:
             PredictiveResult with all fields required by REQ_14, REQ_15, REQ_10
         """
-        return self._analyze(text)
+        try:
+            # Input validation (SECURITY)
+            if text is None:
+                logger.warning("analyze() called with None text")
+                return PredictiveResult(
+                    complexity_score=0,
+                    estimated_effort_weeks=0.0,
+                    cost_index="low",
+                    risk_level="low",
+                    recommendations=["No text provided for analysis"],
+                    confidence_score=0.0,
+                    breakdown={}
+                )
+            
+            if not isinstance(text, str):
+                logger.warning(f"analyze() called with non-string text: {type(text)}")
+                return PredictiveResult(
+                    complexity_score=0,
+                    estimated_effort_weeks=0.0,
+                    cost_index="low",
+                    risk_level="low",
+                    recommendations=["Invalid text format"],
+                    confidence_score=0.0,
+                    breakdown={}
+                )
+            
+            if len(text) > max_length:
+                logger.warning(f"analyze() called with text exceeding max length: {len(text)} > {max_length}")
+                return PredictiveResult(
+                    complexity_score=0,
+                    estimated_effort_weeks=0.0,
+                    cost_index="low",
+                    risk_level="low",
+                    recommendations=[f"Text exceeds maximum length of {max_length} characters"],
+                    confidence_score=0.0,
+                    breakdown={}
+                )
+            
+            return self._analyze(text)
+        except Exception as e:
+            logger.exception(f"Error in analyze(): {e}")
+            return PredictiveResult(
+                complexity_score=0,
+                estimated_effort_weeks=0.0,
+                cost_index="low",
+                risk_level="low",
+                recommendations=["Analysis failed due to internal error"],
+                confidence_score=0.0,
+                breakdown={}
+            )
 
     def analyze_text(self, text: str) -> Dict[str, any]:
         """

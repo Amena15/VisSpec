@@ -8,16 +8,17 @@ import {
   Filter,
   ChevronDown,
   AlertTriangle,
-  FileText
+  FileText,
+  Play
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DiagramViewer from '../components/DiagramViewer';
-import PlantUMLViewer from '../components/PlantUMLViewer';
 import { ieeeDiagramsAPI, documentAPI, diagramsAPI } from '../services/api';
+import plantumlEncoder from 'plantuml-encoder';
 
 const VisualizationPage = () => {
-  const { documentId } = useParams(); // Revert back to documentId
+  const { documentId } = useParams();
   const navigate = useNavigate();
 
   const [diagramType, setDiagramType] = useState('usecase');
@@ -28,55 +29,34 @@ const VisualizationPage = () => {
   const [generating, setGenerating] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [error, setError] = useState(null);
-  const [compliance, setCompliance] = useState(null);
   
-  // Document selection state
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(documentId || '');
 
-  // Fetch documents on mount
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
         const res = await documentAPI.getAll();
         setDocuments(res.data || []);
       } catch (err) {
-        console.error('Documents fetch error:', err);
         toast.error('Could not load documents');
       }
     };
     fetchDocuments();
   }, []);
 
-  // Fetch IEEE-compliant diagram when selected document changes
   useEffect(() => {
     if (!selectedDocument || selectedDocument === 'undefined' || selectedDocument === '') {
-      console.log('No valid document selected, showing document selector');
       setError('Please select a document to visualize.');
       setLoading(false);
       return;
     }
-    
-    // Try to fetch existing diagrams first
-    const fetchExistingDiagram = async () => {
-      try {
-        // For now, we'll just set loading to false and let user generate new diagram
-        setCurrentDiagram(null);
-        setLoading(false);
-      } catch (err) {
-        console.error('Diagram fetch error:', err);
-        setError('Failed to load diagram. Please generate a new one.');
-        toast.error('Could not load diagram');
-        setLoading(false);
-      }
-    };
-    
-    fetchExistingDiagram();
+    setCurrentDiagram(null);
+    setLoading(false);
   }, [selectedDocument, diagramType]);
 
-  // Fetch available scenarios (sequence diagram scenarios) when switching to sequence tab
   useEffect(() => {
-    if (diagramType !== 'sequence' || !selectedDocument || selectedDocument === 'undefined' || selectedDocument === '') return;
+    if (diagramType !== 'sequence' || !selectedDocument) return;
     
     const fetchScenarios = async () => {
       try {
@@ -87,15 +67,12 @@ const VisualizationPage = () => {
           setSelectedScenario(scenarioList[0].id);
         }
       } catch (err) {
-        console.error('Scenarios fetch error:', err);
         setScenarios([]);
       }
     };
-    
     fetchScenarios();
   }, [diagramType, selectedDocument]);
 
-  // Generate IEEE-compliant diagram
   const handleGenerateDiagram = async () => {
     if (!selectedDocument) {
       toast.error('Please select a document first');
@@ -112,27 +89,22 @@ const VisualizationPage = () => {
         selectedScenario || null
       );
       
-      // Access the actual response data from axios response
       const data = response.data;
       
       if (data.success) {
         setCurrentDiagram({
-          mermaid_syntax: data.plantuml_syntax,
+          mermaid_syntax: data.mermaid_syntax,
+          plantuml_syntax: data.plantuml_syntax, 
           diagram_id: data.diagram_id,
-          compliance: data.compliance
         });
-        setCompliance(data.compliance);
         toast.success(`IEEE-compliant ${diagramType} diagram generated successfully`);
         
-        if (data.compliance?.warning) {
-          toast.warning(data.compliance.warning);
-        }
+        if (data.compliance?.warning) toast.warning(data.compliance.warning);
       } else {
         setError(data.error || 'Failed to generate diagram');
         toast.error(data.error || 'Failed to generate diagram');
       }
     } catch (err) {
-      console.error('Diagram generation error:', err);
       setError('Failed to generate diagram. Please try again.');
       toast.error('Could not generate diagram');
     } finally {
@@ -140,300 +112,243 @@ const VisualizationPage = () => {
     }
   };
 
-  // Handle diagram type change
-  const handleDiagramTypeChange = (newType) => {
-    setDiagramType(newType);
-    setCurrentDiagram(null); // Reset current diagram when type changes
-  };
-
-  // Handle document selection
   const handleDocumentChange = (e) => {
-    const documentId = e.target.value;
-    setSelectedDocument(documentId);
-    navigate(`/visualization/${documentId}`);
+    const docId = e.target.value;
+    setSelectedDocument(docId);
+    navigate(`/visualization/${docId}`);
   };
 
-  // Handle zoom controls
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 50));
   const handleResetZoom = () => setZoomLevel(100);
 
-  // Export PlantUML as PNG for PDF generation
+  // --- Export Handlers ---
   const handleExportPlantUML = async () => {
-    if (!currentDiagram?.plantuml_syntax) {
-      toast.error('No PlantUML syntax to export');
-      return;
-    }
-    
+    if (!currentDiagram?.plantuml_syntax) return toast.error('No PlantUML syntax to export');
     try {
-      const response = await ieeeDiagramsAPI.renderPlantUMLToPNG(currentDiagram.plantuml_syntax);
-      
-      if (response.success && response.png_base64) {
-        // Convert base64 to blob and download
-        const byteCharacters = atob(response.png_base64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'image/png' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${diagramType}_diagram.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('PlantUML PNG exported for PDF generation');
-      } else {
-        // Fallback to PlantUML syntax export
-        const blob = new Blob([currentDiagram.plantuml_syntax], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${diagramType}_diagram.puml`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.warning('PNG rendering failed, exported PlantUML syntax instead');
-      }
-    } catch (err) {
-      console.error('PlantUML rendering error:', err);
-      // Fallback to PlantUML syntax export
-      const blob = new Blob([currentDiagram.plantuml_syntax], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
+      const blob = new Blob([currentDiagram.plantuml_syntax], { type: 'text/plain;charset=utf-8' });
+      const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = downloadUrl;
       a.download = `${diagramType}_diagram.puml`;
       a.click();
-      URL.revokeObjectURL(url);
-      toast.warning('PNG rendering failed, exported PlantUML syntax instead');
+      URL.revokeObjectURL(downloadUrl);
+      toast.success('PlantUML source exported successfully');
+    } catch (err) {
+      toast.error('Failed to export PlantUML source');
     }
   };
 
-  // Export SVG from Mermaid (for interactive use)
-  const handleExportSVG = () => {
-    const svgElement = document.querySelector('.mermaid svg');
-    if (!svgElement) {
-      toast.error('No SVG element found to export');
-      return;
-    }
+ const handleExportSVG = async () => {
+    if (!currentDiagram?.plantuml_syntax) return toast.error('No diagram to export');
     
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
-    const blob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${diagramType}_diagram.svg`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('SVG exported (Mermaid rendering)');
+    try {
+      const toastId = toast.loading('Generating SVG...');
+
+      const encoded = plantumlEncoder.encode(currentDiagram.plantuml_syntax);
+      const response = await ieeeDiagramsAPI.renderPlantUMLToSVG(encoded);
+      const blob = new Blob([response.data], { type: 'image/svg+xml;charset=utf-8' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${diagramType}_diagram.svg`;
+      a.click();
+      URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('SVG exported successfully', { id: toastId });
+    } catch (err) {
+      console.error('SVG export failed:', err);
+      toast.error('Failed to export SVG');
+    }
   };
 
-  // Get current diagram string for display
-  const currentDiagramString = currentDiagram?.mermaid_syntax || '';
-  const hasNoScenarios = diagramType === 'sequence' && scenarios.length === 0 && !generating;
+  const currentDiagramString = currentDiagram?.plantuml_syntax || '';
 
   return (
-    <div className="min-h-screen bg-[var(--content-bg)] py-6">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        
+        {/* --- Top Header --- */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/analysis-results')}
-              className="p-2 rounded-lg hover:bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="p-2 bg-white rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 text-gray-600 transition-all"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-[var(--text-primary)]">Visualization</h1>
-              <p className="text-sm text-[var(--text-secondary)]">Generated from validated requirements</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Visualization</h1>
+              <p className="text-sm text-gray-500 mt-0.5">Generate and export IEEE-compliant diagrams</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          
+          <div className="flex gap-3 w-full sm:w-auto">
             <button
               onClick={handleExportSVG}
               disabled={!currentDiagramString}
-              className="flex items-center px-4 py-2 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] disabled:opacity-50"
+              className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-sm"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export SVG (Mermaid)
+              SVG
             </button>
             <button
               onClick={handleExportPlantUML}
               disabled={!currentDiagramString}
-              className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+              className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-sm"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export PlantUML (PDF)
+              <Download className="w-4 h-4 mr-2" />
+              PlantUML
             </button>
           </div>
         </div>
 
-        {/* Document Selector */}
+        {/* --- Document Selector --- */}
         {!selectedDocument && (
-          <div className="bg-[var(--card-bg)] rounded-xl shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Select Document</h3>
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Select a Source Document</h3>
             </div>
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-[var(--text-secondary)]">
-                Document:
-              </label>
-              <select
-                value={selectedDocument}
-                onChange={handleDocumentChange}
-                className="flex-1 px-4 py-2 bg-[var(--content-bg)] border border-[var(--card-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-main)]"
-              >
-                <option value="">Select a document...</option>
-                {documents.map((doc) => (
-                  <option key={doc.doc_id} value={doc.doc_id}>
-                    {doc.filename}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={selectedDocument}
+              onChange={handleDocumentChange}
+              className="w-full md:w-1/2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            >
+              <option value="">Choose document...</option>
+              {documents.map((doc) => (
+                <option key={doc.doc_id} value={doc.doc_id}>{doc.filename}</option>
+              ))}
+            </select>
           </div>
         )}
 
-        {/* Controls */}
-        <div className="bg-[var(--card-bg)] rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setDiagramType('usecase')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  diagramType === 'usecase'
-                    ? 'bg-[var(--primary-main)] text-white shadow-sm'
-                    : 'bg-[var(--surface-bg)] text-[var(--text-secondary)] hover:text-[var(--primary-main)]'
-                }`}
-              >
-                Use Case Diagram
-              </button>
-              <button
-                onClick={() => setDiagramType('sequence')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  diagramType === 'sequence'
-                    ? 'bg-[var(--primary-main)] text-white shadow-sm'
-                    : 'bg-[var(--surface-bg)] text-[var(--text-secondary)] hover:text-[var(--primary-main)]'
-                }`}
-              >
-                Sequence Diagram
-              </button>
-            </div>
-
-            {diagramType === 'sequence' && scenarios.length > 0 && (
-              <div className="flex items-center gap-3">
-                <Filter className="h-4 w-4 text-[var(--text-secondary)]" />
-                <label className="text-sm font-medium text-[var(--text-secondary)]">
-                  Scenario:
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedScenario}
-                    onChange={(e) => setSelectedScenario(e.target.value)}
-                    className="appearance-none bg-[var(--surface-bg)] border border-[var(--card-border)] rounded-lg px-4 py-2 pr-8 text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-main)] min-w-[200px]"
-                  >
-                    {scenarios.map(sc => (
-                      <option key={sc.id || sc.name || `scenario-${Math.random()}`} value={sc.id}>
-                        {sc.name} ({sc.steps || '?'} steps)
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-secondary)] pointer-events-none" />
-                </div>
+        {/* --- Control Bar --- */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Diagram Toggles */}
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setDiagramType('usecase')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    diagramType === 'usecase'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Use Case
+                </button>
+                <button
+                  onClick={() => setDiagramType('sequence')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    diagramType === 'sequence'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Sequence
+                </button>
               </div>
-            )}
 
-            <div className="flex items-center gap-2">
+              {/* Scenario Dropdown (Conditional) */}
+              {diagramType === 'sequence' && scenarios.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <div className="relative">
+                    <select
+                      value={selectedScenario}
+                      onChange={(e) => setSelectedScenario(e.target.value)}
+                      className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none min-w-[200px]"
+                    >
+                      {scenarios.map(sc => (
+                        <option key={sc.id} value={sc.id}>
+                          {sc.name} ({sc.steps || '?'} steps)
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* Primary Generate Action */}
               <button
                 onClick={handleGenerateDiagram}
                 disabled={generating || !selectedDocument}
-                className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                className="flex items-center px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                {generating ? 'Generating...' : 'Generate IEEE-Compliant Diagram'}
+                {generating ? (
+                  <span className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Generating...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Play className="w-4 h-4 mr-2" />
+                    Generate Diagram
+                  </span>
+                )}
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleZoomOut}
-                className="p-2 rounded-lg border border-[var(--card-border)] hover:bg-[var(--surface-bg)]"
-                title="Zoom Out"
-              >
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1 border-l border-gray-200 pl-4">
+              <button onClick={handleZoomOut} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="Zoom Out">
                 <ZoomOut className="h-4 w-4" />
               </button>
-              <span className="text-sm text-[var(--text-secondary)]">{zoomLevel}%</span>
-              <button
-                onClick={handleZoomIn}
-                className="p-2 rounded-lg border border-[var(--card-border)] hover:bg-[var(--surface-bg)]"
-                title="Zoom In"
-              >
+              <span className="text-xs font-medium text-gray-600 w-12 text-center">{zoomLevel}%</span>
+              <button onClick={handleZoomIn} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="Zoom In">
                 <ZoomIn className="h-4 w-4" />
               </button>
-              <button
-                onClick={handleResetZoom}
-                className="p-2 rounded-lg border border-[var(--card-border)] hover:bg-[var(--surface-bg)]"
-                title="Reset Zoom"
-              >
+              <button onClick={handleResetZoom} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors ml-1" title="Reset Zoom">
                 <RotateCcw className="h-4 w-4" />
               </button>
             </div>
+
           </div>
         </div>
 
-        {/* Compliance warnings */}
-        {compliance?.warning && (
-          <div className="mb-6 bg-[var(--warning-light)]/20 border-l-4 border-[var(--warning-main)] p-4 rounded">
-            <div className="flex">
-              <AlertTriangle className="h-5 w-5 text-[var(--warning-main)] mr-3" />
-              <p className="text-sm text-[var(--warning-main)]">
-                ⚠️ {compliance.warning}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Diagram Display */}
-        <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-[var(--card-border)]">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+        {/* --- Diagram Canvas --- */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-h-[600px]">
+          
+          {/* Canvas Header */}
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50">
+            <h2 className="text-lg font-semibold text-gray-900">
               {diagramType === 'sequence'
                 ? (selectedScenario ? `Sequence: ${selectedScenario}` : 'Sequence Diagram')
                 : 'Use Case Diagram'}
             </h2>
-            {compliance && (
-              <div className="mt-2 text-xs text-[var(--text-secondary)]">
-                <span className="mr-4">BR-11 Compliant: {compliance.br_11_compliant ? '✓' : '✗'}</span>
-                <span>BR-12 Compliant: {compliance.br_12_compliant ? '✓' : '✗'}</span>
-              </div>
-            )}
           </div>
-          <div className="p-8 min-h-[500px] flex items-center justify-center">
-            {loading || generating ? (
-              <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-main)] mb-4" />
-                <p className="text-[var(--text-secondary)]">Generating IEEE-compliant diagram...</p>
+
+          {/* Canvas Area */}
+          <div className="flex-1 p-8 flex items-center justify-center bg-dots-pattern bg-gray-50/30 overflow-auto relative">
+            {generating ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                <p className="text-sm font-medium text-gray-500">Synthesizing IEEE-compliant diagram...</p>
               </div>
             ) : error ? (
-              <div className="text-center text-[var(--error-main)]">
-                <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-                <p>{error}</p>
-                <button
-                  onClick={handleGenerateDiagram}
-                  className="mt-4 px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg"
-                >
-                  Generate Diagram
+              <div className="flex flex-col items-center max-w-sm text-center">
+                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <h3 className="text-gray-900 font-medium mb-1">Generation Failed</h3>
+                <p className="text-sm text-gray-500 mb-6">{error}</p>
+                <button onClick={handleGenerateDiagram} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                  Try Again
                 </button>
               </div>
             ) : !selectedDocument ? (
-              <div className="text-center text-[var(--text-secondary)]">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Please select a document to visualize.</p>
+              <div className="flex flex-col items-center text-gray-400">
+                <FileText className="h-16 w-16 mb-4 opacity-20" />
+                <p className="text-sm font-medium">Select a document above to begin</p>
               </div>
             ) : currentDiagramString ? (
-              <div className="w-full overflow-auto">
+              <div className="w-full h-full flex items-center justify-center">
                 <DiagramViewer
                   key={`${diagramType}-${selectedScenario || 'usecase'}`}
                   chartString={currentDiagramString}
@@ -442,8 +357,11 @@ const VisualizationPage = () => {
                 />
               </div>
             ) : (
-              <div className="text-center text-[var(--text-secondary)]">
-                <p>No diagram available. Click "Generate IEEE-Compliant Diagram" to create one.</p>
+              <div className="flex flex-col items-center text-gray-400">
+                <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-xl mb-4 flex items-center justify-center bg-gray-50">
+                  <Play className="h-6 w-6 text-gray-300" />
+                </div>
+                <p className="text-sm font-medium text-gray-500">Ready to visualize. Click "Generate Diagram" to start.</p>
               </div>
             )}
           </div>
