@@ -9,13 +9,13 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue.svg)
 ![License](https://img.shields.io/badge/License-Academic-red.svg)
 
-**FYP01-SE-T2530-393 | Multimedia University, Malaysia | 2026**
+**FYP02-SE-T2530-393 | Multimedia University, Malaysia | 2026**
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -37,15 +37,15 @@
 **VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (LLaMA 3 via Groq API)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
 
 The system performs:
-- 🔍 **Semantic Analysis** - Extracts entities, relationships, and detects ambiguities
-- ⚠️ **Predictive Analysis** - Estimates complexity, effort (weeks), cost index, and risk levels
-- 📝 **Validation Pipeline** - Detects inconsistencies, incompleteness, and contradictions
-- 📊 **Diagram Generation** - Creates Use Case, Sequence, and Activity diagrams (Mermaid.js)
-- 📄 **PDF Report Export** - Generates professional validation reports with watermark
+-  **Semantic Analysis** - Extracts entities, relationships, and detects ambiguities
+-  **Predictive Analysis** - Estimates complexity, effort (weeks), cost index, and risk levels
+-  **Validation Pipeline** - Detects inconsistencies, incompleteness, and contradictions
+-  **Diagram Generation** - Creates Use Case, Sequence, and Activity diagrams (Mermaid.js)
+-  **PDF Report Export** - Generates professional validation reports with watermark
 
 ---
 
-## ✨ Features
+##  Features
 
 ### Core Capabilities
 
