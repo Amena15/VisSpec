@@ -32,7 +32,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (LLaMA 3 via Groq API)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
 
