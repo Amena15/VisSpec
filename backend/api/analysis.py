@@ -400,6 +400,12 @@ async def apply_suggestion(
         req.last_modified_by = current_user.user_id
         req.last_modified_at = datetime.now(timezone.utc)
 
+        # ------------------------------------------------------------------
+        # BR-14: state-aware validation workflow
+        # After applying a rewrite, mark this requirement as pending re-validation.
+        # ------------------------------------------------------------------
+        req.validation_status = "pending"
+
         # Mark associated defects as suggestion_applied
         from backend.models.validation import Defect
         await db.execute(
@@ -412,7 +418,37 @@ async def apply_suggestion(
         )
 
         await db.commit()
+
+        # Best-effort targeted re-validation for the updated requirement.
+        # If targeted validation fails, requirement stays in pending state.
+        try:
+            from backend.services.validation.validator import Validator
+            from backend.core.config import settings
+
+            validator = Validator(use_llm=True)
+            single_result = validator.validate_text(req.current_text)
+            all_defects = single_result.get("defects", [])
+            filtered = [
+                d for d in all_defects
+                if (d.get("confidence", 0) or 0) >= settings.MIN_CONFIDENCE_THRESHOLD
+            ]
+
+            if not filtered:
+                req.validation_status = "passed"
+            else:
+                if any((d.get("severity", "") or "").lower() == "high" for d in filtered):
+                    req.validation_status = "failed"
+                else:
+                    req.validation_status = "warning"
+
+            await db.commit()
+        except Exception as ve:
+            logger.warning(
+                f"Targeted re-validation best-effort failed for req_id={request.req_id}: {ve}"
+            )
+
         logger.info(f"Successfully applied suggestion for req_id={request.req_id}")
+
 
         return {
             "success": True,
@@ -538,6 +574,12 @@ async def undo_suggestion(
         req.last_modified_by = current_user.user_id
         req.last_modified_at = datetime.now(timezone.utc)
 
+        # ------------------------------------------------------------------
+        # BR-14: state-aware validation workflow
+        # After undoing an edit, mark this requirement as pending re-validation.
+        # ------------------------------------------------------------------
+        req.validation_status = "pending"
+
         # Mark associated defects as suggestion_applied = 0 (restored)
         from backend.models.validation import Defect
         await db.execute(
@@ -548,6 +590,7 @@ async def undo_suggestion(
                 applied_at=None
             )
         )
+
 
         await db.commit()
         logger.info(f"Successfully undone suggestion for req_id={request.req_id}")

@@ -62,12 +62,45 @@ const DashboardCharts = ({ documents, stats, loading }) => {
       { name: 'Ready for Analysis', count: 0, color: '#F59E0B' }
     ];
 
+    const normalizeToBucket = (rawStatus) => {
+      const s = (rawStatus || '').toString().trim().toLowerCase();
+
+      if (
+        s === 'completed' ||
+        s === 'analyzed & organized' ||
+        s === 'validated - issues found' ||
+        s === 'validated - minor issues' ||
+        s === 'validated'
+      ) {
+        return 'Completed';
+      }
+
+      if (
+        s === 'in-progress' ||
+        s === 'in progress' ||
+        s === 'ready for analysis' ||
+        s === 'uploading' ||
+        s === 'pending' ||
+        s === 'processing' ||
+        s === 'in_progress'
+      ) {
+        return s === 'ready for analysis' || s === 'pending' || s === 'processing' ? 'Ready for Analysis' : 'In Progress';
+      }
+
+      // If backend returns plain 'ready'/'pass' etc, treat them as ready.
+      if (s === 'ready' || s === 'pass' || s === 'passed') return 'Ready for Analysis';
+
+      // Fallback bucket so we never drop data completely.
+      return 'Ready for Analysis';
+    };
+
     documents.forEach(doc => {
-      const status = doc.status || 'Ready for Analysis';
-      const index = statusData.findIndex(item => item.name === status || item.name === 'Ready for Analysis');
+      const bucket = normalizeToBucket(doc.status);
+      const index = statusData.findIndex(item => item.name === bucket);
       if (index !== -1) statusData[index].count++;
     });
 
+    // Keep buckets with 0 only if you want a fixed axis; here we keep only >0 to avoid clutter.
     return statusData.filter(item => item.count > 0);
   };
 
@@ -251,19 +284,31 @@ const DashboardCharts = ({ documents, stats, loading }) => {
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Document Status</h3>
             <CheckCircle className="w-5 h-5 text-[var(--success-main)]" />
           </div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={statusData} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis type="number" tick={{ fill: '#6b7280' }} />
-              <YAxis dataKey="name" type="category" tick={{ fill: '#6b7280' }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" radius={[0, 8, 8, 0]}>
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+
+          {statusData.length === 0 ? (
+            <div className="h-[250px] flex flex-col items-center justify-center text-center px-4">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-bg)] border border-[var(--card-border)] flex items-center justify-center mb-3">
+                <CheckCircle className="w-6 h-6 text-[var(--success-main)]" />
+              </div>
+              <h4 className="text-[var(--text-primary)] font-medium mb-1">Ready documents will appear here</h4>
+              <p className="text-[var(--text-secondary)] text-sm">No status counts available yet. Upload documents to populate this chart.</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={statusData} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                {/* When layout="horizontal", X should be the category labels and Y should be the numeric values */}
+                <XAxis dataKey="name" type="category" tick={{ fill: '#6b7280' }} />
+                <YAxis dataKey="count" type="number" tick={{ fill: '#6b7280' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" radius={[0, 8, 8, 0]}>
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Monthly Trend */}

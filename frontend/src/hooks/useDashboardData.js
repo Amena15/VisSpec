@@ -42,6 +42,55 @@ export const useDashboardData = () => {
     return cache.timestamp && (Date.now() - cache.timestamp < cache.ttl);
   }, []);
 
+  const normalizeDocStatus = useCallback((rawStatus) => {
+    const s = (rawStatus || '').toString().trim().toLowerCase();
+
+    // Completed-like statuses
+    const completedLike = new Set([
+      'completed',
+      'validated - perfect',
+      'validated - minor issues',
+      'validated - issues found',
+      'analyzed & organized',
+      'analyzed & organized '.trim(),
+      'validated',
+      'pass',
+      'passed',
+      'ready',
+    ]);
+
+    if (completedLike.has(s)) return 'completed';
+
+    // In progress / ready-to-analyze
+    const inProgressLike = new Set([
+      'in-progress',
+      'in progress',
+      'ready for analysis',
+      'uploading',
+      'pending',
+      'processing',
+      'in_progress',
+    ]);
+
+    if (inProgressLike.has(s)) return 'in-progress';
+
+    // Failed statuses
+    const failedLike = new Set([
+      'failed',
+      'validation failed',
+      'error',
+      'defective',
+      'invalid',
+    ]);
+
+    if (failedLike.has(s)) return 'failed';
+
+    // If unknown, keep raw value but map to a safe default bucket for badge coloring.
+    // This prevents the dashboard from showing an unrecognized status with the wrong color.
+    if (!s) return 'in-progress';
+    return 'in-progress';
+  }, []);
+
   // Transform document data for display
   const transformDocument = useCallback((doc) => {
     return {
@@ -50,7 +99,7 @@ export const useDashboardData = () => {
       filename: doc.filename,
       uploadedAt: doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : 'Unknown',
       updatedAt: doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : 'Unknown',
-      status: doc.status || 'Ready for Analysis',
+      status: normalizeDocStatus(doc.status),
       qualityScore: doc.quality_score || Math.min(100, Math.max(0, Math.round((doc.word_count || 0) / 10))),
       complexity: doc.word_count > 1000 ? 'High' : doc.word_count > 500 ? 'Medium' : 'Low',
       defects: doc.defect_count || 0, // Real defect count from database validation
@@ -60,7 +109,7 @@ export const useDashboardData = () => {
       wordCount: doc.word_count || 0,
       requirementsFound: doc.requirements_found || 0
     };
-  }, []);
+  }, [normalizeDocStatus]);
 
   // Transform project data for display
   const transformProject = useCallback((project) => {

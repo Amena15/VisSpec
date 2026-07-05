@@ -6,6 +6,7 @@ import {
   Wand2, Lightbulb, ShieldAlert, RotateCcw, RotateCw
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import ExportReport from '../components/ExportReport.jsx';
 import { toast } from 'sonner';
 import { documentAPI, validationAPI, analysisAPI } from '../services/api';
 
@@ -38,6 +39,7 @@ const MODAL_VERB_COLORS = {
 const AnalysisResults = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('findings');
+  const [showExportModal, setShowExportModal] = useState(false);
   const [expandedFinding, setExpandedFinding] = useState(null);
   const [document, setDocument] = useState(null);
   const [validation, setValidation] = useState(null);
@@ -67,7 +69,10 @@ const AnalysisResults = () => {
   const [redoStack, setRedoStack] = useState([]);
 
   useEffect(() => {
-    if (id) fetchDocument();
+    if (id) {
+      setShowExportModal(false);
+      fetchDocument();
+    }
   }, [id]);
 
   const fetchDocument = async (forceRefresh = false) => {
@@ -516,10 +521,20 @@ const AnalysisResults = () => {
                   </button>
                 </>
               )}
-              {hasValidation && (
-                <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+              {hasValidation && !showExportModal && (
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  className="flex items-center px-4 py-2 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors"
+                >
                   <Download className="h-4 w-4 mr-2" /> Export Report
                 </button>
+              )}
+              {hasValidation && showExportModal && (
+                <ExportReport
+                  documentData={document}
+                  analysisResults={validation}
+                  onClose={() => setShowExportModal(false)}
+                />
               )}
 
               {/* Always show organize requirements for historical/dirty data */}

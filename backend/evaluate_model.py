@@ -32,10 +32,11 @@ def load_test_data() -> List[Dict]:
     with open(dataset_path, "r") as f:
         return json.load(f)
 
-def predict_defect(text: str, validator: Validator) -> Tuple[bool, float]:
-    """
-    Run VisSpec validation and determine if a defect exists.
-    Returns: (has_defect, confidence_score)
+def predict_defect(text: str, validator: Validator) -> Tuple[bool, float, Dict[str, int]]:
+    """Run VisSpec validation and determine if a defect exists.
+
+    Returns:
+      (has_defect, confidence_score, defect_type_counts)
     """
     try:
         result = validator.validate_text(text)
@@ -43,15 +44,21 @@ def predict_defect(text: str, validator: Validator) -> Tuple[bool, float]:
         defects_found = len(defects) > 0
 
         confidence = 0.0
+        defect_type_counts: Dict[str, int] = {}
         if defects:
             confidence = max([d.get("confidence", 0.0) for d in defects])
+            for d in defects:
+                t = d.get("type", "unknown")
+                defect_type_counts[t] = defect_type_counts.get(t, 0) + 1
 
-        return defects_found, confidence
+        return defects_found, confidence, defect_type_counts
     except Exception:
-        return False, 0.0
+        return False, 0.0, {}
+
 
 def evaluate_model():
     """Main evaluation function"""
+
     print("\n" + "=" * 80)
     print("VISSPEC MODEL EVALUATION - PRECISION, RECALL, F1-SCORE")
     print("Based on FYP Report Section 4.8.1")
@@ -84,8 +91,10 @@ def evaluate_model():
         
         # Run VisSpec prediction
         start_time = time.time()
-        vis_prediction, confidence = predict_defect(text, validator)
+        vis_prediction, confidence, defect_type_counts = predict_defect(text, validator)
+
         elapsed = time.time() - start_time
+
         total_time += elapsed
         
         # Determine truth
@@ -113,11 +122,14 @@ def evaluate_model():
             "id": item["id"],
             "text": text[:70] + ("..." if len(text) > 70 else ""),
             "expert": expert,
+            "expert_defect_type": defect_type,
             "vis_prediction": "DEFECT" if vis_prediction else "NO_DEFECT",
             "confidence": round(confidence, 3),
             "verdict": verdict,
-            "elapsed_ms": round(elapsed * 1000, 1)
+            "elapsed_ms": round(elapsed * 1000, 1),
+            "defect_type_counts": defect_type_counts,
         })
+
         
         print(f"[{i:02d}] {symbol} {verdict:7} | Expert: {expert:8} | VisSpec: {'DEFECT' if vis_prediction else 'NO_DEFECT':8} | Conf: {confidence:.2f} | {text[:50]}...")
     

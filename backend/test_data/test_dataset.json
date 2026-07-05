@@ -118,5 +118,511 @@
     "text": "Error messages must be descriptive enough.",
     "expert_verdict": "DEFECT",
     "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-021",
+    "text": "The system shall provide adequate security for user data.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-022",
+    "text": "The system must encrypt all passwords using bcrypt with a cost factor of 12.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-023",
+    "text": "The application should be user-friendly and easy to navigate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-024",
+    "text": "The login page must display a 'Forgot Password' link that directs to the password reset flow.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-025",
+    "text": "The system shall handle a large number of concurrent users efficiently.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-026",
+    "text": "The system shall support up to 10,000 concurrent users with a response time under 200ms.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-027",
+    "text": "The software must be reliable and robust against failures.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-028",
+    "text": "The system must recover from database failures within 30 seconds using automatic failover.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-029",
+    "text": "The API should return appropriate error messages.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-030",
+    "text": "The API must return HTTP status 400 with a JSON error object containing 'code' and 'message' fields for validation failures.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-031",
+    "text": "The system shall process transactions quickly.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-032",
+    "text": "The system shall process international wire transfers within 5 seconds of submission.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-033",
+    "text": "The user interface should be visually appealing and modern.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-034",
+    "text": "The dashboard must display real-time metrics updated every 10 seconds using WebSocket connections.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-035",
+    "text": "The system shall maintain audit logs for all critical actions.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-036",
+    "text": "The system must record audit logs including timestamp, user ID, action type, and IP address for all write operations.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-037",
+    "text": "The search feature should be fast and accurate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-038",
+    "text": "The search must return results within 300ms for queries up to 50 characters and sort by relevance score.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-039",
+    "text": "The system should handle errors gracefully.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-040",
+    "text": "The system must display a user-friendly error page with a support contact link for all unhandled exceptions.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-041",
+    "text": "The mobile app shall be responsive on all devices.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-042",
+    "text": "The mobile app must adapt to screen widths between 320px and 768px with touch-friendly button sizes of at least 44x44px.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-043",
+    "text": "The system must allow users to reset their passwords, but also prevent password resets for security reasons.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-044",
+    "text": "The system must allow users to reset their passwords via email link and enforce a 15-minute expiry window.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-045",
+    "text": "The reporting module should generate comprehensive reports for management.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-046",
+    "text": "The reporting module must generate daily sales reports in PDF format including total revenue, top products, and regional breakdowns.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-047",
+    "text": "The system should be able to handle peak loads without degradation.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-048",
+    "text": "The system must maintain 99.9% availability and handle up to 5,000 requests per minute without degradation.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-049",
+    "text": "The application must include proper input validation to prevent injection attacks.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-050",
+    "text": "The application must validate all user inputs against a whitelist of allowed characters and reject any payload exceeding 1MB.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-051",
+    "text": "The system shall send email notifications to users when required.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-052",
+    "text": "The system shall send email notifications to users within 5 seconds of account creation, including a verification link.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-053",
+    "text": "The software shall be cost-effective to maintain.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-054",
+    "text": "The software must have a modular architecture allowing replacement of any component without affecting others, with documented APIs.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-055",
+    "text": "The system should allow users to cancel their orders, but once canceled, orders cannot be restored.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-056",
+    "text": "The system must allow users to cancel orders within 5 minutes of placement, and permanently delete canceled orders after 30 days.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-057",
+    "text": "The authentication mechanism must be secure.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-058",
+    "text": "The authentication mechanism must support OAuth2 with refresh tokens and enforce 2FA for users with admin roles.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-059",
+    "text": "The system shall provide reasonable performance under load.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-060",
+    "text": "The system must maintain an average response time of ≤150ms under 70% load for all read-only endpoints.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-061",
+    "text": "The platform should be accessible to users with disabilities.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-062",
+    "text": "The platform must comply with WCAG 2.1 AA standards including keyboard navigation, screen reader support, and 4.5:1 contrast ratio.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-063",
+    "text": "The system must handle file uploads, but also restrict file types.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-064",
+    "text": "The system must accept PDF, PNG, and JPEG uploads up to 5MB, and reject all other formats with a clear error message.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-065",
+    "text": "The chatbot should understand user queries effectively.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-066",
+    "text": "The chatbot must achieve 95% intent classification accuracy on a test dataset of 10,000 user messages.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-067",
+    "text": "The system shall store user preferences, but should also respect GDPR regulations.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-068",
+    "text": "The system shall store user preferences and provide a data export API that returns all stored data in JSON format within 30 seconds.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-069",
+    "text": "The payment gateway integration should be reliable.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-070",
+    "text": "The payment gateway integration must retry failed transactions up to 3 times with exponential backoff and log each attempt.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-071",
+    "text": "The system must enforce strong password policies, but not make it too hard for users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-072",
+    "text": "The system must enforce passwords with minimum 12 characters, including uppercase, lowercase, number, and special character.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-073",
+    "text": "The application should be able to scale horizontally.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-074",
+    "text": "The application must support horizontal scaling with stateless sessions stored in Redis and zero-downtime deployments.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-075",
+    "text": "The system shall generate invoices for customers when needed.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-076",
+    "text": "The system must generate invoices within 2 seconds of order confirmation and email them as PDF attachments.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-077",
+    "text": "The reporting dashboard should visualize KPIs clearly.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-078",
+    "text": "The reporting dashboard must display 12 KPIs including revenue, conversion rate, and churn with interactive charts (bar/line/pie).",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-079",
+    "text": "The system must allow administrators to delete user accounts, but also maintain data retention policies.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-080",
+    "text": "The system must allow administrators to delete user accounts on request and purge all associated data within 7 days.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-081",
+    "text": "The search functionality should be efficient for large datasets.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-082",
+    "text": "The search must return results within 1 second for datasets up to 1 million records using Elasticsearch with pagination.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-083",
+    "text": "The system should be easy to deploy and maintain.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-084",
+    "text": "The system must be deployable via Docker Compose with documented environment variables and health check endpoints.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-085",
+    "text": "The API should be designed to be future-proof and extensible.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-086",
+    "text": "The API must use semantic versioning and include an OpenAPI 3.0 specification with all endpoints documented.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-087",
+    "text": "The system must implement caching for performance, but must also invalidate cache on updates.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-088",
+    "text": "The system must implement Redis caching with TTL of 5 minutes and invalidate cache on any write operation.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-089",
+    "text": "The mobile app should provide a smooth user experience.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-090",
+    "text": "The mobile app must render at 60 FPS on devices running Android 10+ and maintain smooth scrolling with virtualized lists.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-091",
+    "text": "The system shall support multiple languages for the interface.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-092",
+    "text": "The system must support English, Malay, and Chinese with dynamic language switching without page reload.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-093",
+    "text": "The software must be secure against common web vulnerabilities.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-094",
+    "text": "The software must pass OWASP Top 10 security scans with zero critical vulnerabilities and enforce CSP headers.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-095",
+    "text": "The system should integrate with third-party services reliably.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-096",
+    "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry policies and circuit breakers for each.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-097",
+    "text": "The application must be user-friendly for both technical and non-technical users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-098",
+    "text": "The application must provide role-specific dashboards for 5 user roles with guided tours for first-time users.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-099",
+    "text": "The system should be fast enough for all users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-100",
+    "text": "The system must handle 500 concurrent users with average response time below 300ms.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  }
+,
+  {
+    "id": "TC-101",
+    "text": "The system shall handle all user inputs.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "incomplete"
+  },
+  {
+    "id": "TC-102",
+    "text": "The system must support file uploads without errors.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "incomplete"
+  },
+  {
+    "id": "TC-103",
+    "text": "The system shall respond in a reasonable time.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "unverifiable"
+  },
+  {
+    "id": "TC-104",
+    "text": "The software must be secure for all users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "unverifiable"
   }
 ]
+

@@ -145,7 +145,7 @@ const LoginPage = ({ onLogin }) => {
         } else {
           // Otherwise, try to log in after registration
           const loginResponse = await authAPI.login({
-            username: formData.email,  // Use email for login
+            username: formData.email,  
             password: formData.password
           });
 

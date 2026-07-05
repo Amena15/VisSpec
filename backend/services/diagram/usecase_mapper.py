@@ -120,16 +120,27 @@ class UseCaseMapper:
             # 6. Determine system name
             system_name = self._extract_system_name(requirements)
 
+            # Backward-compat: some tests expect a combined `relationships` list.
+            relationships = []
+            for inc in includes:
+                # include: [source, target]
+                relationships.append({'type': 'include', 'source': inc[0], 'target': inc[1]})
+            for ext in extends_:
+                # extend: [base, extending]
+                relationships.append({'type': 'extend', 'source': ext[0], 'target': ext[1]})
+
             return {
                 'actors': actors,
                 'use_cases': merged_use_cases,
                 'associations': unique_associations,
                 'includes': includes,
                 'extends': extends_,
+                'relationships': relationships,
                 'system_name': system_name,
                 'total_actors': len(actors),
                 'total_use_cases': len(merged_use_cases),
-                'total_associations': len(unique_associations)
+                'total_associations': len(unique_associations),
+                'total_relationships': len(relationships)
             }
 
         except Exception as e:

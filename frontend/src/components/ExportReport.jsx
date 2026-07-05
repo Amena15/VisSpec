@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, FileText, Clock, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../services/api';
 
 const ExportReport = ({ documentData, analysisResults, onClose }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -11,9 +12,33 @@ const ExportReport = ({ documentData, analysisResults, onClose }) => {
 
     try {
       // Simulate report generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call backend export API and trigger a real PDF download
+      const payload = {
+        project_name: documentData?.projectName || 'Untitled Project',
+        analysis_data: analysisResults?.analysisData || analysisResults || {},
+        diagrams: documentData?.diagrams || [],
+        metrics: analysisResults?.metrics || analysisResults || {},
+        traceability: documentData?.traceability || analysisResults?.traceability || [],
+        report_type: 'full',
+      };
 
-      // In a real app, this would call the backend export API
+      const response = await apiClient.post('/api/reports/export', payload, {
+        responseType: 'blob',
+      });
+
+      if (exportFormat === 'pdf') {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const fileName = `vispec_report_${documentData?.projectName || 'Untitled_Project'}.pdf`;
+        a.href = url;
+        a.download = fileName.replace(/[^a-z0-9 _-]/gi, '_');
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
+
       toast.success(`Report exported successfully as ${exportFormat.toUpperCase()}!`, {
         duration: 3000,
         position: 'top-right'

@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-06-24T00:13:39.727869",
-  "dataset_size": 20,
+  "timestamp": "2026-07-02T01:43:44.935988",
+  "dataset_size": 104,
   "metrics": {
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1_score": 1.0,
-    "accuracy": 1.0,
-    "specificity": 1.0,
+    "precision": 0.9245,
+    "recall": 0.9074,
+    "f1_score": 0.9159,
+    "accuracy": 0.9135,
+    "specificity": 0.92,
     "avg_response_time_ms": 0.1
   },
   "confusion_matrix": {
-    "true_positives": 10,
-    "false_positives": 0,
-    "false_negatives": 0,
-    "true_negatives": 10
+    "true_positives": 49,
+    "false_positives": 4,
+    "false_negatives": 5,
+    "true_negatives": 46
   },
   "benchmark": {
     "precision_target": 0.843,
@@ -31,181 +31,1255 @@
       "id": "TC-001",
       "text": "The system shall be fast and user-friendly.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.3
+      "elapsed_ms": 2.8,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
     },
     {
       "id": "TC-002",
       "text": "The system must respond within 200 milliseconds.",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-003",
       "text": "Data retention period should be appropriate.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
     },
     {
       "id": "TC-004",
       "text": "System must comply with relevant privacy regulations.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
     },
     {
       "id": "TC-005",
       "text": "The system shall lock user accounts after 5 failed login attempts with...",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-006",
       "text": "The system must notify users via email after account lockout.",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-007",
       "text": "Passwords must be hashed using Argon2.",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-008",
       "text": "The system should maybe implement captcha.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
     },
     {
       "id": "TC-009",
       "text": "Security features must be adequate.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2,
+        "incompleteness": 1
+      }
     },
     {
       "id": "TC-010",
       "text": "The system shall process international wire transfers. The system must...",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.3,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-011",
       "text": "The system must handle many concurrent users. Page load should be quic...",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 3
+      }
     },
     {
       "id": "TC-012",
       "text": "The system shall allow users to register with email and password.",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-013",
       "text": "The system should be reliable and secure.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
     },
     {
       "id": "TC-014",
       "text": "The system shall generate daily sales reports in PDF format.",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-015",
       "text": "Users can add items to shopping cart. The system usually processes pay...",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
-      "confidence": 0.8,
+      "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 1,
+        "incompleteness": 2
+      }
     },
     {
       "id": "TC-016",
       "text": "The braking system shall engage within 50 milliseconds when the obstac...",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-017",
       "text": "The system must sound an alarm immediately. Brake pressure must reach ...",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-018",
       "text": "The REST API must support GET and POST methods. Endpoints shall return...",
       "expert": "NO_DEFECT",
+      "expert_defect_type": null,
       "vis_prediction": "NO_DEFECT",
       "confidence": 0.0,
       "verdict": "TN \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
     },
     {
       "id": "TC-019",
       "text": "The system should handle many concurrent requests.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
     },
     {
       "id": "TC-020",
       "text": "Error messages must be descriptive enough.",
       "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
       "vis_prediction": "DEFECT",
       "confidence": 0.85,
       "verdict": "TP \u2705",
-      "elapsed_ms": 0.1
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-021",
+      "text": "The system shall provide adequate security for user data.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
+    },
+    {
+      "id": "TC-022",
+      "text": "The system must encrypt all passwords using bcrypt with a cost factor ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-023",
+      "text": "The application should be user-friendly and easy to navigate.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 3
+      }
+    },
+    {
+      "id": "TC-024",
+      "text": "The login page must display a 'Forgot Password' link that directs to t...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-025",
+      "text": "The system shall handle a large number of concurrent users efficiently...",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.55,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-026",
+      "text": "The system shall support up to 10,000 concurrent users with a response...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-027",
+      "text": "The software must be reliable and robust against failures.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-028",
+      "text": "The system must recover from database failures within 30 seconds using...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-029",
+      "text": "The API should return appropriate error messages.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
+    },
+    {
+      "id": "TC-030",
+      "text": "The API must return HTTP status 400 with a JSON error object containin...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-031",
+      "text": "The system shall process transactions quickly.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-032",
+      "text": "The system shall process international wire transfers within 5 seconds...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-033",
+      "text": "The user interface should be visually appealing and modern.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-034",
+      "text": "The dashboard must display real-time metrics updated every 10 seconds ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-035",
+      "text": "The system shall maintain audit logs for all critical actions.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.55,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-036",
+      "text": "The system must record audit logs including timestamp, user ID, action...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "DEFECT",
+      "confidence": 0.55,
+      "verdict": "FP \u274c",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-037",
+      "text": "The search feature should be fast and accurate.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
+    },
+    {
+      "id": "TC-038",
+      "text": "The search must return results within 300ms for queries up to 50 chara...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-039",
+      "text": "The system should handle errors gracefully.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-040",
+      "text": "The system must display a user-friendly error page with a support cont...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "FP \u274c",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
+    },
+    {
+      "id": "TC-041",
+      "text": "The mobile app shall be responsive on all devices.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.55,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-042",
+      "text": "The mobile app must adapt to screen widths between 320px and 768px wit...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-043",
+      "text": "The system must allow users to reset their passwords, but also prevent...",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.9,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "inconsistency": 2,
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-044",
+      "text": "The system must allow users to reset their passwords via email link an...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-045",
+      "text": "The reporting module should generate comprehensive reports for managem...",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-046",
+      "text": "The reporting module must generate daily sales reports in PDF format i...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-047",
+      "text": "The system should be able to handle peak loads without degradation.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-048",
+      "text": "The system must maintain 99.9% availability and handle up to 5,000 req...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-049",
+      "text": "The application must include proper input validation to prevent inject...",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-050",
+      "text": "The application must validate all user inputs against a whitelist of a...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-051",
+      "text": "The system shall send email notifications to users when required.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "FN \u274c",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-052",
+      "text": "The system shall send email notifications to users within 5 seconds of...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-053",
+      "text": "The software shall be cost-effective to maintain.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "FN \u274c",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-054",
+      "text": "The software must have a modular architecture allowing replacement of ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "DEFECT",
+      "confidence": 0.6,
+      "verdict": "FP \u274c",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "incompleteness": 1
+      }
+    },
+    {
+      "id": "TC-055",
+      "text": "The system should allow users to cancel their orders, but once cancele...",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.9,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.3,
+      "defect_type_counts": {
+        "inconsistency": 1,
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-056",
+      "text": "The system must allow users to cancel orders within 5 minutes of place...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-057",
+      "text": "The authentication mechanism must be secure.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-058",
+      "text": "The authentication mechanism must support OAuth2 with refresh tokens a...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-059",
+      "text": "The system shall provide reasonable performance under load.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-060",
+      "text": "The system must maintain an average response time of \u2264150ms under 70% ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-061",
+      "text": "The platform should be accessible to users with disabilities.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-062",
+      "text": "The platform must comply with WCAG 2.1 AA standards including keyboard...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-063",
+      "text": "The system must handle file uploads, but also restrict file types.",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.9,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "inconsistency": 1
+      }
+    },
+    {
+      "id": "TC-064",
+      "text": "The system must accept PDF, PNG, and JPEG uploads up to 5MB, and rejec...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "DEFECT",
+      "confidence": 0.9,
+      "verdict": "FP \u274c",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "inconsistency": 1
+      }
+    },
+    {
+      "id": "TC-065",
+      "text": "The chatbot should understand user queries effectively.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-066",
+      "text": "The chatbot must achieve 95% intent classification accuracy on a test ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-067",
+      "text": "The system shall store user preferences, but should also respect GDPR ...",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-068",
+      "text": "The system shall store user preferences and provide a data export API ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-069",
+      "text": "The payment gateway integration should be reliable.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-070",
+      "text": "The payment gateway integration must retry failed transactions up to 3...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-071",
+      "text": "The system must enforce strong password policies, but not make it too ...",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.6,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-072",
+      "text": "The system must enforce passwords with minimum 12 characters, includin...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-073",
+      "text": "The application should be able to scale horizontally.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-074",
+      "text": "The application must support horizontal scaling with stateless session...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-075",
+      "text": "The system shall generate invoices for customers when needed.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "FN \u274c",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-076",
+      "text": "The system must generate invoices within 2 seconds of order confirmati...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-077",
+      "text": "The reporting dashboard should visualize KPIs clearly.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-078",
+      "text": "The reporting dashboard must display 12 KPIs including revenue, conver...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-079",
+      "text": "The system must allow administrators to delete user accounts, but also...",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.9,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {
+        "inconsistency": 1
+      }
+    },
+    {
+      "id": "TC-080",
+      "text": "The system must allow administrators to delete user accounts on reques...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-081",
+      "text": "The search functionality should be efficient for large datasets.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 3
+      }
+    },
+    {
+      "id": "TC-082",
+      "text": "The search must return results within 1 second for datasets up to 1 mi...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-083",
+      "text": "The system should be easy to deploy and maintain.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
+    },
+    {
+      "id": "TC-084",
+      "text": "The system must be deployable via Docker Compose with documented envir...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-085",
+      "text": "The API should be designed to be future-proof and extensible.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-086",
+      "text": "The API must use semantic versioning and include an OpenAPI 3.0 specif...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-087",
+      "text": "The system must implement caching for performance, but must also inval...",
+      "expert": "DEFECT",
+      "expert_defect_type": "inconsistency",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "FN \u274c",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-088",
+      "text": "The system must implement Redis caching with TTL of 5 minutes and inva...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-089",
+      "text": "The mobile app should provide a smooth user experience.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-090",
+      "text": "The mobile app must render at 60 FPS on devices running Android 10+ an...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.2,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-091",
+      "text": "The system shall support multiple languages for the interface.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-092",
+      "text": "The system must support English, Malay, and Chinese with dynamic langu...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-093",
+      "text": "The software must be secure against common web vulnerabilities.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-094",
+      "text": "The software must pass OWASP Top 10 security scans with zero critical ...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-095",
+      "text": "The system should integrate with third-party services reliably.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-096",
+      "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-097",
+      "text": "The application must be user-friendly for both technical and non-techn...",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-098",
+      "text": "The application must provide role-specific dashboards for 5 user roles...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-099",
+      "text": "The system should be fast enough for all users.",
+      "expert": "DEFECT",
+      "expert_defect_type": "ambiguity",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 4
+      }
+    },
+    {
+      "id": "TC-100",
+      "text": "The system must handle 500 concurrent users with average response time...",
+      "expert": "NO_DEFECT",
+      "expert_defect_type": null,
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "TN \u2705",
+      "elapsed_ms": 0.0,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-101",
+      "text": "The system shall handle all user inputs.",
+      "expert": "DEFECT",
+      "expert_defect_type": "incomplete",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.55,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-102",
+      "text": "The system must support file uploads without errors.",
+      "expert": "DEFECT",
+      "expert_defect_type": "incomplete",
+      "vis_prediction": "NO_DEFECT",
+      "confidence": 0.0,
+      "verdict": "FN \u274c",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {}
+    },
+    {
+      "id": "TC-103",
+      "text": "The system shall respond in a reasonable time.",
+      "expert": "DEFECT",
+      "expert_defect_type": "unverifiable",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 1
+      }
+    },
+    {
+      "id": "TC-104",
+      "text": "The software must be secure for all users.",
+      "expert": "DEFECT",
+      "expert_defect_type": "unverifiable",
+      "vis_prediction": "DEFECT",
+      "confidence": 0.85,
+      "verdict": "TP \u2705",
+      "elapsed_ms": 0.1,
+      "defect_type_counts": {
+        "ambiguity": 2
+      }
     }
   ]
 }

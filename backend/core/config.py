@@ -15,8 +15,6 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    # Database
-    # IMPORTANT: keep this as a valid connection string (no inline comments)
     # Override via .env for real credentials.
     # NOTE: keep defaults only for local dev; real values should come from backend/.env
     DATABASE_URL: str = "postgresql+asyncpg://vispec:vispec123@localhost:5432/vispec"
