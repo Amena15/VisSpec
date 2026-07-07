@@ -33,6 +33,6 @@ class RequirementDocument(Base):
     upload_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     project = relationship("backend.models.project.Project", back_populates="documents")
-    uploader = relationship("backend.models.user.User", back_populates="uploaded_documents")
+    uploader = relationship("backend.models.user.User", viewonly=True)
     requirements = relationship("Requirement", back_populates="document", cascade="all, delete-orphan", foreign_keys="Requirement.doc_id")
     validation_sessions = relationship("backend.models.validation.ValidationSession", back_populates="document", cascade="all, delete-orphan")

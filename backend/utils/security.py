@@ -120,7 +120,13 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
             lock_until = None
 
         if lock_until and datetime.now(timezone.utc) < lock_until:
-            return None
+            remaining_seconds = max(int((lock_until - datetime.now(timezone.utc)).total_seconds()), 0)
+            remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Account locked due to multiple failed attempts. Try again in {remaining_minutes} minutes.",
+                headers={"Retry-After": str(remaining_seconds)} if remaining_seconds > 0 else None,
+            )
 
         # Lock expired (or could not be parsed) -> reset attempts
         user.failed_login_attempts = 0
@@ -157,6 +163,11 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
             from datetime import datetime, timezone, timedelta
             user.locked_until = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
         await db.commit()
+        if user.failed_login_attempts >= 5:
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail="Account locked due to multiple failed attempts. Please try again in 15 minutes.",
+            )
         return None
     return user
 

@@ -6,6 +6,7 @@ from sqlalchemy.pool import StaticPool
 from datetime import datetime, timedelta
 import random
 import string
+import uuid
 
 from main import app
 from config.database import Base, get_db
@@ -408,13 +409,13 @@ class TestAuthIntegration:
         """
         Covers UC_02: Login - Business Rule BR-04 (Optional)
         Simulate account lockout after multiple failed login attempts.
-        Note: This implementation doesn't have account lockout, so this test
-        verifies that multiple failed attempts don't lock the account.
+        The implementation should lock the account after 5 failed attempts.
         """
         # Arrange - Create a user first
+        unique_suffix = uuid.uuid4().hex[:8]
         user_data = {
-            "username": "lockoutuser",
-            "email": "lockout@example.com",
+            "username": f"lockoutuser_{unique_suffix}",
+            "email": f"lockout_{unique_suffix}@example.com",
             "password": "SecurePassword123!",
             "role": "analyst"
         }
@@ -423,21 +424,24 @@ class TestAuthIntegration:
 
         # Act - Try to login with wrong password multiple times (5 attempts)
         login_data = {
-            "username": "lockout@example.com",
+            "username": user_data["email"],
             "password": "WrongPassword!"  # Wrong password
         }
         
-        for i in range(5):
+        for i in range(4):
             response = client.post("/api/auth/login", data=login_data)
-            assert response.status_code == 401  # All attempts should fail
+            assert response.status_code == 401
 
-        # Try with correct password - should still work (no lockout implemented)
+        # 5th attempt should trigger lockout
+        response = client.post("/api/auth/login", data=login_data)
+        assert response.status_code == 423
+        assert "locked" in response.json()["detail"].lower()
+
+        # Try with correct password while locked - should still be blocked
         correct_login_data = {
-            "username": "lockout@example.com",
+            "username": user_data["email"],
             "password": "SecurePassword123!"
         }
-        response = client.post("/auth/login", data=correct_login_data)
-        
-        # In this implementation, there's no account lockout, so login should succeed
-        assert response.status_code == 200
-        assert "access_token" in response.json()
+        response = client.post("/api/auth/login", data=correct_login_data)
+        assert response.status_code == 423
+        assert "locked" in response.json()["detail"].lower()

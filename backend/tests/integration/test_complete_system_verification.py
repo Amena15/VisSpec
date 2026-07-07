@@ -7,9 +7,15 @@ Checks if all described functionality is properly implemented.
 
 import sys
 import os
+from pathlib import Path
 
-# Add the backend directory to the path
-sys.path.insert(0, '/Users/amena/Documents/FYPCode/VisSpec/backend')
+CURRENT_FILE = Path(__file__).resolve()
+BACKEND_ROOT = CURRENT_FILE.parents[2]
+REPO_ROOT = CURRENT_FILE.parents[3]
+
+for path in (str(REPO_ROOT), str(BACKEND_ROOT)):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 def test_module_3_validation():
     """Test Module 3 - AI Validation implementation"""

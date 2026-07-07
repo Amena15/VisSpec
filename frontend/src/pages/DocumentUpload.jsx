@@ -110,7 +110,7 @@ const DocumentUpload = () => {
       toast.success(`Document uploaded! Found ${result.requirements_found} requirements.`);
     } catch (error) {
       console.error('Upload failed:', error);
-      const errorMsg = error.response?.data?.detail || 'Upload failed due to server error. Please retry.';
+      const errorMsg = error.response?.data?.detail || error.message || 'Upload failed due to server error. Please retry.';
       setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'error', errors: [errorMsg] } : f));
       toast.error(errorMsg);
     } finally {

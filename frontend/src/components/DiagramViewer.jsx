@@ -92,6 +92,36 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
             const diagramId = 'diagram-' + Date.now();
             const { svg } = await mermaid.render(diagramId, chartString);
             diagramRef.current.innerHTML = svg;
+
+            // Attach click handler: if Mermaid nodes include data-element-id attributes
+            // then we can pass them to the parent.
+            // NOTE: Mermaid doesn't automatically know our element_id; the IEEE diagram generator
+            // must embed it in the Mermaid string.
+            const svgRoot = diagramRef.current.querySelector('svg');
+            if (svgRoot && svgRoot.dataset && svgRoot.dataset.elementId) {
+              // No-op: element_id on root not expected.
+            }
+
+            // Delegate click events from within the SVG
+            svgRoot?.addEventListener('click', (evt) => {
+              const target = evt.target;
+              if (!target) return;
+
+              const el = target.closest?.('[data-element-id]');
+              if (!el) return;
+
+              const elementId = el.getAttribute('data-element-id');
+              if (!elementId) return;
+
+              // Fire a custom event that the page can listen to.
+              const event = new CustomEvent('diagram-node-click', {
+                detail: { elementId },
+              });
+              window.dispatchEvent(event);
+            });
+
+            // If Mermaid doesn't produce data-element-id, no clicks will be mapped.
+
           } catch (error) {
             console.error('Error rendering diagram:', error);
             diagramRef.current.innerHTML = `
@@ -111,6 +141,7 @@ const DiagramViewer = ({ chartString, zoomLevel = 100, darkMode = false }) => {
       renderDiagram();
     }
   }, [chartString, isPlantUML]);
+
 
   // Handle PlantUML image load success/failure
   const handleImageLoad = () => {

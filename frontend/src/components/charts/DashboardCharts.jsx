@@ -164,8 +164,9 @@ const DashboardCharts = ({ documents, stats, loading }) => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900">{label}</p>
+        <div className="bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900 dark:text-slate-100">{label}</p>
+
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value}
@@ -180,8 +181,9 @@ const DashboardCharts = ({ documents, stats, loading }) => {
   const CustomPieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900">{payload[0].name}</p>
+        <div className="bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900 dark:text-slate-100">{payload[0].name}</p>
+
           <p className="text-sm text-gray-600">Count: {payload[0].value}</p>
           <p className="text-sm text-gray-600">
             Percentage: {((payload[0].value / documents.length) * 100).toFixed(1)}%
@@ -268,8 +270,10 @@ const DashboardCharts = ({ documents, stats, loading }) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fill: '#6b7280' }} />
               <YAxis tick={{ fill: '#6b7280' }} />
+
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]}>
+
                 {complexityData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -350,7 +354,8 @@ const DashboardCharts = ({ documents, stats, loading }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-900/20 border border-green-200 dark:border-green-800/60 rounded-lg p-4">
+
           <div className="flex items-center">
             <CheckCircle className="w-8 h-8 text-green-600 mr-3" />
             <div>
@@ -362,7 +367,8 @@ const DashboardCharts = ({ documents, stats, loading }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800/60 rounded-lg p-4">
+
           <div className="flex items-center">
             <TrendingUp className="w-8 h-8 text-blue-600 mr-3" />
             <div>

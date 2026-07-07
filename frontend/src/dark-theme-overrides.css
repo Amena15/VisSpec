@@ -1,0 +1,45 @@
+/* Global dark-mode overrides.
+   These apply whenever the app adds the Tailwind `dark` class to <html>.
+*/
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Theme variables used by your app (CSS-variable based components) */
+  --content-bg: #121212;
+  --card-bg: #1e1e26;
+  --card-border: #374151;
+  --surface-bg: #18181b;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --theme-border: #374151;
+  --sidebar-bg: #1e1e26;
+  --sidebar-border: #374151;
+  --header-bg: #1e1e26;
+  --header-border: #374151;
+
+  /* Tailwind utility fallbacks */
+}
+
+.dark .bg-white {
+
+  background-color: #0b1220; /* slate-950-ish */
+}
+
+.dark .text-gray-500 {
+  color: #cbd5e1; /* readable secondary text */
+}
+
+.dark .text-gray-600 {
+  color: #cbd5e1;
+}
+
+.dark .border-gray-200 {
+  border-color: #334155; /* slate-700 */
+}
+
+

@@ -44,12 +44,12 @@ class User(Base):
     updated_at = Column(String, nullable=False, default=_now, onupdate=_now)
 
     # Relationships
-    projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
-    uploaded_documents = relationship("RequirementDocument", back_populates="uploader")
-    validation_sessions = relationship("ValidationSession", back_populates="triggered_by_user")
-    traceability_notes = relationship("TraceabilityNote", back_populates="creator")
-    review_audits = relationship("ReviewAudit", back_populates="supervisor")
-    export_reports = relationship("ExportReport", back_populates="generated_by_user")
+    projects = relationship("backend.models.project.Project", viewonly=True)
+    uploaded_documents = relationship("RequirementDocument", viewonly=True)
+    validation_sessions = relationship("ValidationSession", viewonly=True)
+    traceability_notes = relationship("TraceabilityNote", viewonly=True)
+    review_audits = relationship("ReviewAudit", viewonly=True)
+    export_reports = relationship("ExportReport", viewonly=True)
 
     def verify_password(self, plain_password):
         return pwd_context.verify(plain_password, self.password_hash)

@@ -128,8 +128,18 @@ class ExportService:
                 "Visual Specification System", self.styles["ReportSubtitle"]
             )
         )
+
+        # Empty-data handling (Test expects: "No data to export")
+        if not analysis_data and not metrics and not traceability and not diagrams:
+            story.append(PageBreak())
+            story.append(Paragraph("No data to export", self.styles["SectionHeader"]))
+            doc.build(story)
+            buffer.seek(0)
+            return buffer.getvalue()
+
         story.append(Spacer(1, 30))
         story.append(Paragraph(project_name, self.styles["Title"]))
+
         story.append(Spacer(1, 10))
         story.append(
             Paragraph(
@@ -222,9 +232,18 @@ class ExportService:
         # Metrics section
         if report_type == "full" and metrics:
             story.append(Paragraph("Project Metrics", self.styles["SectionHeader"]))
+
+            # Test expects “Complexity, effort included”.
+            # Backend currently provides estimated_weeks; map it to “Effort”.
+            effort_value = (
+                metrics.get("effort")
+                if metrics.get("effort") is not None
+                else metrics.get("estimated_weeks", "N/A")
+            )
+
             metric_items = [
                 ("Complexity Score", metrics.get("complexity_score", "N/A")),
-                ("Estimated Weeks", metrics.get("estimated_weeks", "N/A")),
+                ("Effort", effort_value),
                 ("Cost Index", metrics.get("relative_cost_index", "N/A")),
                 ("Actor Count", metrics.get("actor_count", 0)),
                 (
@@ -233,6 +252,7 @@ class ExportService:
                 ),
                 ("Quality Score", metrics.get("quality_score", "N/A")),
             ]
+
 
             data = [["Metric", "Value"]]
             for label, value in metric_items:
@@ -290,7 +310,8 @@ class ExportService:
             )
             defects = analysis_data.get("defects", [])
             if defects:
-                for i, defect in enumerate(defects[:50], 1):
+                for i, defect in enumerate(defects, 1):
+
                     story.append(
                         Paragraph(
                             f"<b>Defect #{i}</b> [{defect.get('severity', 'N/A').upper()}]",
@@ -315,11 +336,10 @@ class ExportService:
 
         # Traceability
         if report_type == "full" and traceability:
-            story.append(
-                Paragraph("Traceability Matrix", self.styles["SectionHeader"])
-            )
+            story.append(Paragraph("Traceability Matrix", self.styles["SectionHeader"]))
             data = [["Req ID", "Status", "Defects", "Diagrams"]]
             for item in traceability[:100]:
+
                 data.append(
                     [
                         item.get("req_id", ""),
@@ -366,8 +386,10 @@ class ExportService:
             story.append(table)
 
         doc.build(story)
+
         buffer.seek(0)
         return buffer.getvalue()
+
 
 
 # Backwards-compatible alias for existing imports.

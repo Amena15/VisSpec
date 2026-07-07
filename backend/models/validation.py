@@ -31,7 +31,7 @@ class ValidationSession(Base):
 
     project = relationship("backend.models.project.Project", back_populates="validation_sessions")
     document = relationship("backend.models.document.RequirementDocument", back_populates="validation_sessions")
-    triggered_by_user = relationship("backend.models.user.User", back_populates="validation_sessions")
+    triggered_by_user = relationship("backend.models.user.User", viewonly=True)
     defects = relationship("backend.models.validation.Defect", back_populates="validation_session", cascade="all, delete-orphan")
     diagrams = relationship("backend.models.diagram.Diagram", back_populates="validation_session", cascade="all, delete-orphan")
     ai_prompt_logs = relationship("backend.models.auxiliary.AIPromptLog", back_populates="validation_session", cascade="all, delete-orphan")

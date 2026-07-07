@@ -17,7 +17,7 @@ class PasswordResetToken(Base):
     previous_hash_check = Column(String, nullable=True)
     created_at = Column(String, nullable=False, default=_now)
 
-    user = relationship("User")
+    user = relationship("backend.models.user.User", viewonly=True)
 
 
 class SystemLog(Base):
@@ -30,7 +30,7 @@ class SystemLog(Base):
     details = Column(Text, nullable=True)
     created_at = Column(String, nullable=False, default=_now, index=True)
 
-    user = relationship("User")
+    user = relationship("backend.models.user.User", viewonly=True)
 
 
 class AIPromptLog(Base):
@@ -67,4 +67,4 @@ class ExportReport(Base):
 
     project = relationship("Project", back_populates="export_reports")
     validation_session = relationship("ValidationSession", back_populates="export_reports")
-    generated_by_user = relationship("User", back_populates="export_reports")
+    generated_by_user = relationship("backend.models.user.User", viewonly=True)

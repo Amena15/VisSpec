@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { authAPI } from './services/api';
 import { Toaster } from 'sonner';
 
 import LoginPage from './pages/LoginPage';
@@ -24,6 +25,8 @@ import Documents from './pages/Documents';
 import UserManagement from './pages/UserManagement';
 import MainLayout from './components/MainLayout';
 import TestMermaid from './components/TestMermaid';
+import DashboardLayout from './components/layout/DashboardLayout';
+
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -38,6 +41,31 @@ function App() {
         // Check if token is expired
         if (decoded.exp * 1000 > Date.now()) {
           setCurrentUser(decoded);
+
+          // Fetch profile to get username (JWT may omit it)
+          authAPI
+            .getProfile()
+            .then((profileRes) => {
+              const profile = profileRes?.data;
+              if (profile) {
+                setCurrentUser((prev) => ({
+                  ...(prev || {}),
+                  ...(profile.user || profile),
+                }));
+              }
+            })
+            .catch((e) => {
+              console.warn('Failed to fetch profile:', e);
+              // Best-effort fallback normalization
+              setCurrentUser((prev) => {
+                const next = { ...(prev || {}) };
+                if (!next.username) {
+                  if (next.email) next.username = String(next.email).split('@')[0];
+                  else if (next.name) next.username = next.name;
+                }
+                return next;
+              });
+            });
         } else {
           localStorage.removeItem('token');
         }
@@ -49,7 +77,7 @@ function App() {
     setIsLoading(false);
   }, []);
 
-  const handleLogin = (token) => {
+  const handleLogin = async (token) => {
     localStorage.setItem('token', token);
 
     // IMPORTANT: token may be slightly different shape depending on backend.
@@ -57,6 +85,30 @@ function App() {
     const decoded = jwtDecode(token);
 
     setCurrentUser(decoded);
+
+    // Fetch profile from backend to ensure username is correct (JWT might not include it)
+    try {
+      const profileRes = await authAPI.getProfile();
+      const profile = profileRes?.data;
+      if (profile) {
+        setCurrentUser((prev) => ({
+          ...(prev || {}),
+          ...(profile.user || profile),
+        }));
+      }
+    } catch (e) {
+      // Keep whatever we have from token if profile fetch fails
+      console.warn('Failed to fetch profile:', e);
+      // Best-effort fallback normalization
+      setCurrentUser((prev) => {
+        const next = { ...(prev || {}) };
+        if (!next.username) {
+          if (next.email) next.username = String(next.email).split('@')[0];
+          else if (next.name) next.username = next.name;
+        }
+        return next;
+      });
+    }
 
     // Redirect to appropriate dashboard based on user role
     let redirectPath = '/dashboard';
@@ -132,11 +184,16 @@ function App() {
           element={<div className="h-screen w-screen bg-[var(--content-bg)] overflow-hidden"><DebugLoginRequest /></div>}
         />
 
-        <Route element={
-          <ProtectedRoute>
-            <MainLayout currentUser={currentUser} onLogout={handleLogout} />
-          </ProtectedRoute>
-        }>
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <MainLayout currentUser={currentUser} onLogout={handleLogout} />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        >
+
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/analyst" element={<AnalystDashboard />} />
           <Route path="/supervisor" element={<SupervisorDashboard />} />

@@ -29,8 +29,13 @@ const VisualizationPage = () => {
   const [generating, setGenerating] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [error, setError] = useState(null);
-  
+
+  // Diagram node click state
+  const [linkedRequirements, setLinkedRequirements] = useState([]);
+  const [showNodeRequirementsModal, setShowNodeRequirementsModal] = useState(false);
+
   const [documents, setDocuments] = useState([]);
+
   const [selectedDocument, setSelectedDocument] = useState(documentId || '');
 
   useEffect(() => {
@@ -164,8 +169,35 @@ const VisualizationPage = () => {
 
   const currentDiagramString = currentDiagram?.plantuml_syntax || '';
 
+  // Listen for node clicks emitted by DiagramViewer
+  useEffect(() => {
+    const handler = async (evt) => {
+      const elementId = evt?.detail?.elementId;
+      if (!elementId || !currentDiagram?.diagram_id) return;
+
+      try {
+        const res = await ieeeDiagramsAPI.getDiagramNodeRequirements(
+          currentDiagram.diagram_id,
+          elementId
+        );
+
+        const requirements = res?.data?.requirements || [];
+        setLinkedRequirements(requirements);
+        setShowNodeRequirementsModal(true);
+      } catch (err) {
+        console.error('Failed to load linked requirements for diagram node:', err);
+        toast.error('Failed to load linked requirements');
+      }
+    };
+
+    window.addEventListener('diagram-node-click', handler);
+    return () => window.removeEventListener('diagram-node-click', handler);
+  }, [currentDiagram?.diagram_id]);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* --- Top Header --- */}
@@ -173,7 +205,8 @@ const VisualizationPage = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/analysis-results')}
-              className="p-2 bg-white rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 text-gray-600 transition-all"
+              className="p-2 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-all"
+
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -205,12 +238,14 @@ const VisualizationPage = () => {
 
         {/* --- Document Selector --- */}
         {!selectedDocument && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-blue-50 rounded-lg">
                 <FileText className="h-5 w-5 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Select a Source Document</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Select a Source Document</h3>
+
             </div>
             <select
               value={selectedDocument}

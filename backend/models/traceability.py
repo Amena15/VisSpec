@@ -39,5 +39,5 @@ class TraceabilityNote(Base):
     created_at = Column(String, nullable=False, default=_now)
 
     requirement = relationship("Requirement", back_populates="traceability_notes")
-    creator = relationship("User", back_populates="traceability_notes")
+    creator = relationship("backend.models.user.User", viewonly=True)
     project = relationship("Project", back_populates="traceability_notes")

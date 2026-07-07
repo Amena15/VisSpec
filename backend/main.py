@@ -24,7 +24,9 @@ from backend.api.analysis import router as analysis_router
 from backend.api.auth import router as auth_router
 from backend.api.documents import router as documents_router
 from backend.api.diagrams import router as diagrams_router
+from backend.api.diagram_mapping import router as diagram_mapping_router
 from backend.api.uml_diagrams import router as ieee_diagrams_router
+
 from backend.api.projects import router as projects_router
 from backend.api.traceability import router as traceability_router
 from backend.api.users import router as users_router
@@ -104,7 +106,9 @@ app.include_router(analysis_router, tags=["analysis"])
 app.include_router(supervisor_router, prefix="/api/supervisor", tags=["supervisor"])
 app.include_router(visualization_router, prefix="/api/visualization", tags=["visualization"])
 app.include_router(diagrams_router, prefix="/api/diagrams", tags=["diagrams"])
+app.include_router(diagram_mapping_router, prefix="/api/diagrams", tags=["diagram-mapping"])
 app.include_router(ieee_diagrams_router, prefix="/api/ieee-diagrams", tags=["ieee-diagrams"])
+
 app.include_router(validation_router, tags=["validation"])
 app.include_router(reports_router, prefix="/api/reports", tags=["reports"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])

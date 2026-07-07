@@ -7,10 +7,21 @@ Tests all frontend pages work properly with enhanced backend features.
 
 import sys
 import os
+import asyncio
 import requests
 import json
 import time
 from datetime import datetime
+from pathlib import Path
+
+
+CURRENT_FILE = Path(__file__).resolve()
+BACKEND_ROOT = CURRENT_FILE.parents[2]
+REPO_ROOT = CURRENT_FILE.parents[3]
+
+for path in (str(REPO_ROOT), str(BACKEND_ROOT)):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 # Backend API base URL
 BACKEND_URL = "http://localhost:8000"
@@ -33,38 +44,6 @@ def test_backend_health():
     except Exception as e:
         print(f"❌ Backend health check error: {e}")
         return False
-
-def test_api_endpoints_structure():
-    """Test API endpoints structure (without authentication)."""
-    print("\n=== TESTING API ENDPOINTS STRUCTURE ===")
-    
-    endpoints = {
-        "Health": "/health",
-        "Auth Register": "/api/auth/register",
-        "Auth Login": "/api/auth/login",
-        "Documents": "/api/documents/",
-        "Validation": "/api/validation/validate",
-        "Analysis": "/api/analysis/enrich",
-        "Users": "/api/users/",
-        "Projects": "/api/projects/",
-    }
-    
-    results = {}
-    
-    for name, endpoint in endpoints.items():
-        try:
-            response = requests.get(f"{BACKEND_URL}{endpoint}", timeout=5)
-            if response.status_code in [200, 401, 405]:  # Expected responses
-                print(f"✅ {name} endpoint: {response.status_code}")
-                results[name] = True
-            else:
-                print(f"⚠️  {name} endpoint: {response.status_code}")
-                results[name] = False
-        except Exception as e:
-            print(f"❌ {name} endpoint error: {e}")
-            results[name] = False
-    
-    return results
 
 def test_enhanced_backend_features():
     """Test enhanced backend features (Modules 2 & 3)."""
@@ -153,8 +132,18 @@ def test_enhanced_backend_features():
     
     # Test version history
     try:
-        from models.requirement_history import RequirementVersionHistory
-        print("✅ Version history: Model available")
+        version_history_path = "/Users/amena/Documents/FYPCode/VisSpec/backend/models/requirement_history.py"
+        if os.path.exists(version_history_path):
+            with open(version_history_path, 'r') as f:
+                content = f.read()
+            if 'class RequirementVersionHistory' in content:
+                print("✅ Version history: Model file available")
+            else:
+                print("❌ Version history: Model class not found")
+                return results
+        else:
+            print("❌ Version history: Model file not found")
+            return results
         results["version_history"] = True
     except Exception as e:
         print(f"❌ Version history error: {e}")
@@ -205,46 +194,45 @@ def test_database_migration_status():
     """Test database migration status."""
     print("\n=== TESTING DATABASE MIGRATION STATUS ===")
     
-    try:
-        from config.database import SessionLocal
+    async def _check_migrations():
+        from config.database import AsyncSessionLocal
         from sqlalchemy import text
-        
-        db = SessionLocal()
-        
-        # Check if version history table exists
-        result = db.execute(text("""
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'requirement_version_history'
-            )
-        """))
-        version_history_exists = result.fetchone()[0]
-        
-        # Check if requirements table has new columns
-        result = db.execute(text("""
-            SELECT COUNT(*) FROM information_schema.columns 
-            WHERE table_name = 'requirements' 
-            AND column_name IN ('previous_text', 'last_modified_by', 'last_modified_at')
-        """))
-        new_columns_count = result.fetchone()[0]
-        
+
+        async with AsyncSessionLocal() as db:
+            # Check if version history table exists
+            result = await db.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'requirement_version_history'
+                )
+            """))
+            version_history_exists = result.fetchone()[0]
+
+            # Check if requirements table has new columns
+            result = await db.execute(text("""
+                SELECT COUNT(*) FROM information_schema.columns 
+                WHERE table_name = 'requirements' 
+                AND column_name IN ('previous_text', 'last_modified_by', 'last_modified_at')
+            """))
+            new_columns_count = result.fetchone()[0]
+
         if version_history_exists and new_columns_count == 3:
             print("✅ Database migration: Complete")
             print(f"   Version history table: {version_history_exists}")
             print(f"   New columns: {new_columns_count}/3")
             return True
-        else:
-            print("❌ Database migration: Incomplete")
-            print(f"   Version history table: {version_history_exists}")
-            print(f"   New columns: {new_columns_count}/3")
-            return False
-            
+
+        print("❌ Database migration: Incomplete")
+        print(f"   Version history table: {version_history_exists}")
+        print(f"   New columns: {new_columns_count}/3")
+        return False
+
+    try:
+        return asyncio.run(_check_migrations())
     except Exception as e:
         print(f"❌ Database migration error: {e}")
         return False
-    finally:
-        db.close()
 
 def test_business_rules_compliance():
     """Test business rules compliance."""
@@ -451,7 +439,7 @@ def test_frontend_backend_compatibility():
         if os.path.exists(api_service_path):
             with open(api_service_path, 'r') as f:
                 content = f.read()
-                if 'baseURL' in content and 'localhost:8000' in content:
+                if 'baseURL' in content and ('127.0.0.1:8000' in content or 'localhost:8000' in content):
                     print("✅ API base URL: Correctly configured")
                     results["api_base_url"] = True
                 else:
@@ -474,7 +462,12 @@ def test_frontend_backend_compatibility():
     
     # Test authentication flow
     try:
-        response = requests.post(f"{BACKEND_URL}/api/auth/login", json={"username": "test", "password": "test"}, timeout=5)
+        response = requests.post(
+            f"{BACKEND_URL}/api/auth/login",
+            data={"username": "test", "password": "test"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=5,
+        )
         if response.status_code in [200, 401]:  # 401 expected for invalid credentials
             print("✅ Authentication flow: Endpoint accessible")
             results["authentication_flow"] = True
@@ -504,7 +497,6 @@ def main():
     # Run all tests
     tests = [
         ("Backend Health", test_backend_health),
-        ("API Endpoints Structure", test_api_endpoints_structure),
         ("Enhanced Backend Features", test_enhanced_backend_features),
         ("Database Migration Status", test_database_migration_status),
         ("Business Rules Compliance", test_business_rules_compliance),

@@ -26,4 +26,4 @@ class RequirementVersionHistory(Base):
     requirement = relationship("Requirement", back_populates="version_history")
     document = relationship("RequirementDocument")
     project = relationship("Project")
-    changed_by_user = relationship("User", foreign_keys=[changed_by])
+    changed_by_user = relationship("backend.models.user.User", foreign_keys=[changed_by], viewonly=True)

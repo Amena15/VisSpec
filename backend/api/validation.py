@@ -47,6 +47,19 @@ def _safe_json_loads(value, default=None):
         return default if default is not None else []
 
 
+def _build_defect_response(defect_data: Dict[str, Any]) -> DefectResponse:
+    """Normalize raw validator defect data into the API response shape."""
+    return DefectResponse(
+        text=defect_data.get("text") or defect_data.get("original_text") or defect_data.get("description") or "",
+        type=defect_data.get("type", "unknown"),
+        severity=defect_data.get("severity", "low"),
+        confidence=float(defect_data.get("confidence", 0.0)),
+        description=defect_data.get("description", ""),
+        suggestion=defect_data.get("suggestion"),
+        req_id=defect_data.get("req_id"),
+    )
+
+
 def _ensure_test_routes_enabled() -> None:
     """Block test-only endpoints unless debug mode is explicitly enabled."""
     if not settings.DEBUG:
@@ -75,7 +88,7 @@ async def validate_requirements(
             total_defects=result["total_defects"],
             defects_by_type=result["defects_by_type"],
             defects_by_severity=result["defects_by_severity"],
-            defects=[DefectResponse(**d) for d in result["defects"]],
+            defects=[_build_defect_response(d) for d in result["defects"]],
             llm_used=result["llm_used"],
             processing_time_ms=result["processing_time_ms"],
         )
@@ -304,7 +317,10 @@ async def validate_document(
             req_defect_counts[req_id] = req_defect_counts.get(req_id, 0) + 1
             if req_id not in req_defect_details:
                 req_defect_details[req_id] = {"high": 0, "medium": 0, "low": 0}
-            req_defect_details[req_id][d["severity"]] += 1
+            severity_key = str(d.get("severity", "")).lower()
+            if severity_key not in req_defect_details[req_id]:
+                severity_key = "low"
+            req_defect_details[req_id][severity_key] += 1
 
         if d["type"] == "ambiguity":
             ambiguity_count += 1
@@ -368,7 +384,7 @@ async def validate_document(
         total_requirements=len(requirements),
         defects_by_type=result.get("defects_by_type", {}),
         defects_by_severity=result.get("defects_by_severity", {}),
-        defects=[DefectResponse(**d) for d in filtered_defects],
+        defects=[_build_defect_response(d) for d in filtered_defects],
         llm_used=llm_used,
         processing_time_ms=processing_time_ms,
         perfect_score=perfect_score,

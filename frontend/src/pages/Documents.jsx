@@ -134,8 +134,12 @@ const Documents = () => {
                         <Folder className="h-6 w-6 text-[var(--primary-main)]" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-[var(--text-primary)]">{project.name}</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">{project.document_count} documents</p>
+                        <h3 className="font-semibold text-[var(--text-primary)]">
+                          {project.name || project.title || project.project_name || project.username || 'Untitled Project'}
+                        </h3>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          {project.document_count ?? project.documents_count ?? project.documents?.length ?? project.documents?.size ?? 0} documents
+                        </p>
                       </div>
                     </div>
                     <div className="relative">

@@ -135,7 +135,10 @@ async def get_traceability(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
+
     """
+
+
     Get traceability data for all requirements in a project.
     Implements REQ_18: Requirements Traceability Matrix.
     """

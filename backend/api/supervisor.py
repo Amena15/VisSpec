@@ -541,8 +541,10 @@ async def get_supervisor_reports(
 
     for project, owner in rows:
         latest_val = await _latest_validation_for_project(db, project.project_id)
-        quality = latest_val.overall_score if latest_val else 0
-        defect = latest_val.defect_count if latest_val else 0
+        # overall_score / defect_count can be NULL in DB; normalize to 0 for calculations
+        quality = latest_val.overall_score if latest_val and latest_val.overall_score is not None else 0
+        defect = latest_val.defect_count if latest_val and latest_val.defect_count is not None else 0
+
 
         if (min_quality is not None and quality < min_quality) or (max_quality is not None and quality > max_quality):
             continue
@@ -613,7 +615,10 @@ async def get_supervisor_reports(
             review_status_counts[status_key] = 1
 
     total_projects = len(project_reports)
-    avg_quality = sum(quality_scores) / total_projects if total_projects > 0 else 0
+    # quality_scores already normalized, but keep this safe
+    safe_quality_scores = [q for q in quality_scores if q is not None]
+    avg_quality = sum(safe_quality_scores) / total_projects if total_projects > 0 else 0
+
     total_defects_sum = sum(defect_counts)
 
     summary = {

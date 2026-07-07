@@ -8,12 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select
 from datetime import datetime
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
 
 from backend.models.user import User
 from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
+from backend.models.diagram import DiagramElement
 from backend.services.visualization.visualizer import Visualizer
 from backend.services.ai.semantic_analyzer import SemanticAnalyzer
+
 from backend.utils.security import get_current_active_user
 from backend.config.database import get_db
 from backend.core.logging import get_logger
@@ -188,6 +192,7 @@ async def get_sequence_diagram(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
+
     """
     Get Sequence diagram for a specific document and scenario.
     Enforces BR-12: Maximum 15 steps per sequence diagram.

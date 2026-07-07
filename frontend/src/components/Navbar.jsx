@@ -45,7 +45,7 @@ const Navbar = ({ currentUser, onLogout }) => {
                 <div className="flex items-center space-x-3">
                   <UserCircleIcon className="h-8 w-8 text-slate-400" />
                   <div>
-                    <p className="text-sm font-medium text-white">{currentUser.username}</p>
+                    <p className="text-sm font-medium text-white">{currentUser?.username || currentUser?.email || currentUser?.name || 'User'}</p>
                     <p className="text-xs font-medium text-slate-400 capitalize">{currentUser.role}</p>
                   </div>
                   <button

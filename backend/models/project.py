@@ -20,7 +20,7 @@ class Project(Base):
     created_at = Column(String, nullable=False, default=_now)
     updated_at = Column(String, nullable=False, default=_now, onupdate=_now)
 
-    owner = relationship("backend.models.user.User", back_populates="projects")
+    owner = relationship("backend.models.user.User", viewonly=True)
     documents = relationship("backend.models.document.RequirementDocument", back_populates="project", cascade="all, delete-orphan")
     validation_sessions = relationship("backend.models.validation.ValidationSession", back_populates="project", cascade="all, delete-orphan")
     diagrams = relationship("backend.models.diagram.Diagram", back_populates="project", cascade="all, delete-orphan")

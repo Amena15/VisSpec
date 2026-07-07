@@ -110,6 +110,7 @@ export const documentAPI = {
         'Content-Type': 'multipart/form-data',
       },
       onUploadProgress,
+      timeout: 120000,
     });
   },
   getAll: (projectId) => {
@@ -219,6 +220,7 @@ export const notificationsAPI = {
 export const ieeeDiagramsAPI = {
   generateDiagram: (documentId, diagramType, scenario = null) => {
     const payload = {
+
       document_id: documentId,
       diagram_type: diagramType,
       scenario: scenario
@@ -248,7 +250,12 @@ export const ieeeDiagramsAPI = {
   getDiagramDetails: (diagramId) => {
     return apiClient.get(`/api/ieee-diagrams/diagram/${diagramId}`);
   },
+
+  getDiagramNodeRequirements: (diagramId, elementId) => {
+    return apiClient.get(`/api/diagrams/diagram/${diagramId}/elements/${elementId}/requirements`);
+  },
 };
+
 
 // Legacy Visualization API (kept for backward compatibility)
 export const visualizationAPI = {

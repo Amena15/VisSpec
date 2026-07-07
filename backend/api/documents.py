@@ -189,7 +189,7 @@ async def upload_document(
     # 4. Parse document
     # ------------------------------------------------------------------
     try:
-        from services.document.parser import DocumentParser
+        from backend.services.document.parser import DocumentParser
         parser = DocumentParser()
         parse_result = parser.parse(file_content, filename)
         

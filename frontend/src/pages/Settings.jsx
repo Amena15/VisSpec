@@ -113,6 +113,13 @@ const Settings = () => {
     }
   };
 
+  const defaultSettings = {
+    emailNotifications: true,
+    pushNotifications: false,
+    language: 'en',
+    timezone: 'UTC',
+  };
+
   const handleResetSettings = () => {
     // Reset to default values
     setEmailNotifications(defaultSettings.emailNotifications);

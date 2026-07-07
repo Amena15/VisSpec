@@ -18,6 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from datetime import datetime, timezone, timedelta
+import uuid
 
 from main import app
 from config.database import Base, get_db
@@ -222,17 +223,24 @@ class TestLogin:
         assert "incorrect" in response.json()["detail"].lower()
 
     def test_login_account_lockout_after_5_attempts(self, client):
-        """Account should lock after 5 failed attempts. Expect 401 after lockout."""
-        register_user(client, "lockout", "lockout@example.com", "SecurePassword123!")
+        """Account should lock after 5 failed attempts. Expect 423 after lockout."""
+        unique_suffix = uuid.uuid4().hex[:8]
+        email = f"lockout_{unique_suffix}@example.com"
+        register_user(client, f"lockout_{unique_suffix}", email, "SecurePassword123!")
 
-        # 5 failed attempts
-        for _ in range(5):
-            response = login_user(client, "lockout@example.com", "WrongPassword!")
+        # First 4 failed attempts should still be unauthorized
+        for _ in range(4):
+            response = login_user(client, email, "WrongPassword!")
             assert response.status_code == 401
 
-        # 6th attempt should still be 401 (locked or incorrect)
-        response = login_user(client, "lockout@example.com", "WrongPassword!")
-        assert response.status_code == 401
+        # 5th failed attempt should lock the account
+        response = login_user(client, email, "WrongPassword!")
+        assert response.status_code == 423
+        assert "locked" in response.json()["detail"].lower()
+
+        # Correct credentials should still be blocked while locked
+        response = login_user(client, email, "SecurePassword123!")
+        assert response.status_code == 423
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, Plus, Star, MessageSquare, Clock, CheckCircle, AlertTriangle, AlertOctagon, FileText } from 'lucide-react';
+import { Search, Filter, Plus, Star, MessageSquare, Clock, CheckCircle, AlertTriangle, AlertOctagon, FileText, Trash2, BarChart2, ArrowDownUp } from 'lucide-react';
+
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { documentAPI, validationAPI, traceabilityAPI, projectAPI } from '../services/api';
 import { toast } from 'sonner';
@@ -8,13 +9,19 @@ const Traceability = () => {
   const { id } = useParams(); // Get ID parameter from the URL
   console.log('Traceability component - URL ID:', id);
   
-  // Determine if this is a document-level or project-level traceability request
-  const isDocumentLevel = window.location.pathname.includes('/traceability/document/');
-  
-  console.log('Is document-level traceability:', isDocumentLevel);
+  // Determine traceability mode from current route.
+  // App routes are:
+  //  - /traceability (no :id)
+  //  - /traceability/:id   -> project-level
+  // (There is no `/traceability/document/...` route in App.jsx)
+  const isDocumentLevel = false;
+
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterHasNotes, setFilterHasNotes] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: 'identifier', direction: 'asc' });
+
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [noteText, setNoteText] = useState('');
@@ -114,6 +121,7 @@ const Traceability = () => {
 
   const traceabilityData = useMemo(() => {
     return requirements.map((req, index) => {
+
       // Find associated defect for this requirement
       const associatedDefect = defects.find(defect => 
         defect.requirement_id === req.id || 
@@ -139,8 +147,11 @@ const Traceability = () => {
   const filteredData = useMemo(() => {
     if (!traceabilityData || traceabilityData.length === 0) return [];
     return traceabilityData.filter(item => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch =
+        !searchTerm ||
+
         item.requirement.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
         item.visualElement.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Handle status filtering with proper mapping
@@ -159,9 +170,12 @@ const Traceability = () => {
         matchesStatus = item.status === filterStatus;
       }
       
-      return matchesSearch && matchesStatus;
+      const matchesNotes = !filterHasNotes || item.hasNotes;
+      
+      return matchesSearch && matchesStatus && matchesNotes;
     });
-  }, [traceabilityData, searchTerm, filterStatus]);
+  }, [traceabilityData, searchTerm, filterStatus, filterHasNotes]);
+
 
   const handleSaveNote = async () => {
     if (!selectedRequirement || !noteText.trim()) return;
@@ -367,6 +381,17 @@ const Traceability = () => {
                   <option value="ambiguous">Ambiguous Only</option>
                   <option value="conflict">Conflict Only</option>
                 </select>
+
+                <label className="flex items-center space-x-2 text-sm text-[var(--text-secondary)] select-none">
+                  <input
+                    type="checkbox"
+                    checked={filterHasNotes}
+                    onChange={(e) => setFilterHasNotes(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--primary-main)]"
+                  />
+                  <span>Has Notes</span>
+                </label>
+
               </div>
             </div>
           )}
@@ -378,7 +403,21 @@ const Traceability = () => {
                 <table className="min-w-full divide-y divide-[var(--card-border)]">
                   <thead className="bg-[var(--surface-bg)]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">ID</th>
+                          <th
+                            onClick={() => {
+                              setSortConfig((prev) => ({
+                                key: 'identifier',
+                                direction: prev.key === 'identifier' && prev.direction === 'asc' ? 'desc' : 'asc',
+                              }));
+                            }}
+                            className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider cursor-pointer select-none"
+                          >
+                            <span className="flex items-center gap-2">
+                              ID
+                              <ArrowDownUp className="w-3 h-3" />
+                            </span>
+                          </th>
+
                       <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Requirement</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Visual Element</th>
@@ -391,9 +430,12 @@ const Traceability = () => {
                     {filteredData.length > 0 ? (
                       filteredData.map((item, index) => (
                         <tr key={item.id} className="hover:bg-[var(--surface-bg)] transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+                      <td
+                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]"
+                          >
                             {item.identifier || `REQ-${String(item.id).padStart(3, '0')}`}
                           </td>
+
                           <td className="px-6 py-4 text-sm text-[var(--text-primary)] max-w-xs truncate" title={item.requirement}>
                             {item.requirement}
                           </td>
@@ -554,7 +596,8 @@ const Traceability = () => {
               <div>
                 <p className="text-sm text-[var(--text-secondary)] mb-2">Requirement ID:</p>
                 <p className="text-sm bg-[var(--surface-bg)] p-3 rounded border border-[var(--card-border)] font-mono">
-                  REQ-{String(viewRequirement.id).padStart(3, '0')}
+                  {viewRequirement.identifier || `REQ-${String(viewRequirement.id).padStart(3, '0')}`}
+
                 </p>
               </div>
 
@@ -598,18 +641,21 @@ const Traceability = () => {
                 </p>
               </div>
 
-              {viewRequirement.hasNotes && (
-                <div>
-                  <p className="text-sm text-[var(--text-secondary)] mb-2">Notes:</p>
-                  <div className="text-sm bg-[var(--surface-bg)] p-3 rounded border border-[var(--card-border)]">
-                    {viewRequirement.notes.map((note, index) => (
+              <div>
+                <p className="text-sm text-[var(--text-secondary)] mb-2">Notes:</p>
+                <div className="text-sm bg-[var(--surface-bg)] p-3 rounded border border-[var(--card-border)]">
+                  {viewRequirement.notes && viewRequirement.notes.length > 0 ? (
+                    viewRequirement.notes.map((note, index) => (
                       <div key={index} className="mb-2 last:mb-0">
                         <p>{note.content || note}</p>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-[var(--text-secondary)] italic">No notes available</p>
+                  )}
                 </div>
-              )}
+              </div>
+
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">

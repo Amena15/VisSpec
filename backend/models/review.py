@@ -23,5 +23,5 @@ class ReviewAudit(Base):
     created_at = Column(String, nullable=False, default=_now)
 
     project = relationship("Project", back_populates="review_audits")
-    supervisor = relationship("User", back_populates="review_audits")
+    supervisor = relationship("backend.models.user.User", viewonly=True)
     validation_session = relationship("ValidationSession", back_populates="review_audits")
