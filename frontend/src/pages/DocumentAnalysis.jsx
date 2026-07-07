@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DocumentTextIcon, ExclamationTriangleIcon, LightBulbIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { apiClient } from '../services/api';
 
 const DocumentAnalysis = () => {
   const [inputText, setInputText] = useState('');
@@ -17,23 +18,12 @@ const DocumentAnalysis = () => {
     try {
       // In a real implementation, this would call the backend API
       // For demo purposes, we'll simulate the response
-      const response = await fetch('http://localhost:8000/api/analysis/full', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await apiClient.post('/api/analysis/full', {
           semantic_request: { text: inputText, analysis_type: 'semantic' },
           predictive_request: { text: inputText, analysis_type: 'predictive' }
-        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnalysisResult(data);
-      } else {
-        throw new Error('Analysis failed');
-      }
+      setAnalysisResult(response.data);
     } catch (error) {
       console.error('Analysis error:', error);
       // For demo purposes, create a mock response

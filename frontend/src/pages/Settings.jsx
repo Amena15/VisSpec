@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Moon, Bell, Monitor, Globe, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
-import { authAPI } from '../services/api';
+import { authAPI, apiClient } from '../services/api';
 import PasswordChangeForm from '../components/PasswordChangeForm';
 
 const Settings = () => {
@@ -24,15 +24,14 @@ const Settings = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:8000/api/users/settings', {
+        const response = await apiClient.get('/api/users/settings', {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
           }
         });
 
-        if (response.ok) {
-          const settings = await response.json();
+        if (response.status >= 200 && response.status < 300) {
+          const settings = response.data;
           setEmailNotifications(settings.email_notifications || true);
           setPushNotifications(settings.push_notifications || false);
           setLanguage(settings.language || 'en');
@@ -85,25 +84,21 @@ const Settings = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/users/settings', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const response = await apiClient.put('/api/users/settings', {
           email_notifications: emailNotifications,
           push_notifications: pushNotifications,
           language,
           timezone
-        })
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
       });
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         toast.success('Settings saved successfully');
       } else {
-        const data = await response.json();
-        toast.error(data.detail || 'Failed to save settings');
+        toast.error(response.data?.detail || 'Failed to save settings');
       }
     } catch (error) {
       console.error('Error saving settings:', error);

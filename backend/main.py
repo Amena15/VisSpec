@@ -7,13 +7,17 @@ import sys
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 # Ensure backend/ package imports work when launched from repo root
 BACKEND_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = BACKEND_ROOT.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+STATIC_DIR = BACKEND_ROOT / "static"
 
 from backend.core.config import settings
 from backend.config.database import engine, Base
@@ -129,7 +133,27 @@ async def test_direct():
 
 @app.get("/")
 def root():
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+
     return {"message": "VisSpec API is running", "version": "1.0.0", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def spa_fallback(full_path: str):
+    if full_path.startswith(("api/", "docs", "redoc", "openapi.json", "health", "test-direct")):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    requested_file = STATIC_DIR / full_path
+    if requested_file.is_file():
+        return FileResponse(requested_file)
+
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 if __name__ == "__main__":
