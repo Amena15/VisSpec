@@ -42,6 +42,27 @@ export const useDashboardData = () => {
     return cache.timestamp && (Date.now() - cache.timestamp < cache.ttl);
   }, []);
 
+  const formatEffortWeeks = useCallback((doc) => {
+    const explicitWeeks = Number(doc.estimated_effort_weeks);
+
+    if (Number.isFinite(explicitWeeks) && explicitWeeks > 0) {
+      const displayValue = Number.isInteger(explicitWeeks)
+        ? explicitWeeks
+        : Number(explicitWeeks.toFixed(1));
+      return `${displayValue} ${displayValue === 1 ? 'week' : 'weeks'}`;
+    }
+
+    const wordCount = Number(doc.word_count || 0);
+    if (!wordCount) return 'Unknown';
+
+    const estimatedWeeks = Math.max(0.1, wordCount / 8000);
+    const displayValue = estimatedWeeks < 10
+      ? Number(estimatedWeeks.toFixed(1))
+      : Math.round(estimatedWeeks);
+
+    return `${displayValue} ${displayValue === 1 ? 'week' : 'weeks'}`;
+  }, []);
+
   const normalizeDocStatus = useCallback((rawStatus) => {
     const s = (rawStatus || '').toString().trim().toLowerCase();
 
@@ -103,13 +124,13 @@ export const useDashboardData = () => {
       qualityScore: doc.quality_score || Math.min(100, Math.max(0, Math.round((doc.word_count || 0) / 10))),
       complexity: doc.word_count > 1000 ? 'High' : doc.word_count > 500 ? 'Medium' : 'Low',
       defects: doc.defect_count || 0, // Real defect count from database validation
-      effortEstimate: doc.word_count ? `${Math.ceil(doc.word_count / 200)}h` : 'Unknown',
+      effortEstimate: formatEffortWeeks(doc),
       comments: doc.requirements_found ? `${doc.requirements_found} requirements found` : 'No comments',
       projectId: doc.project_id,
       wordCount: doc.word_count || 0,
       requirementsFound: doc.requirements_found || 0
     };
-  }, [normalizeDocStatus]);
+  }, [formatEffortWeeks, normalizeDocStatus]);
 
   // Transform project data for display
   const transformProject = useCallback((project) => {

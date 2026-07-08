@@ -166,7 +166,7 @@ def test_visualization_schemas():
     print("  ✓ VisualizationResponse")
 
 def test_analysis_schemas():
-    print("\n📈 Testing Analysis Schemas...")
+    print("\n Testing Analysis Schemas...")
     from datetime import datetime, timezone
     
     now_str = datetime.now(timezone.utc).isoformat()
@@ -215,7 +215,7 @@ def test_analysis_schemas():
     print("  ✓ AnalysisResult")
     
 def test_import_all_schemas():
-    print("\n📦 Testing all exports...")
+    print("\n Testing all exports...")
     expected = [
         "Token", "TokenData", "UserLogin", "PasswordReset", "PasswordChange",
         "UserBase", "UserCreate", "UserUpdate", "UserResponse", "UserInDB",
@@ -246,9 +246,9 @@ if __name__ == "__main__":
         test_analysis_schemas()
         test_import_all_schemas()
         print("\n" + "=" * 60)
-        print("🎉 All schema tests passed!")
+        print(" All schema tests passed!")
         print("=" * 60)
     except Exception as e:
-        print(f"\n❌ Test failed: {e}")
+        print(f"\n Test failed: {e}")
         traceback.print_exc()
         sys.exit(1)

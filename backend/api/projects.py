@@ -4,12 +4,13 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from backend.models.user import User
 from backend.models.project import Project
 from backend.models.document import RequirementDocument
+from backend.models.requirement import Requirement
 from backend.models.validation import ValidationSession
 from backend.utils.security import get_current_active_user
 from backend.config.database import get_db
@@ -79,21 +80,51 @@ async def list_projects(
         result = await db.execute(stmt)
         projects = result.scalars().all()
 
-        # Return only direct project fields; frontend cards derive counts elsewhere.
+        project_ids = [project.project_id for project in projects]
+
+        document_count_map = {}
+        requirement_count_map = {}
+
+        if project_ids:
+            document_counts_result = await db.execute(
+                select(
+                    RequirementDocument.project_id,
+                    func.count(RequirementDocument.doc_id).label("document_count"),
+                )
+                .where(
+                    RequirementDocument.project_id.in_(project_ids),
+                )
+                .group_by(RequirementDocument.project_id)
+            )
+            document_count_map = {row.project_id: int(row.document_count or 0) for row in document_counts_result.all()}
+
+            requirement_counts_result = await db.execute(
+                select(
+                    RequirementDocument.project_id,
+                    func.count().label("requirements_count"),
+                )
+                .join(Requirement, Requirement.doc_id == RequirementDocument.doc_id)
+                .where(
+                    RequirementDocument.project_id.in_(project_ids),
+                )
+                .group_by(RequirementDocument.project_id)
+            )
+            requirement_count_map = {row.project_id: int(row.requirements_count or 0) for row in requirement_counts_result.all()}
+
         return [
             {
-                "project_id": p.project_id,
-                "name": p.name,
-                "description": p.description,
-                "status": p.status,
-                "review_status": p.review_status,
-                "created_at": p.created_at,
-                "updated_at": p.updated_at,
-                "document_count": 0,
-                "requirements_count": 0,
+                "project_id": project.project_id,
+                "name": project.name,
+                "description": project.description,
+                "status": project.status,
+                "review_status": project.review_status,
+                "created_at": project.created_at,
+                "updated_at": project.updated_at,
+                "document_count": document_count_map.get(project.project_id, 0),
+                "requirements_count": requirement_count_map.get(project.project_id, 0),
                 "quality_score": None,
             }
-            for p in projects
+            for project in projects
         ]
     except Exception as e:
         logger.error(f"Error listing projects: {e}")

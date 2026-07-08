@@ -24,12 +24,21 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { CardSkeleton, TableRowSkeleton, PredictionCardSkeleton } from '../components/LoadingSkeleton';
 import DashboardCharts from '../components/charts/DashboardCharts';
+import { apiClient } from '../services/api';
 
 // Helper function to get color based on score
 const getScoreColor = (score) => {
   if (score > 80) return '#10B981';
   if (score > 50) return '#F59E0B';
   return '#EF4444';
+};
+
+const formatWeeks = (value) => {
+  const weeks = Number(value);
+  if (!Number.isFinite(weeks) || weeks <= 0) return 'Unknown';
+
+  const displayValue = Number.isInteger(weeks) ? weeks : Number(weeks.toFixed(1));
+  return `${displayValue} ${displayValue === 1 ? 'week' : 'weeks'}`;
 };
 
 const AnalystDashboard = () => {
@@ -40,8 +49,60 @@ const AnalystDashboard = () => {
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportDocument, setReportDocument] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { documents, stats, loading, error } = useDashboardData();
+
+  const exportPdf = async () => {
+    try {
+      setIsExporting(true);
+
+      const averageEffortWeeks = documents.length
+        ? documents.reduce((sum, doc) => {
+            const match = String(doc.effortEstimate || '').match(/([0-9]+(?:\.[0-9]+)?)/);
+            return sum + (match ? Number(match[1]) : 0);
+          }, 0) / documents.length
+        : 0;
+
+      const reportData = {
+        report_type: 'summary',
+        project_name: 'Analyst Dashboard',
+        analysis_data: {
+          overall_score: stats.avgQualityScore,
+          total_defects: stats.totalDefects,
+        },
+        metrics: {
+          complexity_score: stats.avgComplexity,
+          estimated_weeks: Number(averageEffortWeeks.toFixed(1)),
+          quality_score: stats.avgQualityScore,
+          total_requirements: stats.totalRequirements,
+        },
+        traceability: [],
+        diagrams: [],
+      };
+
+      const response = await apiClient.post('/api/reports/export', reportData, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `analyst_dashboard_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(anchor);
+
+      toast.success('Analysis report exported successfully!');
+    } catch (exportError) {
+      console.error('Failed to export analyst report:', exportError);
+      toast.error('Failed to export analysis report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -401,16 +462,12 @@ const AnalystDashboard = () => {
                   <div className="px-6 py-4 border-b border-[var(--card-border)] flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-[var(--text-primary)]">System Analysis Summary</h2>
                     <button
-                      onClick={() => {
-                        toast.success('Analysis report exported successfully!', {
-                          duration: 3000,
-                          position: 'top-right'
-                        });
-                      }}
+                      onClick={exportPdf}
+                      disabled={isExporting || documents.length === 0}
                       className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] hover:text-white transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
                     >
                       <Download className="w-4 h-4 mr-2" />
-                      Export PDF
+                      {isExporting ? 'Exporting...' : 'Export PDF'}
                     </button>
                   </div>
 
@@ -582,14 +639,12 @@ const AnalystDashboard = () => {
                     Close
                   </button>
                   <button
-                    onClick={() => {
-                      toast.success('Report exported successfully!');
-                      setShowReportModal(false);
-                    }}
+                    onClick={exportPdf}
+                    disabled={isExporting}
                     className="px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors flex items-center"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Export Report
+                    {isExporting ? 'Exporting...' : 'Export Report'}
                   </button>
                 </div>
               </div>

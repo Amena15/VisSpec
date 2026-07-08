@@ -554,5 +554,5 @@ For questions regarding this project:
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for FYP01-SE-T2530-393 | Multimedia University 2026</sub>
+  <sub>Built with ❤️ for FYP02-SE-T2530-393 | Multimedia University 2026</sub>
 </div>

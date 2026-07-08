@@ -27,7 +27,7 @@ jest.mock('../../hooks/useDashboardData', () => ({
         qualityScore: 85,
         complexity: 'Medium',
         defects: 3,
-        effortEstimate: '4h',
+        effortEstimate: '1 week',
         comments: 'Test comments',
       },
     ],
