@@ -141,7 +141,7 @@ const SupervisorReview = () => {
         project_name: reviewView?.project?.name || 'Unknown Project',
         analysis_data: {
           total_requirements: reviewView?.traceability?.length || 0,
-          quality_score: reviewView?.project?.quality_score || 0,
+          quality_score: reviewView?.latest_validation?.overall_score || 0,
           defect_count: reqStats.failed + reqStats.warning,
           review_status: 'supervisor_review'
         },
@@ -158,7 +158,9 @@ const SupervisorReview = () => {
         report_type: 'supervisor'
       };
 
-      const response = await apiClient.post('/api/reports/export', reportData);
+      const response = await apiClient.post('/api/reports/export', reportData, {
+        responseType: 'blob'
+      });
       
       // Create download link
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -198,6 +200,44 @@ const SupervisorReview = () => {
       default:
         return { bg: 'bg-[var(--success-light)]', text: 'text-[var(--success-hover)]', label: 'Low' };
     }
+  };
+
+  const parseVisualElements = (value) => {
+    if (!value) return [];
+
+    const rawItems = Array.isArray(value)
+      ? value
+      : String(value)
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+    return rawItems.map((item) => {
+      const [kindPart, ...labelParts] = String(item).split(':');
+      const kind = (labelParts.length > 0 ? kindPart : 'node').trim().toLowerCase();
+      const label = (labelParts.length > 0 ? labelParts.join(':') : kindPart).trim();
+      return { kind, label, raw: String(item) };
+    });
+  };
+
+  const openDiagramForRequirement = (item, selectedNode = null) => {
+    const docId = item?.doc_id;
+    const highlightLabel = selectedNode?.label || parseVisualElements(item?.visual_elements)[0]?.label || '';
+    const nodeKind = selectedNode?.kind || parseVisualElements(item?.visual_elements)[0]?.kind || 'node';
+    const preferredDiagram = nodeKind.includes('actor') || nodeKind.includes('use case') ? 'usecase' : 'sequence';
+
+    const basePath = docId ? `/visualization/${docId}` : '/visualization';
+    const query = new URLSearchParams({
+      source: 'supervisor-review',
+      diagram: preferredDiagram,
+    });
+
+    if (highlightLabel) {
+      query.set('highlight', highlightLabel);
+      query.set('nodeType', nodeKind);
+    }
+
+    window.open(`${basePath}?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleSubmit = async () => {
@@ -276,7 +316,7 @@ const SupervisorReview = () => {
                 <BarChart3 className="h-6 w-6 text-[var(--warning-main)]" />
               </div>
               <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {reviewView?.project?.quality_score || 0}%
+                {reviewView?.latest_validation?.overall_score || 0}%
               </div>
               <div className="text-sm text-[var(--text-secondary)]">Quality Score</div>
             </div>
@@ -516,16 +556,25 @@ const SupervisorReview = () => {
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                                  <div className="text-sm text-gray-900">
-                                    {item.visual_elements ? (
-                                      <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4 text-blue-600" />
-                                        <span>{item.visual_elements}</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
-                                  </div>
+                                  {parseVisualElements(item.visual_elements).length > 0 ? (
+                                    <div className="flex max-w-md flex-wrap gap-2">
+                                      {parseVisualElements(item.visual_elements).map((node) => (
+                                        <button
+                                          key={`${item.req_id}-${node.raw}`}
+                                          type="button"
+                                          onClick={() => openDiagramForRequirement(item, node)}
+                                          className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                                          title={`Open diagram focus for ${node.raw}`}
+                                        >
+                                          <span className="opacity-80">{node.kind}</span>
+                                          <span>{node.label}</span>
+                                          <ExternalLink className="h-3 w-3" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
                                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
@@ -552,7 +601,7 @@ const SupervisorReview = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <button
-                                    onClick={() => window.open(`/visualization/${project_id}`, '_blank')}
+                                    onClick={() => openDiagramForRequirement(item)}
                                     className="text-blue-600 hover:text-blue-800 flex items-center gap-2 text-sm font-medium transition-colors"
                                     title="View Diagrams"
                                   >
@@ -646,8 +695,9 @@ const SupervisorReview = () => {
 
         {/* Requirement Details Modal */}
         {showModal && selectedRequirement && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 md:p-6">
+            <div className="mx-auto flex min-h-full items-start justify-center">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-2xl max-w-4xl w-full max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
               {/* Modal Header */}
               <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <div>
@@ -665,7 +715,7 @@ const SupervisorReview = () => {
               </div>
 
               {/* Modal Content */}
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="flex-1 min-h-0 overflow-y-auto p-6 overscroll-contain">
                 <div className="space-y-6">
                   {/* Requirement ID */}
                   <div>
@@ -725,8 +775,21 @@ const SupervisorReview = () => {
                   {selectedRequirement.visual_elements && (
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Visual Elements</label>
-                      <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">
-                        {selectedRequirement.visual_elements}
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg">
+                        <div className="flex flex-wrap gap-2">
+                          {parseVisualElements(selectedRequirement.visual_elements).map((node) => (
+                            <button
+                              key={`${selectedRequirement.req_id}-${node.raw}`}
+                              type="button"
+                              onClick={() => openDiagramForRequirement(selectedRequirement, node)}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                            >
+                              <span className="opacity-80">{node.kind}</span>
+                              <span>{node.label}</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -804,13 +867,14 @@ const SupervisorReview = () => {
                   Close
                 </button>
                 <button
-                  onClick={() => window.open(`/visualization/${project_id}`, '_blank')}
+                  onClick={() => openDiagramForRequirement(selectedRequirement)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                   <Eye className="h-4 w-4" />
                   View Diagrams
                 </button>
               </div>
+            </div>
             </div>
           </div>
         )}

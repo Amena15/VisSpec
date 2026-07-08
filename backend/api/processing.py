@@ -7,8 +7,7 @@ from backend.models.user import User
 from backend.utils.security import get_current_active_user
 from backend.services.ai.hybrid_processor import hybrid_processor
 from backend.core.logging import get_logger
-from backend.core.task_queue import task_queue   # <-- ADD THIS
-
+from backend.core.task_queue import task_queue   
 logger = get_logger(__name__)
 
 # Remove prefix here (prefix is set in main.py)

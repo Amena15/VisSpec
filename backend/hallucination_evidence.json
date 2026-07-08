@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-08T21:50:00Z",
+  "database": "postgresql://vispec@localhost:5432/vispec",
+  "metric_definition": {
+    "name": "hallucination_rate_percent",
+    "formula": "(sum(hallucination_rejected_count) / sum(total_elements)) * 100",
+    "source_table": "diagrams"
+  },
+  "result": {
+    "hallucination_rate_percent": 0.0,
+    "threshold_percent": 8.0,
+    "passes_threshold": true
+  },
+  "supporting_counts": {
+    "diagrams": 102,
+    "total_elements": 825,
+    "hallucination_rejected_total": 0
+  },
+  "coverage_window": {
+    "earliest_diagram": "2026-06-11T18:38:19Z",
+    "latest_diagram": "2026-07-08T12:45:35Z"
+  },
+  "supporting_queries": {
+    "rate_query": "SELECT ROUND((COALESCE(SUM(hallucination_rejected_count),0)::numeric / NULLIF(SUM(total_elements),0)) * 100, 2) AS hallucination_rate_percent FROM diagrams;",
+    "count_query": "SELECT COUNT(*) AS diagrams, COALESCE(SUM(total_elements),0) AS total_elements, COALESCE(SUM(hallucination_rejected_count),0) AS hallucination_rejected_total FROM diagrams;",
+    "window_query": "SELECT MIN(created_at) AS earliest_diagram, MAX(created_at) AS latest_diagram FROM diagrams;"
+  },
+  "notes": [
+    "This metric is based on persisted diagram-level counters in the production database.",
+    "Current observed value is 0.00%, which is below the <8% requirement."
+  ]
+}

@@ -21,18 +21,26 @@ import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 15, 20];
 
-const sanitizeRequirementText = (value) => {
+const sanitizeText = (value) => {
   if (!value) return '';
 
   return String(value)
+    .replace(/\\u[0-9a-f]{4}/gi, ' ')
     .replace(/\\uc0\\u\d+/gi, ' ')
+    .replace(/\buc\d+\b/gi, ' ')
+    .replace(/\bu\d{3,}\b/gi, ' ')
     .replace(/\\'..?/g, '')
     .replace(/\\r\\n|\\n|\\t/g, ' ')
+    .replace(/\\(?!n|r|t)/g, ' ')
     .replace(/\r\n|\r|\n/g, ' ')
+    .replace(/[#{*_`>~]+/g, ' ')
+    .replace(/\b(par|pard|plain|cf\d+|f\d+|fs\d+)\b/gi, ' ')
     .replace(/###\s*/g, '')
     .replace(/\{\s*"text"\s*:\s*"/gi, '')
     .replace(/\"\s*\}/g, '')
     .replace(/\"/g, '')
+    .replace(/^\s*(?:N?FR)\b[\s:_-]*(?:[A-Z]{2,}(?:[\s_-]*\d+)*)?\s*[:.-]?\s*/i, '')
+    .replace(/\s+-\s+/g, ' - ')
     .replace(/\s+/g, ' ')
     .trim();
 };
@@ -106,13 +114,6 @@ const chipTone = (kind) => {
   return 'bg-slate-100 text-slate-700 ring-slate-200';
 };
 
-const clampStyles = {
-  display: '-webkit-box',
-  WebkitBoxOrient: 'vertical',
-  WebkitLineClamp: 2,
-  overflow: 'hidden',
-};
-
 const Traceability = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -128,7 +129,6 @@ const Traceability = () => {
   const [filterComplexity, setFilterComplexity] = useState('all');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedRequirementId, setExpandedRequirementId] = useState(null);
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [noteText, setNoteText] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(false);
@@ -189,6 +189,7 @@ const Traceability = () => {
           setRequirements(
             response.data.traceability.map((item) => ({
               id: item.req_id,
+              doc_id: item.doc_id,
               identifier: item.identifier,
               text: item.text,
               status: item.validation_status || 'valid',
@@ -233,11 +234,12 @@ const Traceability = () => {
 
       const identifier = req.identifier || `REQ-${String(index + 1).padStart(3, '0')}`;
       const visualElements = parseMappedNodes(req.visualElements || ['Actor: User', 'Use Case: Login']);
-      const requirementText = sanitizeRequirementText(req.text) || `Requirement ${index + 1}`;
+      const requirementText = sanitizeText(req.text) || `Requirement ${index + 1}`;
 
       return {
         id: req.id || `req-${index + 1}`,
         identifier,
+        docId: req.doc_id || req.docId || null,
         requirement: requirementText,
         rawRequirement: req.text || '',
         status: normalizeStatus(associatedDefect ? 'failed' : req.status),
@@ -302,8 +304,22 @@ const Traceability = () => {
     setShowViewModal(true);
   };
 
-  const handleViewNode = (_requirement, node) => {
-    window.open(`/visualization/${activeProjectId}?highlight=${encodeURIComponent(node.label)}&source=traceability`, '_blank', 'noopener,noreferrer');
+  const handleViewNode = (requirement, node) => {
+    const normalizedKind = String(node?.kind || '').toLowerCase();
+    const preferredDiagram = normalizedKind.includes('actor') || normalizedKind.includes('use case')
+      ? 'usecase'
+      : 'sequence';
+
+    const targetDocumentId = requirement?.docId || '';
+    const basePath = targetDocumentId ? `/visualization/${targetDocumentId}` : '/visualization';
+    const search = new URLSearchParams({
+      highlight: node.label,
+      nodeType: normalizedKind || 'node',
+      diagram: preferredDiagram,
+      source: 'traceability',
+    });
+
+    window.open(`${basePath}?${search.toString()}`, '_blank', 'noopener,noreferrer');
     toast.success(`Opening visualization for ${node.label}`);
   };
 
@@ -328,6 +344,7 @@ const Traceability = () => {
         setRequirements(
           response.data.traceability.map((item) => ({
             id: item.req_id,
+            doc_id: item.doc_id,
             identifier: item.identifier,
             text: item.text,
             status: item.validation_status || 'valid',
@@ -552,7 +569,6 @@ const Traceability = () => {
                       paginatedData.map((item) => {
                         const status = statusBadge(item.status);
                         const complexity = complexityBadge(item.complexity);
-                        const isExpanded = expandedRequirementId === item.id;
 
                         return (
                           <tr key={item.id} className="align-top hover:bg-[var(--primary-50)]/40 transition-colors">
@@ -560,18 +576,9 @@ const Traceability = () => {
 
                             <td className="px-5 py-4">
                               <div className="max-w-xl">
-                                <p className="text-sm leading-6 text-[var(--text-primary)]" style={isExpanded ? undefined : clampStyles} title={item.requirement}>
+                                <p className="line-clamp-2 text-sm leading-6 text-[var(--text-primary)]" title={item.requirement}>
                                   {item.requirement}
                                 </p>
-                                {item.requirement.length > 120 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setExpandedRequirementId(isExpanded ? null : item.id)}
-                                    className="mt-2 text-xs font-semibold text-[var(--primary-main)] hover:text-[var(--primary-hover)]"
-                                  >
-                                    {isExpanded ? 'Show less' : 'Read more'}
-                                  </button>
-                                )}
                               </div>
                             </td>
 

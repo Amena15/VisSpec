@@ -45,6 +45,7 @@ const AnalysisResults = () => {
   const [validation, setValidation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isValidating, setIsValidating] = useState(false);
+  const [autoValidationTriggered, setAutoValidationTriggered] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
   const [autoEnrichTriggered, setAutoEnrichTriggered] = useState(false);
   const [isEnriched, setIsEnriched] = useState(false);
@@ -71,9 +72,21 @@ const AnalysisResults = () => {
   useEffect(() => {
     if (id) {
       setShowExportModal(false);
+      setAutoValidationTriggered(false);
       fetchDocument();
     }
   }, [id]);
+
+  useEffect(() => {
+    const hasCompletedValidation = validation?.status === 'completed';
+    if (!id || !document || isLoading || isValidating || hasCompletedValidation || autoValidationTriggered) {
+      return;
+    }
+
+    // Auto-run validation once so results are ready when the page opens.
+    setAutoValidationTriggered(true);
+    handleRunValidation({ silentSuccessToast: true });
+  }, [id, document, validation, isLoading, isValidating, autoValidationTriggered]);
 
   const fetchDocument = async (forceRefresh = false) => {
     setIsLoading(true);
@@ -179,15 +192,18 @@ const AnalysisResults = () => {
     }
   };
 
-  const handleRunValidation = async () => {
+  const handleRunValidation = async (options = {}) => {
+    const { silentSuccessToast = false } = options;
     if (!id) return;
     setIsValidating(true);
     try {
       const response = await validationAPI.validateDocument(id);
-      if (response.data.perfect_score) {
-        toast.success('Perfect Score! No defects found.');
-      } else {
-        toast.success(`Validation complete! Found ${response.data.total_defects} defects.`);
+      if (!silentSuccessToast) {
+        if (response.data.perfect_score) {
+          toast.success('Perfect Score! No defects found.');
+        } else {
+          toast.success(`Validation complete! Found ${response.data.total_defects} defects.`);
+        }
       }
       // Refresh validation results and document (backend updates doc.status on validation)
       await fetchValidationResults();
@@ -459,6 +475,43 @@ const AnalysisResults = () => {
     return <>{parts}</>;
   };
 
+  const defects = validation?.defects || [];
+  const requirements = document?.requirements || [];
+  const overallScore = validation?.overall_score ?? null;
+  const hasValidation = validation?.status === 'completed';
+  const groupedDefects = useMemo(() => {
+    if (!defects.length) return [];
+
+    const groups = new Map();
+
+    defects.forEach((finding, index) => {
+      const reqId = finding?.req_id || `unlinked-${index}`;
+      const linkedId = finding?.req_id ? finding.req_id.split('-')[0] : `UNLINKED-${index + 1}`;
+
+      if (!groups.has(reqId)) {
+        groups.set(reqId, {
+          reqId,
+          linkedId,
+          statement: finding?.text || '',
+          items: [],
+        });
+      }
+
+      const group = groups.get(reqId);
+      if (!group.statement && finding?.text) {
+        group.statement = finding.text;
+      }
+
+      group.items.push({
+        finding,
+        index,
+        key: `${reqId}-${index}`,
+      });
+    });
+
+    return Array.from(groups.values());
+  }, [defects]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--content-bg)] flex items-center justify-center">
@@ -477,11 +530,6 @@ const AnalysisResults = () => {
       </div>
     );
   }
-
-  const defects = validation?.defects || [];
-  const requirements = document.requirements || [];
-  const overallScore = validation?.overall_score ?? null;
-  const hasValidation = validation?.status === 'completed';
 
   return (
     <div className="min-h-screen bg-[var(--content-bg)]">
@@ -554,15 +602,6 @@ const AnalysisResults = () => {
                     <Wand2 className="h-4 w-4 mr-2" />
                   )}
                   Organize Requirements
-                </button>
-              )}
-
-              {!hasValidation && !isValidating && (
-                <button
-                  onClick={handleRunValidation}
-                  className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
-                >
-                  <Play className="h-4 w-4 mr-2" /> Run Validation
                 </button>
               )}
 
@@ -702,11 +741,10 @@ const AnalysisResults = () => {
                 {!hasValidation ? (
                   <div className="text-center py-12">
                     <BarChart3 className="h-12 w-12 text-[var(--text-secondary)] mx-auto mb-4" />
-                    <p className="text-[var(--text-secondary)] mb-4">No validation has been run yet.</p>
-                    <button onClick={handleRunValidation} disabled={isValidating}
-                      className="bg-[var(--primary-main)] text-white px-6 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50">
-                      {isValidating ? 'Processing...' : 'Run Validation'}
-                    </button>
+                    <p className="text-[var(--text-secondary)] mb-4">
+                      {isValidating ? 'Preparing validation results...' : 'Validation will start automatically.'}
+                    </p>
+                    {isValidating && <Loader2 className="h-6 w-6 text-[var(--primary-main)] animate-spin mx-auto" />}
                   </div>
                 ) : defects.length === 0 ? (
                   <div className="text-center py-12">
@@ -716,101 +754,120 @@ const AnalysisResults = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {defects.map((finding, index) => (
-                      <div key={index}
-                        className={`border-l-4 p-6 rounded-lg ${
-                          finding.severity === 'high' ? 'border-[var(--error-main)] bg-[var(--error-light)]/20' :
-                          finding.severity === 'medium' ? 'border-[var(--warning-main)] bg-[var(--warning-light)]/20' :
-                          'border-[var(--success-main)] bg-[var(--success-light)]/20'
-                        }`}>
-                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-3 mb-3">
-                              <h4 className="font-medium text-[var(--text-primary)] text-lg">{finding.type?.charAt(0).toUpperCase() + finding.type?.slice(1)}</h4>
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                finding.severity === 'high' ? 'bg-[var(--error-light)] text-[var(--error-main)]' :
-                                finding.severity === 'medium' ? 'bg-[var(--warning-light)] text-[var(--warning-main)]' :
-                                'bg-[var(--success-light)] text-[var(--success-main)]'
-                              }`}>
-                                {finding.severity === 'high' ? <AlertOctagon className="h-4 w-4 mr-2" /> :
-                                 finding.severity === 'medium' ? <AlertTriangle className="h-4 w-4 mr-2" /> :
-                                 <CheckCircle className="h-4 w-4 mr-2" />}
-                                {finding.severity}
-                              </span>
-                            </div>
-                            <p className="text-[var(--text-secondary)] leading-relaxed">{finding.description}</p>
-                            
-                            <div className="flex flex-wrap items-center gap-3 mt-3">
-                              {finding.confidence && (
-                                <span className="inline-flex items-center text-sm bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md">
-                                  <span className="font-medium">Confidence:</span> {(finding.confidence * 100).toFixed(0)}%
-                                </span>
-                              )}
-                              <span className="inline-flex items-center text-sm bg-[var(--surface-bg)] px-3 py-1.5 rounded-md border border-[var(--card-border)]">
-                                <span className="font-medium">Linked ID:</span> 
-                                <span className="font-mono ml-1">{finding.req_id ? finding.req_id.split('-')[0] : 'N/A'}</span>
-                              </span>
-                              {finding.suggestion && (
-                                <span className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
-                                  AI Suggestion available
-                                </span>
-                              )}
-                            </div>
-                            {finding.text && (
-                              <div className="mt-3 p-3 bg-[var(--surface-bg)] rounded-lg border border-[var(--card-border)]">
-                                <h5 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Requirement Statement</h5>
-                                <p className="text-sm text-[var(--text-primary)] italic">"{finding.text}"</p>
-                              </div>
-                            )}
+                    {groupedDefects.map((group) => {
+                      const hasHigh = group.items.some(item => item.finding?.severity === 'high');
+                      const hasMedium = group.items.some(item => item.finding?.severity === 'medium');
+                      const cardClass = hasHigh
+                        ? 'border-[var(--error-main)] bg-[var(--error-light)]/20'
+                        : hasMedium
+                        ? 'border-[var(--warning-main)] bg-[var(--warning-light)]/20'
+                        : 'border-[var(--success-main)] bg-[var(--success-light)]/20';
+
+                      return (
+                        <div key={group.reqId} className={`border-l-4 p-6 rounded-lg ${cardClass}`}>
+                          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                            <h4 className="font-semibold text-[var(--text-primary)] text-lg">
+                              Requirement {group.linkedId}
+                            </h4>
+                            <span className="inline-flex items-center text-sm bg-[var(--surface-bg)] px-3 py-1.5 rounded-md border border-[var(--card-border)]">
+                              <span className="font-medium">Defects:</span>
+                              <span className="ml-1">{group.items.length}</span>
+                            </span>
                           </div>
-                          
-                          <div className="flex items-center gap-3 lg:ml-4 mt-4 lg:mt-0">
-                            <button onClick={() => setExpandedFinding(expandedFinding === index ? null : index)}
-                              className="text-[var(--text-secondary)] hover:text-[var(--primary-main)] transition-colors p-2 rounded-lg hover:bg-[var(--surface-bg)]">
-                              <Eye className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>
-                        {expandedFinding === index && (
-                          <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
-                            <div className="bg-[var(--surface-bg)] p-4 rounded-lg">
-                              <h5 className="font-medium text-[var(--text-primary)] mb-2">Details</h5>
-                              <p className="text-sm text-[var(--text-secondary)] mb-3">{finding.description}</p>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-medium text-[var(--text-secondary)]">Type:</span> <span className="ml-2 capitalize">{finding.type}</span></div>
-                                <div><span className="font-medium text-[var(--text-secondary)]">Severity:</span> <span className="ml-2 capitalize">{finding.severity}</span></div>
-                                <div><span className="font-medium text-[var(--text-secondary)]">Requirement ID:</span> <span className="ml-2">{finding.req_id ? finding.req_id.split('-')[0] : 'N/A'}</span></div>
-                                <div><span className="font-medium text-[var(--text-secondary)]">Confidence:</span> <span className="ml-2">{(finding.confidence * 100).toFixed(0)}%</span></div>
-                              </div>
-                              {finding.suggestion && (
-                                <div className="mt-3">
-                                  <span className="font-medium text-[var(--text-secondary)]">AI Suggestion:</span>
-                                  <p className="text-sm text-[var(--text-primary)] mt-1">{finding.suggestion}</p>
+
+                          {group.statement && (
+                            <div className="mb-4 p-3 bg-[var(--surface-bg)] rounded-lg border border-[var(--card-border)]">
+                              <h5 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Requirement Statement</h5>
+                              <p className="text-sm text-[var(--text-primary)] italic">"{group.statement}"</p>
+                            </div>
+                          )}
+
+                          <ul className="space-y-3">
+                            {group.items.map(({ finding, index, key }) => (
+                              <li key={key} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                                      <span className="font-medium text-[var(--text-primary)] capitalize">
+                                        {finding.type}
+                                      </span>
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                        finding.severity === 'high' ? 'bg-[var(--error-light)] text-[var(--error-main)]' :
+                                        finding.severity === 'medium' ? 'bg-[var(--warning-light)] text-[var(--warning-main)]' :
+                                        'bg-[var(--success-light)] text-[var(--success-main)]'
+                                      }`}>
+                                        {finding.severity === 'high' ? <AlertOctagon className="h-3 w-3 mr-1" /> :
+                                         finding.severity === 'medium' ? <AlertTriangle className="h-3 w-3 mr-1" /> :
+                                         <CheckCircle className="h-3 w-3 mr-1" />}
+                                        {finding.severity}
+                                      </span>
+                                      {finding.confidence ? (
+                                        <span className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
+                                          {(finding.confidence * 100).toFixed(0)}% confidence
+                                        </span>
+                                      ) : null}
+                                      {finding.suggestion ? (
+                                        <span className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md">
+                                          AI suggestion
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{finding.description}</p>
+                                  </div>
+
+                                  <button
+                                    onClick={() => setExpandedFinding(expandedFinding === key ? null : key)}
+                                    className="text-[var(--text-secondary)] hover:text-[var(--primary-main)] transition-colors p-2 rounded-lg hover:bg-[var(--surface-bg)]"
+                                    title="View details"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </button>
                                 </div>
-                              )}
-                              <div className="mt-4 flex space-x-3">
-                                <button onClick={() => handleApplySuggestion(index)}
-                                  disabled={isApplying}
-                                  className="px-3 py-1.5 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                  {isApplying ? (
-                                    <>
-                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                      Applying...
-                                    </>
-                                  ) : (
-                                    'Apply Suggestion'
-                                  )}
-                                </button>
-                                <button onClick={() => handleIgnoreFinding(index)}
-                                  className="px-3 py-1.5 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors text-sm border border-[var(--card-border)]">
-                                  Ignore
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+
+                                {expandedFinding === key && (
+                                  <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
+                                    <div className="bg-[var(--surface-bg)] p-4 rounded-lg">
+                                      <h5 className="font-medium text-[var(--text-primary)] mb-2">Details</h5>
+                                      <p className="text-sm text-[var(--text-secondary)] mb-3">{finding.description}</p>
+                                      <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div><span className="font-medium text-[var(--text-secondary)]">Type:</span> <span className="ml-2 capitalize">{finding.type}</span></div>
+                                        <div><span className="font-medium text-[var(--text-secondary)]">Severity:</span> <span className="ml-2 capitalize">{finding.severity}</span></div>
+                                        <div><span className="font-medium text-[var(--text-secondary)]">Requirement ID:</span> <span className="ml-2">{group.linkedId}</span></div>
+                                        <div><span className="font-medium text-[var(--text-secondary)]">Confidence:</span> <span className="ml-2">{((finding.confidence || 0) * 100).toFixed(0)}%</span></div>
+                                      </div>
+                                      {finding.suggestion && (
+                                        <div className="mt-3">
+                                          <span className="font-medium text-[var(--text-secondary)]">AI Suggestion:</span>
+                                          <p className="text-sm text-[var(--text-primary)] mt-1">{finding.suggestion}</p>
+                                        </div>
+                                      )}
+                                      <div className="mt-4 flex space-x-3">
+                                        <button onClick={() => handleApplySuggestion(index)}
+                                          disabled={isApplying}
+                                          className="px-3 py-1.5 bg-[var(--success-main)] text-white rounded-lg hover:bg-[var(--success-hover)] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                          {isApplying ? (
+                                            <>
+                                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                              Applying...
+                                            </>
+                                          ) : (
+                                            'Apply Suggestion'
+                                          )}
+                                        </button>
+                                        <button onClick={() => handleIgnoreFinding(index)}
+                                          className="px-3 py-1.5 bg-[var(--surface-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--card-border)] transition-colors text-sm border border-[var(--card-border)]">
+                                          Ignore
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -131,21 +131,35 @@ function App() {
 
   // Protected route component
   const ProtectedRoute = ({ children, allowedRoles }) => {
-    // If currentUser isn't set yet, try to recover from token.
-    if (!currentUser) {
+    let activeUser = currentUser;
+
+    // If currentUser isn't set yet, recover from token.
+    if (!activeUser) {
       const token = localStorage.getItem('token');
       if (token) {
         try {
           const decoded = jwtDecode(token);
           if (decoded?.exp && decoded.exp * 1000 > Date.now()) {
-            // Keep it local; App-level state update is async so just render children.
-            return children;
+            activeUser = decoded;
           }
         } catch (e) {
-          // ignore, fall through to redirect
+          // Fall through to login redirect.
         }
       }
+    }
+
+    if (!activeUser) {
       return <Navigate to="/login" replace />;
+    }
+
+    const normalizedRole = String(activeUser?.role || '').toLowerCase();
+    const normalizedAllowedRoles = Array.isArray(allowedRoles)
+      ? allowedRoles.map((role) => String(role).toLowerCase())
+      : null;
+
+    if (normalizedAllowedRoles && normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(normalizedRole)) {
+      const fallbackPath = normalizedRole === 'supervisor' ? '/supervisor' : '/analyst';
+      return <Navigate to={fallbackPath} replace />;
     }
 
     return children;
@@ -195,11 +209,46 @@ function App() {
         >
 
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/analyst" element={<AnalystDashboard />} />
-          <Route path="/supervisor" element={<SupervisorDashboard />} />
-          <Route path="/supervisor/review/:project_id" element={<SupervisorReview />} />
-          <Route path="/supervisor/reports" element={<SupervisorReports />} />
-          <Route path="/supervisor/review-queue" element={<SupervisorReviewQueue />} />
+          <Route
+            path="/analyst"
+            element={
+              <ProtectedRoute allowedRoles={['analyst', 'developer', 'student']}>
+                <AnalystDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supervisor"
+            element={
+              <ProtectedRoute allowedRoles={['supervisor']}>
+                <SupervisorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supervisor/review/:project_id"
+            element={
+              <ProtectedRoute allowedRoles={['supervisor']}>
+                <SupervisorReview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supervisor/reports"
+            element={
+              <ProtectedRoute allowedRoles={['supervisor']}>
+                <SupervisorReports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supervisor/review-queue"
+            element={
+              <ProtectedRoute allowedRoles={['supervisor']}>
+                <SupervisorReviewQueue />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="/analysis" element={<DocumentUpload />} />
           <Route path="/analysis-results" element={<AnalysisResults />} />

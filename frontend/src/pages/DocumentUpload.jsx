@@ -267,11 +267,11 @@ const DocumentUpload = () => {
           {uploadResult ? (
             <button onClick={handleStartAnalysis}
               className="bg-[var(--primary-main)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center">
-              Run Validation <ArrowRight className="ml-2 h-5 w-5" />
+              View Analysis Results <ArrowRight className="ml-2 h-5 w-5" />
             </button>
           ) : (
             <button disabled className="bg-[var(--surface-bg)] text-[var(--text-secondary)] px-6 py-3 rounded-lg font-medium cursor-not-allowed">
-              Run Validation
+              View Analysis Results
             </button>
           )}
         </div>

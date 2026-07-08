@@ -27,6 +27,7 @@ const getScoreColor = (score) => {
 const SupervisorDashboard = () => {
   // Existing state
   const [projects, setProjects] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
   const [stats, setStats] = useState({
     totalProjects: 0,
     pendingReviews: 0,
@@ -37,6 +38,17 @@ const SupervisorDashboard = () => {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
+
+  const formatDisplayDate = (value) => {
+    if (!value) return 'Date pending';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Date pending';
+    return parsed.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   // Load real data from API
   useEffect(() => {
@@ -56,11 +68,11 @@ const SupervisorDashboard = () => {
           title: p.name,
           developer: p.owner,
           ownerEmail: null,
-          submittedAt: p.last_updated,
+          submittedAt: p.last_updated || p.created_at || p.updated_at || 'Date pending',
           lastReviewed: null,
           status: p.review_status || 'not_reviewed',
           qualityScore: p.quality_score ?? 0,
-          complexity: 'N/A',
+          complexity: p.complexity_level || 'N/A',
           defects: p.defect_count ?? 0,
           comments: null,
           priority: 'medium',
@@ -108,6 +120,76 @@ const SupervisorDashboard = () => {
     if (activeTab === 'pending') return project.status === 'not_reviewed';
     return project.status === activeTab;
   });
+
+  const stabilityScore = projects.length
+    ? Math.round(
+        projects.reduce((sum, project) => sum + Number(project.qualityScore || 0), 0) / projects.length
+      )
+    : 0;
+
+  const totalDefects = projects.reduce((sum, project) => sum + Number(project.defects || 0), 0);
+
+  const exportPredictionPdf = async () => {
+    try {
+      setIsExporting(true);
+
+      const traceabilityRows = projects.map((project) => ({
+        req_id: project.id,
+        identifier: project.title,
+        validation_status: project.status,
+        defect_count: project.defects || 0,
+        complexity: project.complexity || 'N/A',
+        source_document: `${project.developer || 'Unknown Owner'} - submitted ${formatDisplayDate(project.submittedAt)}`,
+        text: `Project ${project.title} reviewed by supervisor workflow.`,
+        visual_elements: [],
+        defects: [],
+      }));
+
+      const reportData = {
+        report_type: 'supervisor',
+        project_name: 'Supervisor Dashboard',
+        analysis_data: {
+          total_requirements: projects.length,
+          quality_score: stabilityScore,
+          defect_count: totalDefects,
+          review_status: 'supervisor_dashboard',
+        },
+        metrics: {
+          validation_status: {
+            passed: stats.approvedProjects,
+            warning: stats.pendingReviews,
+            failed: stats.rejectedProjects,
+          },
+          completion_rate: stats.totalProjects
+            ? Math.round(((stats.approvedProjects + stats.rejectedProjects) / stats.totalProjects) * 100)
+            : 0,
+        },
+        traceability: traceabilityRows,
+        diagrams: [],
+      };
+
+      const response = await apiClient.post('/api/reports/export', reportData, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `supervisor_prediction_analysis_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Supervisor prediction report exported successfully');
+    } catch (error) {
+      console.error('Failed to export supervisor prediction report:', error);
+      toast.error('Failed to export supervisor report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
   <div className="py-8">
@@ -217,7 +299,7 @@ const SupervisorDashboard = () => {
                     <tr key={project.id} className="hover:bg-[var(--surface-bg)] transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-[var(--text-primary)]">{project.title}</div>
-                        <div className="text-xs text-[var(--text-secondary)]">Submitted: {project.submittedAt} | Last Reviewed: {project.lastReviewed || 'N/A'}</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Submitted: {formatDisplayDate(project.submittedAt)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -226,7 +308,7 @@ const SupervisorDashboard = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                        {project.submittedAt}
+                        {formatDisplayDate(project.submittedAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
@@ -325,9 +407,13 @@ const SupervisorDashboard = () => {
           <div className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden mb-12">
             <div className="px-6 py-4 border-b border-[var(--card-border)] flex justify-between items-center">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Prediction Analysis</h2>
-              <button className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
+              <button
+                onClick={exportPredictionPdf}
+                disabled={isExporting || projects.length === 0}
+                className="flex items-center px-4 py-2 bg-[var(--primary-main)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
                 <Download className="w-4 h-4 mr-2" />
-                Export PDF
+                {isExporting ? 'Exporting...' : 'Export PDF'}
               </button>
             </div>
             
@@ -352,16 +438,16 @@ const SupervisorDashboard = () => {
                         cy="50" 
                         r="45" 
                         fill="none" 
-                        stroke="#10B981" 
+                              stroke={getScoreColor(stabilityScore)} 
                         strokeWidth="8" 
                         strokeDasharray="283" 
-                        strokeDashoffset={283 - (283 * 85) / 100} 
+                              strokeDashoffset={283 - (283 * stabilityScore) / 100} 
                         strokeLinecap="round"
                         transform="rotate(-90 50 50)"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">85%</span>
+                            <span className="text-3xl font-bold text-gray-900">{stabilityScore}%</span>
                       <span className="text-sm text-gray-600">Stability Score</span>
                     </div>
                   </div>
@@ -372,7 +458,10 @@ const SupervisorDashboard = () => {
                   <div className="mb-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-3">System Behavior Prediction</h3>
                     <p className="text-gray-600 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      System behavior is 85% deterministic. Recommended for production with minimal risk mitigation.
+                      System behavior is {stabilityScore}% deterministic based on current supervisor portfolio metrics.
+                      {stabilityScore >= 80
+                        ? ' Recommended for production with minimal risk mitigation.'
+                        : ' Additional quality improvements are recommended before production approval.'}
                     </p>
                   </div>
                   
@@ -381,17 +470,17 @@ const SupervisorDashboard = () => {
                     <div className="flex items-center">
                       <div className="w-3 h-3 rounded-full bg-[#EF4444] mr-2"></div>
                       <span className="text-sm text-gray-600">Critical:</span>
-                      <span className="text-sm font-medium text-gray-900 ml-1">2 Defects</span>
+                      <span className="text-sm font-medium text-gray-900 ml-1">{stats.rejectedProjects} Projects</span>
                     </div>
                     <div className="flex items-center">
                       <div className="w-3 h-3 rounded-full bg-[#F59E0B] mr-2"></div>
                       <span className="text-sm text-gray-600">Warnings:</span>
-                      <span className="text-sm font-medium text-gray-900 ml-1">5 Defects</span>
+                      <span className="text-sm font-medium text-gray-900 ml-1">{stats.pendingReviews} Pending Reviews</span>
                     </div>
                     <div className="flex items-center">
                       <div className="w-3 h-3 rounded-full bg-[#10B981] mr-2"></div>
                       <span className="text-sm text-gray-600">Stable:</span>
-                      <span className="text-sm font-medium text-gray-900 ml-1">3 Defects</span>
+                      <span className="text-sm font-medium text-gray-900 ml-1">{stats.approvedProjects} Approved Projects</span>
                     </div>
                   </div>
                 </div>

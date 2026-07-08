@@ -15,6 +15,7 @@ from backend.models.document import RequirementDocument
 from backend.models.validation import Defect
 from backend.models.traceability import TraceabilityNote
 from backend.utils.security import get_current_active_user
+from backend.utils.complexity import determine_requirement_complexity
 from backend.config.database import get_db
 from backend.core.logging import get_logger
 
@@ -25,6 +26,7 @@ logger = get_logger(__name__)
 class TraceabilityItem(BaseModel):
     """Single traceability item response."""
     req_id: str
+    doc_id: Optional[str] = None
     identifier: str
     semantic_id: Optional[str] = None
     text: str
@@ -92,43 +94,6 @@ def _extract_visual_elements(requirement_text: str) -> List[str]:
     return visual_elements[:5]  # Limit to 5 elements
 
 
-def _determine_complexity(requirement_text: str) -> str:
-    """Determine complexity based on requirement text analysis."""
-    text = requirement_text.lower()
-    word_count = len(text.split())
-    
-    # Simple heuristic-based complexity determination
-    complexity_indicators = {
-        "high": ["multiple", "various", "complex", "integrate", "system", "database", "security"],
-        "medium": ["shall", "must", "should", "will", "interface", "validate", "process"],
-        "low": ["simple", "basic", "single", "display", "show", "list"]
-    }
-    
-    score = 0
-    for level, indicators in complexity_indicators.items():
-        for indicator in indicators:
-            if indicator in text:
-                if level == "high":
-                    score += 3
-                elif level == "medium":
-                    score += 2
-                else:
-                    score += 1
-    
-    # Consider word count
-    if word_count > 20:
-        score += 2
-    elif word_count > 10:
-        score += 1
-    
-    if score >= 5:
-        return "High"
-    elif score >= 3:
-        return "Medium"
-    else:
-        return "Low"
-
-
 @router.get("/{project_id}", response_model=TraceabilityResponse)
 async def get_traceability(
     project_id: str,
@@ -190,7 +155,7 @@ async def get_traceability(
             visual_elements = _extract_visual_elements(req.current_text or req.original_text)
             
             # Determine complexity
-            complexity = _determine_complexity(req.current_text or req.original_text)
+            complexity = determine_requirement_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
             stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
@@ -208,6 +173,7 @@ async def get_traceability(
             # Create traceability item
             trace_item = TraceabilityItem(
                 req_id=req.req_id,
+                doc_id=req.doc_id,
                 identifier=req.req_identifier or f"REQ-{req.sequence_order + 1:03d}",
                 semantic_id=req.semantic_id,
                 text=req.current_text or req.original_text,
@@ -303,7 +269,7 @@ async def get_document_traceability(
             visual_elements = _extract_visual_elements(req.current_text or req.original_text)
             
             # Determine complexity
-            complexity = _determine_complexity(req.current_text or req.original_text)
+            complexity = determine_requirement_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
             stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
@@ -321,6 +287,7 @@ async def get_document_traceability(
             # Create traceability item
             trace_item = TraceabilityItem(
                 req_id=req.req_id,
+                doc_id=req.doc_id,
                 identifier=req.req_identifier or f"REQ-{req.sequence_order + 1:03d}",
                 semantic_id=req.semantic_id,
                 text=req.current_text or req.original_text,

@@ -6,6 +6,7 @@ Generates PDF reports with VisSpec watermark, diagrams, metrics, and traceabilit
 import io
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from xml.sax.saxutils import escape
 
 from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
@@ -154,6 +155,71 @@ class ExportService:
             )
         )
         story.append(PageBreak())
+
+        # Supervisor overview section
+        if report_type == "supervisor":
+            story.append(Paragraph("Supervisor Review Summary", self.styles["SectionHeader"]))
+
+            total_requirements = analysis_data.get(
+                "total_requirements",
+                len(traceability or []),
+            )
+            quality_score = (
+                analysis_data.get("quality_score")
+                if analysis_data.get("quality_score") is not None
+                else analysis_data.get("overall_score", "N/A")
+            )
+            defect_count = (
+                analysis_data.get("defect_count")
+                if analysis_data.get("defect_count") is not None
+                else analysis_data.get("total_defects", 0)
+            )
+            review_status = analysis_data.get("review_status", "supervisor_review")
+
+            story.append(
+                Paragraph(
+                    f"<b>Total Requirements:</b> {total_requirements}<br/>"
+                    f"<b>Quality Score:</b> {quality_score}<br/>"
+                    f"<b>Total Issues (Failed + Warning):</b> {defect_count}<br/>"
+                    f"<b>Review Status:</b> {review_status}",
+                    self.styles["BodyTextCustom"],
+                )
+            )
+            story.append(Spacer(1, 12))
+
+            validation_status = metrics.get("validation_status", {}) if metrics else {}
+            if validation_status:
+                data = [["Validation Status", "Count"]]
+                for key in ("passed", "warning", "failed"):
+                    data.append([key.title(), str(validation_status.get(key, 0))])
+                table = Table(data, colWidths=[3 * inch, 1.5 * inch])
+                table.setStyle(
+                    TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (-1, 0), HexColor("#2C3E50")),
+                            ("TEXTCOLOR", (0, 0), (-1, 0), HexColor("#FFFFFF")),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                            ("FONTSIZE", (0, 0), (-1, -1), 10),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+                            ("BACKGROUND", (0, 1), (-1, -1), HexColor("#F8F9FA")),
+                            ("GRID", (0, 0), (-1, -1), 1, HexColor("#DEE2E6")),
+                        ]
+                    )
+                )
+                story.append(table)
+                story.append(Spacer(1, 10))
+
+            completion_rate = metrics.get("completion_rate") if metrics else None
+            if completion_rate is not None:
+                story.append(
+                    Paragraph(
+                        f"<b>Completion Rate:</b> {completion_rate}%",
+                        self.styles["BodyTextCustom"],
+                    )
+                )
+
+            story.append(PageBreak())
 
         # Executive Summary
         if report_type in ("full", "summary"):
@@ -334,22 +400,66 @@ class ExportService:
                 )
             story.append(PageBreak())
 
-        # Traceability
-        if report_type == "full" and traceability:
+        # Traceability (full and supervisor reports include full dataset)
+        if report_type in ("full", "supervisor") and traceability:
             story.append(Paragraph("Traceability Matrix", self.styles["SectionHeader"]))
-            data = [["Req ID", "Status", "Defects", "Diagrams"]]
-            for item in traceability[:100]:
 
-                data.append(
-                    [
-                        item.get("req_id", ""),
-                        item.get("validation_status", ""),
-                        item.get("defect_count", "0"),
-                        item.get("diagram_count", "0"),
-                    ]
-                )
+            cell_style = ParagraphStyle(
+                name="TableCellSmall",
+                parent=self.styles["BodyTextCustom"],
+                fontSize=8,
+                leading=10,
+                alignment=TA_CENTER,
+            )
 
-            table = Table(data, colWidths=[1.5 * inch, 1.2 * inch, 1 * inch, 1 * inch])
+            def _short(text: Any, max_len: int = 42) -> str:
+                value = str(text or "").strip()
+                if len(value) <= max_len:
+                    return value
+                return f"{value[: max_len - 3]}..."
+
+            if report_type == "supervisor":
+                data = [["Identifier", "Status", "Defects", "Complexity", "Document"]]
+            else:
+                data = [["Req ID", "Status", "Defects", "Diagrams"]]
+
+            for item in traceability:
+
+                req_id = item.get("req_id", "")
+                if not req_id:
+                    req_id = item.get("identifier", "")
+
+                if report_type == "supervisor":
+                    identifier = item.get("identifier") or _short(req_id, 14)
+                    status = str(item.get("validation_status", "")).title()
+                    complexity = str(item.get("complexity", "")).title()
+                    document_name = _short(item.get("source_document", ""), 34)
+
+                    data.append(
+                        [
+                            Paragraph(escape(str(identifier)), cell_style),
+                            Paragraph(escape(status), cell_style),
+                            str(item.get("defect_count", "0")),
+                            Paragraph(escape(complexity), cell_style),
+                            Paragraph(escape(document_name), cell_style),
+                        ]
+                    )
+                else:
+                    data.append(
+                        [
+                            str(req_id),
+                            str(item.get("validation_status", "")),
+                            str(item.get("defect_count", "0")),
+                            str(item.get("diagram_count", "0")),
+                        ]
+                    )
+
+            if report_type == "supervisor":
+                col_widths = [1.1 * inch, 0.9 * inch, 0.7 * inch, 0.9 * inch, 2.4 * inch]
+            else:
+                col_widths = [1.5 * inch, 1.2 * inch, 1 * inch, 1 * inch]
+
+            table = Table(data, colWidths=col_widths, repeatRows=1)
             table.setStyle(
                 TableStyle(
                     [
@@ -366,7 +476,10 @@ class ExportService:
                             HexColor("#FFFFFF"),
                         ),
                         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                        ("FONTSIZE", (0, 0), (-1, -1), 9),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
                         (
                             "GRID",
                             (0, 0),
@@ -384,6 +497,70 @@ class ExportService:
                 )
             )
             story.append(table)
+
+            if report_type == "supervisor":
+                story.append(PageBreak())
+                story.append(Paragraph("Requirement Details", self.styles["SectionHeader"]))
+
+                for idx, item in enumerate(traceability, 1):
+                    req_id = item.get("req_id") or item.get("identifier", "N/A")
+                    identifier = item.get("identifier", "N/A")
+                    status = item.get("validation_status", "N/A")
+                    defect_count = item.get("defect_count", 0)
+                    complexity = item.get("complexity", "N/A")
+                    text = str(item.get("text", "") or "").strip() or "N/A"
+
+                    story.append(
+                        Paragraph(
+                            f"<b>Requirement #{idx}</b> [{identifier}]",
+                            self.styles["SubSectionHeader"],
+                        )
+                    )
+                    story.append(
+                        Paragraph(
+                            f"<b>Req ID:</b> {req_id}<br/>"
+                            f"<b>Status:</b> {status}<br/>"
+                            f"<b>Complexity:</b> {complexity}<br/>"
+                            f"<b>Defect Count:</b> {defect_count}<br/>"
+                            f"<b>Source Document:</b> {item.get('source_document', 'N/A')}<br/>"
+                            f"<b>Statement:</b> {text}",
+                            self.styles["BodyTextCustom"],
+                        )
+                    )
+
+                    defects = item.get("defects") or []
+                    if defects:
+                        story.append(Spacer(1, 6))
+                        story.append(Paragraph("<b>Defects:</b>", self.styles["BodyTextCustom"]))
+                        for defect_idx, defect in enumerate(defects, 1):
+                            confidence = defect.get("confidence")
+                            confidence_text = (
+                                f"{float(confidence):.0%}"
+                                if confidence is not None
+                                else "N/A"
+                            )
+                            story.append(
+                                Paragraph(
+                                    f"{defect_idx}. [{str(defect.get('severity', 'N/A')).upper()}] "
+                                    f"{defect.get('type', 'N/A')} - {defect.get('description', 'N/A')}"
+                                    f"<br/><b>Confidence:</b> {confidence_text}"
+                                    f"<br/><b>Suggestion:</b> {defect.get('suggestion', 'N/A')}",
+                                    self.styles["BodyTextCustom"],
+                                )
+                            )
+                            story.append(Spacer(1, 4))
+
+                    visual_elements = item.get("visual_elements") or []
+                    if visual_elements:
+                        visual_text = ", ".join(str(v) for v in visual_elements)
+                        story.append(
+                            Paragraph(
+                                f"<b>Visual Elements:</b> {visual_text}",
+                                self.styles["BodyTextCustom"],
+                            )
+                        )
+
+                    story.append(Spacer(1, 12))
 
         doc.build(story)
 

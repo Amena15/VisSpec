@@ -162,21 +162,44 @@ const SupervisorReports = () => {
   const exportPDF = async () => {
     try {
       setIsExporting(true);
-      
+
+      const projects = reportsData?.projects || [];
       const reportData = {
-        report_type: 'supervisor_reports',
-        title: 'Supervisor Reports',
-        subtitle: `Generated on ${new Date().toLocaleDateString()}`,
-        summary_stats: summary,
-        projects: reportsData.projects,
-        filters: {
-          search: searchTerm,
-          review_status: reviewStatusFilter,
-          quality_range: minQuality && maxQuality ? `${minQuality}-${maxQuality}` : 'All'
-        }
+        report_type: 'supervisor',
+        project_name: 'Supervisor Reports',
+        analysis_data: {
+          total_requirements: projects.length,
+          quality_score: summary?.average_quality_score || 0,
+          defect_count: summary?.total_defects || 0,
+          review_status: 'supervisor_reports',
+        },
+        metrics: {
+          validation_status: {
+            passed: summary?.approved_projects || 0,
+            warning: summary?.pending_review || 0,
+            failed: summary?.changes_requested || 0,
+          },
+          completion_rate: projects.length
+            ? Math.round(((summary?.approved_projects || 0) + (summary?.changes_requested || 0)) / projects.length * 100)
+            : 0,
+        },
+        traceability: projects.map((project) => ({
+          req_id: project.project_id,
+          identifier: project.name,
+          validation_status: project.review_status || 'not_reviewed',
+          defect_count: project.defect_count || 0,
+          complexity: project.complexity_level || 'N/A',
+          source_document: project.owner_email || 'Unknown owner',
+          text: `Project ${project.name} under supervisor review workflow.`,
+          visual_elements: [],
+          defects: [],
+        })),
+        diagrams: [],
       };
 
-      const response = await apiClient.post('/api/reports/export', reportData);
+      const response = await apiClient.post('/api/reports/export', reportData, {
+        responseType: 'blob',
+      });
       
       // Create download link
       const blob = new Blob([response.data], { type: 'application/pdf' });

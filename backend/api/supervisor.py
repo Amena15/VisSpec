@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import uuid
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
@@ -28,6 +29,7 @@ from backend.models.metrics import ProjectMetrics
 from backend.models.review import ReviewAudit
 from backend.models.notification import Notification
 from backend.utils.security import get_current_active_user, require_role
+from backend.utils.complexity import determine_requirement_complexity
 from backend.config.database import get_db
 
 router = APIRouter(tags=["supervisor"])
@@ -40,6 +42,56 @@ def _now_iso() -> str:
 class SupervisorReviewDecision(BaseModel):
     decision: str  # "approved" | "changes_requested"
     comments: Optional[str] = None
+
+
+def _safe_json_loads(value: Optional[str], default=None):
+    if not value:
+        return default if default is not None else []
+    try:
+        return json.loads(value)
+    except (TypeError, json.JSONDecodeError):
+        return default if default is not None else []
+
+
+def _derive_visual_elements(req: Requirement, requirement_text: str) -> List[str]:
+    visual_elements: List[str] = []
+
+    actors = _safe_json_loads(req.actors_json, default=[])
+    for actor in actors:
+        actor_text = str(actor).strip()
+        if actor_text:
+            visual_elements.append(f"Actor: {actor_text.title()}")
+
+    # Fallback actor extraction when structured actor metadata is missing.
+    if not visual_elements:
+        for actor in ["user", "admin", "manager", "system", "customer", "guest", "doctor", "patient"]:
+            if actor in requirement_text.lower():
+                visual_elements.append(f"Actor: {actor.title()}")
+
+    # Use requirement metadata and common action keywords to expose diagram-ready use cases.
+    if req.module_name:
+        module_name = str(req.module_name).strip()
+        if module_name:
+            visual_elements.append(f"Use Case: {module_name.title()}")
+
+    action_keywords = [
+        "login", "logout", "register", "create", "update", "delete", "view", "search", "approve", "review",
+    ]
+    text_lower = requirement_text.lower()
+    for action in action_keywords:
+        if action in text_lower:
+            visual_elements.append(f"Use Case: {action.title()}")
+
+    # Keep order but remove duplicates.
+    deduped: List[str] = []
+    seen = set()
+    for item in visual_elements:
+        key = item.lower()
+        if key not in seen:
+            seen.add(key)
+            deduped.append(item)
+
+    return deduped[:6]
 
 
 async def _latest_validation_for_project(db: AsyncSession, project_id: str) -> Optional[ValidationSession]:
@@ -69,11 +121,27 @@ async def supervisor_dashboard(
         owner = owner_result.scalars().first()
         latest_val = await _latest_validation_for_project(db, p.project_id)
 
+        metrics = None
+        if latest_val:
+            metrics_stmt = select(ProjectMetrics).where(ProjectMetrics.validation_id == latest_val.validation_id)
+            metrics_result = await db.execute(metrics_stmt)
+            metrics = metrics_result.scalars().first()
+
         quality_score = None
         defect_count = 0
         if latest_val:
             quality_score = latest_val.overall_score
             defect_count = latest_val.defect_count
+
+        complexity_score = metrics.complexity_score if metrics and metrics.complexity_score is not None else None
+        complexity_level = "N/A"
+        if complexity_score is not None:
+            if complexity_score >= 70:
+                complexity_level = "High"
+            elif complexity_score >= 40:
+                complexity_level = "Medium"
+            else:
+                complexity_level = "Low"
 
         result_list.append(
             {
@@ -84,6 +152,10 @@ async def supervisor_dashboard(
                 "defect_count": defect_count,
                 "status": p.status,
                 "review_status": p.review_status,
+                "created_at": p.created_at,
+                "updated_at": p.updated_at,
+                "complexity_score": complexity_score,
+                "complexity_level": complexity_level,
             }
         )
 
@@ -161,13 +233,16 @@ async def supervisor_review_view(
         latest_note = notes_by_req.get(req.req_id)
         source_document = documents.get(req.doc_id)
         source_document_name = source_document.filename if source_document else f"Document_{req.doc_id[:8]}"
+        requirement_text = req.current_text or req.original_text or ""
+        visual_elements = _derive_visual_elements(req, requirement_text)
+        complexity = determine_requirement_complexity(requirement_text)
 
         traceability.append(
             {
                 "req_id": req.req_id,
                 "identifier": req.req_identifier or f"REQ-{req.sequence_order + 1:03d}",
                 "semantic_id": req.semantic_id,
-                "text": req.current_text or req.original_text,
+            "text": requirement_text,
                 "validation_status": validation_status,
                 "defect_count": len(req_defects),
                 "source_document": source_document_name,
@@ -181,8 +256,8 @@ async def supervisor_review_view(
                 "vague_terms_json": req.vague_terms_json,
                 "word_count": req.word_count,
                 "sequence_order": req.sequence_order,
-                "visual_elements": req.visual_elements if hasattr(req, 'visual_elements') else None,
-                "complexity": req.complexity if hasattr(req, 'complexity') else 'low',
+                "visual_elements": visual_elements,
+                "complexity": complexity,
                 "defects": [
                     {
                         "defect_id": d.defect_id,
