@@ -522,7 +522,7 @@ VisSpec/
 | **Program** | Bachelor of Computer Science (Software Engineering) |
 | **University** | Faculty of Computing and Informatics, Multimedia University, Malaysia |
 | **Supervisor** | Dr. Zarina Binti Che Embi |
-| **Project Code** | FYP01-SE-T2530-393 |
+| **Project Code** | FYP02-SE-T2530-393 |
 | **Academic Year** | 2026 |
 
 ---
