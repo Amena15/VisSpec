@@ -158,9 +158,14 @@ async def get_traceability(
             complexity = determine_requirement_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
-            stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
+            stmt_note = (
+                select(TraceabilityNote)
+                .where(TraceabilityNote.req_id == req.req_id)
+                .order_by(TraceabilityNote.created_at.desc())
+                .limit(1)
+            )
             note_result = await db.execute(stmt_note)
-            note = note_result.scalar_one_or_none()
+            note = note_result.scalars().first()
             
             note_data = None
             if note:
@@ -272,9 +277,14 @@ async def get_document_traceability(
             complexity = determine_requirement_complexity(req.current_text or req.original_text)
             
             # Get note for this requirement
-            stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == req.req_id).order_by(TraceabilityNote.created_at.desc())
+            stmt_note = (
+                select(TraceabilityNote)
+                .where(TraceabilityNote.req_id == req.req_id)
+                .order_by(TraceabilityNote.created_at.desc())
+                .limit(1)
+            )
             note_result = await db.execute(stmt_note)
-            note = note_result.scalar_one_or_none()
+            note = note_result.scalars().first()
             
             note_data = None
             if note:
@@ -331,6 +341,7 @@ async def save_traceability_note(
     Save or update a note for a requirement.
     Implements BR-16: User notes field with timestamp.
     """
+    requirement = None
     try:
         # Verify requirement exists
         logger.info(f"Looking for requirement with req_id: {note_data.req_id}")
@@ -355,16 +366,21 @@ async def save_traceability_note(
             )
         
         # Check if note already exists for this requirement
-        stmt_note = select(TraceabilityNote).where(TraceabilityNote.req_id == note_data.req_id)
+        stmt_note = (
+            select(TraceabilityNote)
+            .where(TraceabilityNote.req_id == note_data.req_id)
+            .order_by(TraceabilityNote.created_at.desc())
+            .limit(1)
+        )
         note_result = await db.execute(stmt_note)
-        existing_note = note_result.scalar_one_or_none()
+        existing_note = note_result.scalars().first()
 
         if existing_note:
             # Update existing note
             existing_note.content = note_data.content
             # NOTE: TraceabilityNote model only has created_at.
             # Treat it as the last-updated timestamp for backward compatibility.
-            existing_note.created_at = datetime.now(timezone.utc)
+            existing_note.created_at = datetime.now(timezone.utc).isoformat()
             await db.commit()
             await db.refresh(existing_note)
 
@@ -382,7 +398,7 @@ async def save_traceability_note(
                 project_id=requirement.project_id,
                 content=note_data.content,
                 note_type="traceability_annotation",
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(timezone.utc).isoformat()
             )
             
             db.add(note)

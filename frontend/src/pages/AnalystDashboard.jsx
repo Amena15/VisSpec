@@ -16,7 +16,7 @@ import {
   AlertOctagon
 } from 'lucide-react';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import AnalystNotificationsBanner from './AnalystNotificationsBanner';
@@ -42,6 +42,7 @@ const formatWeeks = (value) => {
 };
 
 const AnalystDashboard = () => {
+  const navigate = useNavigate();
   // Existing state
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
@@ -52,6 +53,17 @@ const AnalystDashboard = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const { documents, stats, loading, error } = useDashboardData();
+
+  const openPerformanceView = () => {
+    const firstDocumentId = documents.find((doc) => doc?.id)?.id;
+    if (firstDocumentId) {
+      navigate(`/analysis-results/${firstDocumentId}`);
+      return;
+    }
+
+    toast.info('No analyzed documents yet. Opening documents list.');
+    navigate('/documents');
+  };
 
   const exportPdf = async () => {
     try {
@@ -422,8 +434,9 @@ const AnalystDashboard = () => {
                       <p className="text-sm text-[var(--text-secondary)]">Upload requirements document</p>
                     </div>
                   </Link>
-                  <Link
-                    to="/analysis-results"
+                  <button
+                    type="button"
+                    onClick={openPerformanceView}
                     className="flex-1 min-w-[200px] px-6 py-5 text-center border-r border-[var(--card-border)] hover:bg-[var(--surface-bg)] transition-colors"
                   >
                     <div className="flex flex-col items-center">
@@ -431,7 +444,7 @@ const AnalystDashboard = () => {
                       <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">My Performance</h3>
                       <p className="text-sm text-[var(--text-secondary)]">View analysis metrics</p>
                     </div>
-                  </Link>
+                  </button>
                   <Link
                     to="/traceability"
                     className="flex-1 min-w-[200px] px-6 py-5 text-center hover:bg-[var(--surface-bg)] transition-colors"

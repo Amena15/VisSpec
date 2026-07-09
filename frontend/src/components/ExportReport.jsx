@@ -5,7 +5,6 @@ import apiClient from '../services/api';
 
 const ExportReport = ({ documentData, analysisResults, onClose }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [exportFormat, setExportFormat] = useState('pdf');
 
   const handleExport = async () => {
     setIsGenerating(true);
@@ -26,20 +25,18 @@ const ExportReport = ({ documentData, analysisResults, onClose }) => {
         responseType: 'blob',
       });
 
-      if (exportFormat === 'pdf') {
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const fileName = `vispec_report_${documentData?.projectName || 'Untitled_Project'}.pdf`;
-        a.href = url;
-        a.download = fileName.replace(/[^a-z0-9 _-]/gi, '_');
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      }
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fileName = `vispec_report_${documentData?.projectName || 'Untitled_Project'}.pdf`;
+      a.href = url;
+      a.download = fileName.replace(/[^a-z0-9 _-]/gi, '_');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
-      toast.success(`Report exported successfully as ${exportFormat.toUpperCase()}!`, {
+      toast.success('Report exported successfully as PDF!', {
         duration: 3000,
         position: 'top-right'
       });
@@ -104,32 +101,12 @@ const ExportReport = ({ documentData, analysisResults, onClose }) => {
             </div>
           </div>
 
-          {/* Export Options */}
+          {/* Export Format */}
           <div>
             <label className="block text-sm font-medium text-[var(--neutral-700)] mb-2">Export Format</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setExportFormat('pdf')}
-                className={`flex items-center justify-center p-3 rounded-lg border ${
-                  exportFormat === 'pdf'
-                    ? 'border-[var(--accent-main)] bg-[var(--accent-50)] text-[var(--accent-main)]'
-                    : 'border-[var(--neutral-200)] hover:bg-[var(--neutral-50)]'
-                }`}
-              >
-                <FileText className="w-5 h-5 mr-2" />
-                PDF
-              </button>
-              <button
-                onClick={() => setExportFormat('docx')}
-                className={`flex items-center justify-center p-3 rounded-lg border ${
-                  exportFormat === 'docx'
-                    ? 'border-[var(--accent-main)] bg-[var(--accent-50)] text-[var(--accent-main)]'
-                    : 'border-[var(--neutral-200)] hover:bg-[var(--neutral-50)]'
-                }`}
-              >
-                <FileText className="w-5 h-5 mr-2" />
-                DOCX
-              </button>
+            <div className="flex items-center justify-center p-3 rounded-lg border border-[var(--accent-main)] bg-[var(--accent-50)] text-[var(--accent-main)] font-medium">
+              <FileText className="w-5 h-5 mr-2" />
+              PDF
             </div>
           </div>
 
@@ -140,7 +117,7 @@ const ExportReport = ({ documentData, analysisResults, onClose }) => {
               <div>
                 <h4 className="font-medium text-[var(--info-dark)] text-sm">VisSpec Watermark</h4>
                 <p className="text-xs text-[var(--info-dark)] mt-1">
-                  All exported reports include a VisSpec watermark and timestamp as required by business rule BR-20.
+                  All exported reports include a VisSpec watermark and timestamp.
                 </p>
               </div>
             </div>

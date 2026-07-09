@@ -339,7 +339,7 @@ const Traceability = () => {
       setSelectedRequirement(null);
       setNoteText('');
 
-      const response = await traceabilityAPI.getTraceability(id);
+      const response = await traceabilityAPI.getTraceability(activeProjectId);
       if (response.data?.traceability) {
         setRequirements(
           response.data.traceability.map((item) => ({
