@@ -1,0 +1,218 @@
+[
+  {
+    "id": "TC-002",
+    "text": "The system must respond within 200 milliseconds.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-005",
+    "text": "The system shall lock user accounts after 5 failed login attempts within 15 minutes.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-007",
+    "text": "Passwords must be hashed using Argon2.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-008",
+    "text": "The system should maybe implement captcha.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-009",
+    "text": "Security features must be adequate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-016",
+    "text": "The braking system shall engage within 50 milliseconds when the obstacle is detected at 10 meters.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-018",
+    "text": "The REST API must support GET and POST methods. Endpoints shall return JSON responses.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-020",
+    "text": "Error messages must be descriptive enough.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-021",
+    "text": "The system shall provide adequate security for user data.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-022",
+    "text": "The system must encrypt all passwords using bcrypt with a cost factor of 12.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-023",
+    "text": "The application should be user-friendly and easy to navigate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-025",
+    "text": "The system shall handle a large number of concurrent users efficiently.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-028",
+    "text": "The system must recover from database failures within 30 seconds using automatic failover.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-032",
+    "text": "The system shall process international wire transfers within 5 seconds of submission.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-034",
+    "text": "The dashboard must display real-time metrics updated every 10 seconds using WebSocket connections.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-037",
+    "text": "The search feature should be fast and accurate.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-040",
+    "text": "The system must display a user-friendly error page with a support contact link for all unhandled exceptions.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-045",
+    "text": "The reporting module should generate comprehensive reports for management.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-046",
+    "text": "The reporting module must generate daily sales reports in PDF format including total revenue, top products, and regional breakdowns.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-049",
+    "text": "The application must include proper input validation to prevent injection attacks.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-052",
+    "text": "The system shall send email notifications to users within 5 seconds of account creation, including a verification link.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-055",
+    "text": "The system should allow users to cancel their orders, but once canceled, orders cannot be restored.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-057",
+    "text": "The authentication mechanism must be secure.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-067",
+    "text": "The system shall store user preferences, but should also respect GDPR regulations.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-068",
+    "text": "The system shall store user preferences and provide a data export API that returns all stored data in JSON format within 30 seconds.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-069",
+    "text": "The payment gateway integration should be reliable.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-071",
+    "text": "The system must enforce strong password policies, but not make it too hard for users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "inconsistency"
+  },
+  {
+    "id": "TC-075",
+    "text": "The system shall generate invoices for customers when needed.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-076",
+    "text": "The system must generate invoices within 2 seconds of order confirmation and email them as PDF attachments.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-081",
+    "text": "The search functionality should be efficient for large datasets.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-084",
+    "text": "The system must be deployable via Docker Compose with documented environment variables and health check endpoints.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-091",
+    "text": "The system shall support multiple languages for the interface.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "ambiguity"
+  },
+  {
+    "id": "TC-092",
+    "text": "The system must support English, Malay, and Chinese with dynamic language switching without page reload.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-096",
+    "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry policies and circuit breakers for each.",
+    "expert_verdict": "NO_DEFECT",
+    "defect_type": null
+  },
+  {
+    "id": "TC-101",
+    "text": "The system shall handle all user inputs.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "incomplete"
+  },
+  {
+    "id": "TC-104",
+    "text": "The software must be secure for all users.",
+    "expert_verdict": "DEFECT",
+    "defect_type": "unverifiable"
+  }
+]

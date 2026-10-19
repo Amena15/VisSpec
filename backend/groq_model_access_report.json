@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-10-12T13:33:45Z",
+  "note": "API key intentionally NOT recorded. Provider restriction for general-purpose Llama chat models is an account/tier entitlement.",
+  "accessible_model_ids": [
+    "allam-2-7b",
+    "canopylabs/orpheus-arabic-saudi",
+    "canopylabs/orpheus-v1-english",
+    "meta-llama/llama-prompt-guard-2-22m",
+    "meta-llama/llama-prompt-guard-2-86m",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-safeguard-20b",
+    "qwen/qwen3.8-27b",
+    "whisper-large-v3",
+    "whisper-large-v3-turbo"
+  ],
+  "accessible_llama_ids": [
+    "meta-llama/llama-prompt-guard-2-22m",
+    "meta-llama/llama-prompt-guard-2-86m"
+  ],
+  "accessible_non_llama_general_ids": [
+    "allam-2-7b",
+    "canopylabs/orpheus-arabic-saudi",
+    "canopylabs/orpheus-v1-english",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-safeguard-20b",
+    "qwen/qwen3.8-27b",
+    "whisper-large-v3",
+    "whisper-large-v3-turbo"
+  ],
+  "llama_chat_probe": {
+    "meta-llama/llama-prompt-guard-2-22m": {
+      "ok": false,
+      "stage": "http",
+      "status": 400,
+      "code": null,
+      "message": "This model does not support JSON output",
+      "elapsed_ms": 96.0
+    },
+    "meta-llama/llama-prompt-guard-2-86m": {
+      "ok": false,
+      "stage": "http",
+      "status": 400,
+      "code": null,
+      "message": "failed to template request: failed to render text output: messages must contains a single user message for text classification models",
+      "elapsed_ms": 96.2
+    }
+  },
+  "non_llama_contrast_labelled": {
+    "openai/gpt-oss-120b": {
+      "main": {
+        "ok": true,
+        "parsed_json": true,
+        "content": "{\"defects\":[{\"type\":\"ambiguity\",\"severity\":\"low\",\"confidence\":0.9,\"description\":\"The term \\\"user data\\\" is not defined, leading to uncertainty about which data must be encrypted.\",\"suggestion\":\"Define \\\"user data\\\" or specify data categories that must be encrypted.\"}]}",
+        "elapsed_ms": 1568.1
+      },
+      "fp_case_1": {
+        "ok": false,
+        "stage": "http",
+        "status": 400,
+        "code": null,
+        "message": "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+        "elapsed_ms": 236.9
+      },
+      "fp_case_2": {
+        "ok": false,
+        "stage": "http",
+        "status": 400,
+        "code": null,
+        "message": "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+        "elapsed_ms": 1209.7
+      }
+    },
+    "qwen/qwen3.8-27b": {
+      "main": {
+        "ok": false,
+        "stage": "http",
+        "status": 503,
+        "code": null,
+        "message": "qwen/qwen3.8-27b is currently over capacity. Please try again and back off exponentially. Visit https://groqstatus.com to see if there is an active incident.",
+        "elapsed_ms": 30109.1
+      },
+      "fp_case_1": {
+        "ok": false,
+        "stage": "http",
+        "status": 400,
+        "code": null,
+        "message": "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+        "elapsed_ms": 116.8
+      },
+      "fp_case_2": {
+        "ok": false,
+        "stage": "http",
+        "status": 400,
+        "code": null,
+        "message": "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+        "elapsed_ms": 106.3
+      }
+    }
+  }
+}

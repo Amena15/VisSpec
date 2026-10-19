@@ -19,6 +19,8 @@ from backend.services.ai.prompts import (
     REQUIREMENT_EXTRACTION_PROMPT,
     VALIDATION_PROMPT,
 )
+from backend.services.ai.text_cleaner import TextCleaner
+from backend.services.ai import privacy
 from backend.services.ai.response_parser import ResponseParser
 from backend.services.ai.retry_handler import retry_handler
 
@@ -27,19 +29,23 @@ logger = get_logger(__name__)
 
 
 class GroqLLMService:
-    """Service for interacting with Groq API (LLaMA 3)."""
-
-    API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    """Service for interacting with the configured LLM provider
+    (profile from config: default Groq openai/gpt-oss-120b)."""
 
     def __init__(self):
-        self.api_key = settings.GROQ_API_KEY
-        self.model = settings.GROQ_MODEL
-        self.temperature = settings.GROQ_TEMPERATURE
-        self._available = bool(self.api_key)
+        self.api_key = settings.LLM_API_KEY
+        self.model = settings.llm_model_id
+        self.base_url = settings.llm_base_url
+        self.temperature = settings.LLM_TEMPERATURE
+        # Key-required profiles need a key; the OVH anonymous tier needs only
+        # its base URL (same rule as LLMValidator).
+        self._available = settings.llm_available
 
         if not self._available:
             logger.warning(
-                "GROQ_API_KEY not set. LLM features will fall back to rule-based analysis."
+                f"LLM profile '{settings.LLM_PROFILE}' unavailable "
+                "(key required but not set). LLM features will fall back to "
+                "rule-based analysis."
             )
 
     def _make_request(self, prompt: str, max_tokens: int = 2048) -> Optional[str]:
@@ -47,10 +53,17 @@ class GroqLLMService:
         if not self._available:
             return None
 
+        # Privacy control: redact obvious PII from the outgoing prompt before it
+        # leaves the local machine, and restore it in the response afterwards so
+        # local consumers see the original text. (Zero-retention is a provider
+        # policy guarantee; this local redaction in privacy.py is what WE enforce.)
+        prompt, pii_mapping = privacy.redact(prompt)
+
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        if self.api_key:  # anonymous tier: no Authorization header at all
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
         system_instruction = (
             "You are a strict data extraction API. You MUST output ONLY valid JSON. "
@@ -68,10 +81,14 @@ class GroqLLMService:
             "max_tokens": max_tokens,
         }
 
-        response = requests.post(self.API_URL, headers=headers, json=payload, timeout=60)
+        response = requests.post(
+            f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=120
+        )
         response.raise_for_status()
         data = response.json()
-        return data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"]["content"]
+        # Restore locally any PII placeholders the model echoed back.
+        return privacy.restore(content, pii_mapping)
 
     def call_with_retry(self, prompt: str, max_tokens: int = 2048) -> Optional[str]:
         """Call the API with retry logic."""

@@ -120,9 +120,10 @@ Expected Output:
 ## AI SERVICE CONFIGURATION
 
 ### Groq API Settings
-- Model: {os.getenv('GROQ_MODEL', 'llama3-70b-8192')}
-- Temperature: {os.getenv('GROQ_TEMPERATURE', '0.1')}
-- Max Retries: {os.getenv('GROQ_MAX_RETRIES', '3')}
+- Profile: {os.getenv('LLM_PROFILE', 'groq-gpt-oss-120b')}
+- Model: {os.getenv('LLM_MODEL', 'openai/gpt-oss-120b')}
+- Temperature: {os.getenv('LLM_TEMPERATURE', '0.1')}
+- Max Retries: {os.getenv('LLM_MAX_RETRIES', '3')}
 - Timeout: 60 seconds
 
 ### Validation Thresholds

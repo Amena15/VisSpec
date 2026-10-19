@@ -124,6 +124,125 @@ def _extract_title(text: str) -> str:
     return "System"
 
 
+# Common stop words ignored when grounding an extracted element against the
+# source requirement text.
+_GROUNDING_STOPWORDS = {
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "by",
+    "is", "are", "be", "shall", "must", "will", "should", "may", "can", "system",
+    "user", "data", "manage", "process", "perform", "view", "add", "delete",
+    "update", "create", "handle", "use", "case",
+}
+
+
+def _significant_tokens(name: str) -> set:
+    """Return lowercased alphanumeric tokens with stop words removed."""
+    tokens = re.findall(r"[a-z0-9]+", (name or "").lower())
+    return {t for t in tokens if len(t) > 2 and t not in _GROUNDING_STOPWORDS}
+
+
+def _is_grounded(name: str, source_token_index: set) -> bool:
+    """
+    A diagram element is grounded (traceable) if at least one of its significant
+    tokens appears in the combined source requirement text. Elements whose every
+    significant token is absent from the requirements are treated as hallucinations
+    (invented by the LLM with no grounding requirement).
+    """
+    tokens = _significant_tokens(name)
+    if not tokens:
+        # No discriminating tokens (e.g. "Manage System") -> accept, not a hallucination.
+        return True
+    return bool(tokens & source_token_index)
+
+
+def _enforce_traceability(
+    data: Dict[str, Any],
+    requirements: List[Dict[str, Any]],
+    diagram_type: str,
+) -> Dict[str, Any]:
+    """
+    Stage 5 — Traceability Enforcement for the LLM-extraction diagram path.
+
+    The LLM extractor does not attach a source_req_id to each element, so we
+    verify traceability against the *parsed requirement list* instead: an actor or
+    use case is kept only if it is grounded in the combined source requirement text.
+    Any element that is not grounded is counted as a rejected hallucination and
+    dropped from the diagram so it can never reach the rendered syntax.
+
+    Returns a dict with the (possibly mutated) `data`, the number of rejected
+    elements, and the list of rejected element labels.
+    """
+    combined_text = " ".join(
+        (req.get("current_text") or req.get("original_text", "")) for req in requirements
+    )
+    source_token_index = set(re.findall(r"[a-z0-9]+", combined_text.lower()))
+
+    rejected = 0
+    rejected_labels: List[str] = []
+
+    if diagram_type == "usecase":
+        kept_uc = []
+        for uc in data.get("use_cases", []):
+            name = uc.get("name") if isinstance(uc, dict) else str(uc)
+            if _is_grounded(name, source_token_index):
+                kept_uc.append(uc)
+            else:
+                rejected += 1
+                rejected_labels.append(f"use_case:{name}")
+        data["use_cases"] = kept_uc
+
+        kept_actors = []
+        for actor in data.get("actors", []):
+            name = actor.get("name") if isinstance(actor, dict) else str(actor)
+            if _is_grounded(name, source_token_index):
+                kept_actors.append(actor)
+            else:
+                rejected += 1
+                rejected_labels.append(f"actor:{name}")
+        data["actors"] = kept_actors
+
+        # Prune associations referencing dropped nodes.
+        kept_uc_names = {
+            (u.get("name") if isinstance(u, dict) else str(u)) for u in kept_uc
+        }
+        kept_actor_names = {
+            (a.get("name") if isinstance(a, dict) else str(a)) for a in kept_actors
+        }
+        data["associations"] = [
+            a for a in data.get("associations", [])
+            if (a.get("use_case") in kept_uc_names and a.get("actor") in kept_actor_names)
+        ]
+
+    elif diagram_type == "activity":
+        kept = []
+        for act in data.get("activities", []):
+            name = act.get("name") if isinstance(act, dict) else str(act)
+            if _is_grounded(name, source_token_index):
+                kept.append(act)
+            else:
+                rejected += 1
+                rejected_labels.append(f"activity:{name}")
+        data["activities"] = kept
+
+    elif diagram_type == "sequence":
+        # Sequence messages: ground on the free-text message body.
+        kept = []
+        for msg in data.get("messages", []):
+            name = msg.get("message") if isinstance(msg, dict) else str(msg)
+            if _is_grounded(name, source_token_index):
+                kept.append(msg)
+            else:
+                rejected += 1
+                rejected_labels.append(f"message:{str(name)[:40]}")
+        data["messages"] = kept
+
+    return {
+        "data": data,
+        "hallucination_rejected_count": rejected,
+        "rejected_elements": rejected_labels,
+    }
+
+
+
 # -----------------------------------------------------------------------------
 # Endpoints
 # -----------------------------------------------------------------------------
@@ -187,7 +306,20 @@ async def generate_ieee_compliant_diagram(
                     {"from": "System", "to": "User", "message": "Return result"}
                 ])
 
-        # 4. Generate PlantUML and Mermaid
+        # 3b. Stage 5 — Traceability Enforcement (real BR-11 check).
+        # Drop any actor / use case / message the LLM invented that is not grounded
+        # in the parsed requirement list, and count how many were rejected.
+        traceability = _enforce_traceability(data, requirements, request.diagram_type)
+        data = traceability["data"]
+        hallucination_rejected_count = traceability["hallucination_rejected_count"]
+        rejected_elements = traceability["rejected_elements"]
+        if hallucination_rejected_count:
+            logger.info(
+                f"BR-11 traceability: rejected {hallucination_rejected_count} "
+                f"untraceable element(s): {rejected_elements}"
+            )
+
+        # 4. Generate PlantUML and Mermaid (only from verified, grounded nodes)
         if request.diagram_type == "usecase":
             plantuml_syntax = plantuml_gen.generate_usecase_plantuml(data)
             mermaid_syntax = mermaid_gen.generate_usecase_mermaid(data)
@@ -222,7 +354,7 @@ async def generate_ieee_compliant_diagram(
                 plantuml_syntax=plantuml_syntax,
                 syntax_valid=1,
                 total_elements=total_elements,
-                hallucination_rejected_count=0,
+                hallucination_rejected_count=hallucination_rejected_count,
                 generation_time_ms=None
             )
             db.add(diagram)
@@ -239,8 +371,10 @@ async def generate_ieee_compliant_diagram(
 
         # 6. Build compliance response
         compliance = {
-            "br_11_compliant": True,  # actors from text only
+            "br_11_compliant": hallucination_rejected_count == 0,  # 0 untraceable nodes kept out
             "br_12_compliant": not data.get("truncated", False),
+            "hallucination_rejected_count": hallucination_rejected_count,
+            "rejected_elements": rejected_elements,
             "warning": data.get("warning") if data.get("truncated") else None
         }
 

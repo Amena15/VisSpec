@@ -5,6 +5,21 @@ from backend.config.database import Base
 from backend.models.user import _uuid, _now
 
 
+def _default_llm_model() -> str:
+    """Single source of truth: the configured LLM model id from settings.
+
+    Kept as a zero-argument callable so SQLAlchemy evaluates it per-insert;
+    this way the stored model id always matches backend/core/config.py.
+    """
+    try:
+        from backend.core.config import settings
+        return settings.llm_model_id
+    except Exception:
+        # Never hardcode a model id here — an unconfigured default is safer
+        # than a stale one that would mislabel which model produced a result.
+        return ""
+
+
 
 class ValidationSession(Base):
     __tablename__ = "validation_sessions"
@@ -22,9 +37,19 @@ class ValidationSession(Base):
     incompleteness_count = Column(Integer, nullable=False, default=0)
     inconsistency_count = Column(Integer, nullable=False, default=0)
     unverifiable_count = Column(Integer, nullable=False, default=0)
-    llm_model_used = Column(String, nullable=False, default="llama3-70b-8192")
+    # Model actually used for this validation session. Single source of truth =
+    # backend/core/config.py llm_model_id (profile-resolved; default profile
+    # groq-gpt-oss-120b = openai/gpt-oss-120b via Groq); the Python-side
+    # default is injected from settings at import time so this column can
+    # never diverge from the configured model id.
+    llm_model_used = Column(String, nullable=False, default=_default_llm_model)
     api_retries = Column(Integer, nullable=False, default=0)
     processing_time_ms = Column(Integer, nullable=True)
+    # Note: Zero-retention is a policy guarantee of the LLM provider, not a
+    # locally enforced code feature. Local PII redaction is applied in
+    # backend/services/ai/privacy.py before text is sent to the provider.
+    # This column is only an audit flag recording that LOCAL masking was
+    # in effect (1=masking applied); it is NOT a provider guarantee claim.
     zero_retention_confirmed = Column(Integer, nullable=False, default=1)
     validation_date = Column(String, nullable=False, default=_now, index=True)
     error_message = Column(Text, nullable=True)

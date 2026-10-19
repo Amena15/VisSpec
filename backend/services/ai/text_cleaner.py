@@ -15,6 +15,32 @@ CONCATENATED_MODAL_PAIR = re.compile(
     rf"(?i)({_MODAL_ALT})({_MODAL_ALT})(?!\w)",
 )
 
+# ---------------------------------------------------------------------------
+# PII redaction patterns (privacy-by-default before any text reaches the LLM).
+#
+# NOTE: Zero-retention is a policy guarantee of the Groq API provider, not a
+# locally enforced code feature. Local PII redaction IS applied here, in
+# text_cleaner.py, so that obvious personally-identifiable information is
+# stripped before the text is ever sent to an external LLM.
+# ---------------------------------------------------------------------------
+PII_EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+PII_PHONE = re.compile(
+    r"(?<!\d)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}(?!\d)"
+)
+# Long digit runs that are not years in a plausible range (e.g. account/ID numbers)
+PII_LONG_NUMBER = re.compile(r"(?<!\d)\d{7,}(?!\d)")
+# National ID / IC / NRIC style tokens: letter + digits + letter (e.g. 990101-14-5555)
+PII_NRIC = re.compile(r"\b\d{6}\s?-?\s?\d{2}\s?-?\s?\d{4}\b")
+# IPv4 addresses
+PII_IP = re.compile(r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b")
+
+PII_PLACEHOLDER_EMAIL = "[EMAIL_REDACTED]"
+PII_PLACEHOLDER_PHONE = "[PHONE_REDACTED]"
+PII_PLACEHOLDER_NRIC = "[ID_REDACTED]"
+PII_PLACEHOLDER_NUMBER = "[NUMBER_REDACTED]"
+PII_PLACEHOLDER_IP = "[IP_REDACTED]"
+
+
 
 class TextCleaner:
     """Cleans and standardizes requirement text."""
@@ -96,6 +122,42 @@ class TextCleaner:
         return CONCATENATED_MODAL_PAIR.sub(_repl, text)
 
     @classmethod
+    def redact_pii(cls, text: str) -> str:
+        """
+        Strip obvious personally-identifiable information from requirement text
+        BEFORE it is sent to an external LLM provider (Groq / LLaMA 3).
+
+        This is a local privacy control. It is deliberately conservative: it only
+        targets unambiguous PII patterns (emails, phone numbers, national-ID /
+        NRIC-style numbers, and long account/ID digit runs) and replaces them with
+        clear placeholders. It is applied first in clean_requirement_text().
+
+        Args:
+            text: Raw requirement text (may contain PII)
+
+        Returns:
+            Text with obvious PII replaced by redaction placeholders.
+        """
+        if not text or not isinstance(text, str):
+            return text
+
+        original_text = text
+
+        # Order matters: redact more specific patterns before the generic ones.
+        # NRIC/ID and long account numbers are handled before the generic phone
+        # pattern so a 10-digit account number is labelled as a number, not a phone.
+        text = PII_EMAIL.sub(PII_PLACEHOLDER_EMAIL, text)
+        text = PII_NRIC.sub(PII_PLACEHOLDER_NRIC, text)
+        text = PII_LONG_NUMBER.sub(PII_PLACEHOLDER_NUMBER, text)
+        text = PII_IP.sub(PII_PLACEHOLDER_IP, text)
+        text = PII_PHONE.sub(PII_PLACEHOLDER_PHONE, text)
+
+        if text != original_text:
+            logger.info("Redacted PII from requirement text before LLM transmission.")
+
+        return text
+
+    @classmethod
     def clean_requirement_text(cls, text: str) -> str:
         """
         Clean and standardize requirement text.
@@ -110,6 +172,10 @@ class TextCleaner:
             return text
 
         original_text = text
+
+        # Step -1: Redact obvious PII (emails, phone numbers, national IDs, IPs,
+        # long account numbers) BEFORE the text ever reaches the LLM provider.
+        text = cls.redact_pii(text)
 
         # Add this new step to strip markdown (**) and stray slashes
         text = text.replace('**', '').replace('__', '').replace('`', '')
@@ -146,6 +212,17 @@ class TextCleaner:
             logger.info(f"Cleaned requirement text: '{original_text[:50]}...' -> '{text[:50]}...'")
         
         return text
+
+    @classmethod
+    def clean_and_redact(cls, text: str) -> str:
+        """
+        Convenience pipeline: redact PII first (privacy-by-default), then apply the
+        normal text cleaning/standardisation. Use this wherever text is about to be
+        sent to an external LLM.
+        """
+        return cls.clean_requirement_text(cls.redact_pii(text))
+
+
 
     @classmethod
     def clean_requirements_batch(cls, requirements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

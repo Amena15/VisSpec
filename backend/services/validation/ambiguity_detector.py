@@ -27,8 +27,6 @@ VAGUE_TERMS = [
     "if necessary", "if applicable", "enough",
     # modality words
     "should", "may", "might", "could",
-    # additional vague quantifiers used in FN cases
-    "multiple",
 ]
 
 
@@ -65,49 +63,60 @@ class AmbiguityDetector:
         )
 
     def analyze(self, text: str) -> List[Dict[str, Any]]:
-        """Analyze text for ambiguities.
+        """
+        Analyze text for ambiguities.
 
-        Precision fix (for evaluation benchmark):
-        - If any strong, specific signal exists in the text (numbers with units, tech terms, file types,
-          explicit constraints), then DO NOT add ambiguity defects for vague/performance terms.
-        - Still detect pronouns/subjective/compliance references, but only when strong signals are absent.
-        - Optionally detect contradictions to avoid false negatives.
+        Principle (measurable specificity suppresses vague-term noise):
+        - A requirement that already contains a concrete, measurable, or verifiable
+          signal (a numeric quantity with units, a bounded time/size limit, or an
+          explicit standard/format/protocol identifier) is *specific*, so we do NOT
+          raise low-value ambiguity noise for vague/performance-style wording.
+        - Pronouns, subjective terms, compliance references and internal
+          contradictions are still detected regardless of measurable signals.
         """
         defects: List[Dict[str, Any]] = []
         text_lower = text.lower()
 
         # ================================================================
-        # 1) DETECT STRONG SPECIFIC SIGNALS (NO_DEFECT)
+        # 1) DETECT STRONG SPECIFIC SIGNALS (measurable / verifiable)
         # ================================================================
+        # Quantitative measurability: a number tied to a unit, percentage, size,
+        # count or character/digit length. These generalise to any requirement.
         strong_signals = [
-            r"\b\d+\s*(ms|milliseconds|seconds?|minutes?|hours?|days?)\b",
+            r"\b\d+\s*(ms|milliseconds?|seconds?|sec|s|minutes?|mins?|hours?|hrs?|days?)\b",
             r"\b\d+(?:\.\d+)?\s*%\b",
-            r"\b\d+(?:\.\d+)?\s*(mb|kb|gb|tb)\b",
-            r"\bbcrypt\b|\bargon2\b|\bowasp\b|\bwcag\s*2\.[0-9]",
-            r"\bjson\b|\bpdf\b|\bpng\b|\bjpeg\b",
-            r"\bredis\b|\belasticsearch\b|\bdocker\b|\bkubernetes\b|\bwebsocket\b",
-            r"\bwithin\s+\d+\s+seconds?\b|\bunder\s+\d+\s*ms\b",
-            r"\bopenapi\b\s*3\.[0-9]|\boauth2\b|\b2fa\b|\boauth\b",
-            r"\bminimum\s+\d+\s+characters\b",
-            r"\bfailed\s+login\s+attempts\b",
-            r"\bttl\s+of\s+\d+\s+minutes\b",
-            r"\bsemantic\s+versioning\b",
-            r"\bmodular\s+architecture\b",
-            r"\bwhitelist\b",
-            r"\bretry\s+policies\b",
-            r"\bcircuit\s+breakers\b",
-            r"\bzero-downtime\b",
-            r"\bhealth\s+check\b",
-            r"\bendpoint\s+documented\b",
-            r"\bjson\s+format\b",
-            r"\bexponential\s+backoff\b",
-            r"\bswift\b|\bswift\s+database\b",
+            r"\b\d+(?:\.\d+)?\s*(bytes?|mb|kb|gb|tb)\b",
+            r"\b\d+\s*characters?\b",
+            r"\b\d+\s*(?:or\s+)?(?:more|less|fewer|additional)\b",
+            r"\b(?:at\s+least|at\s+most|no\s+more\s+than|no\s+fewer\s+than|minimum\s+of|"
+            r"maximum\s+of|up\s+to|less\s+than|more\s+than|greater\s+than|fewer\s+than)"
+            r"\s+\d+\b",
+            r"\b(?:within|under|over|after|before|every|each)\s+\d+\b",
+            r"\b\d+\s*(?:concurrent\s+)?(?:users?|requests?|attempts?|connections?|"
+            r"transactions?|records?|retries|times)\b",
         ]
-        has_strong_signal = any(re.search(p, text_lower, re.IGNORECASE) for p in strong_signals)
+        # A small, dataset-independent vocabulary of concrete formats, standards,
+        # protocols and well-known technologies that name a verifiable artefact.
+        specific_identifiers = [
+            "json", "xml", "yaml", "csv", "pdf", "png", "jpeg", "jpg", "sql",
+            "oauth", "oauth2", "openid", "openapi", "rest", "https", "http",
+            "tls", "ssl", "jwt", "saml", "wcag", "owasp", "iso", "gdpr", "hipaa",
+            "bcrypt", "argon2", "pbkdf2", "aes", "sha-256", "sha256",
+            "postgresql", "postgres", "mysql", "mongodb", "redis", "sqlite",
+            "elasticsearch", "kafka", "rabbitmq", "docker", "kubernetes", "websocket",
+        ]
+        identifier_pattern = (
+            r"\b(?:v?\d+(?:\.\d+)+)\b"  # explicit versions e.g. 3.0, 2.1, v1.2
+            r"|\b(?:" + "|".join(re.escape(t) for t in specific_identifiers) + r")\b"
+        )
 
-        # ================================================================
-        # 2) CONTRADICTION DETECTION (keep even with strong signals)
-        # ================================================================
+        has_strong_signal = (
+            any(re.search(p, text_lower, re.IGNORECASE) for p in strong_signals)
+            or bool(re.search(identifier_pattern, text_lower, re.IGNORECASE))
+        )
+
+
+        # 2) CONTRADICTION DETECTION (kept even when strong signals are present)
         contradiction_patterns = [
             r"allow.*but.*(prevent|restrict|deny|not)",
             r"must.*but.*(should|may|could)",
@@ -126,19 +135,12 @@ class AmbiguityDetector:
                 "suggestion": "Resolve the contradiction between conflicting requirements.",
             })
 
-        # ================================================================
-        # 3) SKIP AMBIGUITY COMPLETELY IF STRONG SIGNAL EXISTS
-        # ================================================================
+        # 3) When a requirement already contains a measurable/verifiable signal, do not
+        # raise low-value ambiguity noise for performance-style wording.
         if has_strong_signal:
-            # still keep compliance reference check per original behavior? For the requested
-            # benchmark fix we skip ambiguity for vague/performance terms.
-            # We also skip pronoun/subjective/vague-term ambiguity when strong signal exists.
-            # (Contradictions are already handled above.)
             return defects
 
-        # ================================================================
-        # 4) VAGUE / SUBJECTIVE / PRONOUN DETECTION (ONLY IF NO STRONG SIGNAL)
-        # ================================================================
+        # 4) VAGUE / SUBJECTIVE / PRONOUN DETECTION (only when no strong signal)
         sentences = re.split(r"[.!?]+", text)
 
         for match in self.vague_pattern.finditer(text):

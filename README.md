@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green.svg)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
-![LLaMA 3](https://img.shields.io/badge/LLaMA-3-orange.svg)
+![LLM](https://img.shields.io/badge/LLM-GPT--OSS--120b-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue.svg)
 ![License](https://img.shields.io/badge/License-Academic-red.svg)
 
@@ -34,7 +34,7 @@
 
 ## 📖 Overview
 
-**VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (LLaMA 3 via Groq API)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
+**VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (openai/gpt-oss-120b via Groq by default; LLaMA 3.3 70B via OVHcloud as a second profile)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
 
 The system performs:
 - 🔍 **Semantic Analysis** - Extracts entities, relationships, and detects ambiguities
@@ -51,7 +51,7 @@ The system performs:
 
 | Feature | Description | Implementation |
 |---------|-------------|----------------|
-| **Semantic Analysis** | Extract entities, actors, modal verbs, and ambiguities using LLaMA 3 | `/api/analysis/semantic` |
+| **Semantic Analysis** | Extract entities, actors, modal verbs, and ambiguities using the configured LLM profile | `/api/analysis/semantic` |
 | **Predictive Analysis** | Complexity scoring, effort estimation, risk assessment | `/api/analysis/predictive` |
 | **Full Analysis** | Combined semantic + predictive analysis | `/api/analysis/full` |
 | **UML Diagram Generation** | Create Use Case, Sequence, and Activity diagrams from requirements | `/api/visualization/` (with `diagram_type` field) |
@@ -61,7 +61,7 @@ The system performs:
 ### Analysis Pipeline
 
 ```
-Text Input → spaCy NLP → LLaMA 3 (Groq) → Structured Output
+Text Input → spaCy NLP → LLM (Groq / OVHcloud profile) → Structured Output
                 ↓              ↓
          Entity/Actor      Ambiguity/
          Extraction        Inconsistency Detection
@@ -124,7 +124,7 @@ Complexity (0-100) → Weeks → Cost Index → Risk Level
 | FastAPI | 0.115.0 | Web framework with async support |
 | SQLAlchemy | 2.0.32 | ORM for database operations |
 | PostgreSQL | 17 | Production-grade relational database |
-| LLaMA 3 | 70B via Groq API | LLM for semantic analysis |
+| openai/gpt-oss-120b | via Groq API (default profile) | LLM for semantic analysis |
 | spaCy | 3.7+ | NLP preprocessing (en_core_web_sm) |
 | Passlib | 1.7.4 | Password hashing (bcrypt scheme) |
 | python-jose | 3.3+ | JWT token creation/verification |
@@ -229,10 +229,14 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 | `DATABASE_URL` | `postgresql://vispec:password@localhost:5432/vispec` | Database connection string (PostgreSQL) |
 | `SECRET_KEY` | *(required)* | JWT signing key (min 32 chars) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT token expiration time |
-| `GROQ_API_KEY` | *(required)* | Groq API key for LLaMA 3 access |
-| `GROQ_MODEL` | `llama3-70b-8192` | LLM model identifier |
-| `GROQ_TEMPERATURE` | `0.1` | LLM creativity (lower = more deterministic) |
-| `GROQ_MAX_RETRIES` | `3` | Max retry attempts for API calls |
+| `LLM_PROFILE` | `groq-gpt-oss-120b` | Named provider profile (see `LLM_PROFILES` in `backend/core/config.py`) |
+| `LLM_API_KEY` | *(required for Groq)* | API key for the LLM endpoint (never printed/committed; OVHcloud anonymous tier needs none) |
+| `LLM_BASE_URL` | *(profile default)* | Override the OpenAI-compatible endpoint base URL |
+| `LLM_MODEL` | *(profile default)* | Override the model id |
+| `LLM_TEMPERATURE` | `0.1` | LLM creativity (lower = more deterministic) |
+| `LLM_MAX_TOKENS` | `4096` | Max completion tokens (reasoning models need headroom) |
+| `LLM_MAX_RETRIES` | `3` | Max retry attempts for API calls |
+| `LLM_REASONING_EFFORT` | `low` | `reasoning_effort` for reasoning models (Groq accepts it; set empty if a provider rejects it) |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Failed attempts before lockout |
 | `LOCKOUT_DURATION_MINUTES` | `15` | Account lockout duration |
 | `MAX_FILE_SIZE_BYTES` | `10485760` | Max upload size (10MB) |
@@ -240,18 +244,51 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 | `MIN_CONFIDENCE_THRESHOLD` | `0.70` | Minimum confidence for validation |
 | `REPORT_WATERMARK` | `VisSpec` | Watermark text for PDF reports |
 
+### LLM Provider Profiles
+
+Two named profiles are defined in `backend/core/config.py` (`LLM_PROFILES`); select with `LLM_PROFILE`:
+
+| Profile | Endpoint host | Model id | Key |
+|---|---|---|---|
+| `groq-gpt-oss-120b` *(default)* | `api.groq.com` | `openai/gpt-oss-120b` | required (`LLM_API_KEY`) |
+| `ovh-llama33-70b` | `oai.endpoints.kepler.ai.cloud.ovh.net` | `Meta-Llama-3_3-70B-Instruct` | none (anonymous tier) |
+
+`openai/gpt-oss-120b` is a **reasoning model**: requests use `max_tokens=4096` and
+`reasoning_effort="low"` (verified accepted by the Groq API; if another provider
+rejects the parameter the code retries without it and logs a warning — set
+`LLM_REASONING_EFFORT=` empty to disable it explicitly). An empty answer, a
+cut-off answer (`finish_reason=length`), or a response whose model id differs
+from the configured id are all recorded as `llm_failed` — never as "no defects".
+
 ### Getting a Groq API Key
 
 1. Visit [console.groq.com](https://console.groq.com)
 2. Sign up for a free account
 3. Navigate to **API Keys** in the dashboard
 4. Click **Create API Key**
-5. Copy the generated key to `GROQ_API_KEY` in your `.env` file
+5. Copy the generated key to `LLM_API_KEY` in your `.env` file
 
 > ⚠️ **SECURITY WARNING:** The default `SECRET_KEY` in `config.py` is for **development only**.  
 > In any production-like environment, you **MUST** override it with a strong, random key in your `.env` file.
 
-> ℹ️ **Note:** If `GROQ_API_KEY` is not provided, the system automatically falls back to a **rule-based heuristic** for semantic analysis. The heuristic has lower accuracy but ensures the system remains functional without an internet connection or API key.
+> ℹ️ **Note:** If the active LLM profile is unavailable (e.g. no `LLM_API_KEY` for a key-required profile), the system automatically falls back to a **rule-based heuristic** for semantic analysis. The heuristic has lower accuracy but ensures the system remains functional without an internet connection or API key.
+
+### Privacy: which providers receive requirement text
+
+When an LLM profile is active, requirement text is transmitted to the configured provider. **Providers that may receive requirement text:**
+
+| Provider | Endpoint | When |
+|---|---|---|
+| **Groq** | `https://api.groq.com/openai/v1` | profile `groq-gpt-oss-120b` (default) |
+| **OVHcloud AI Endpoints** (anonymous tier) | `https://oai.endpoints.kepler.ai.cloud.ovh.net/v1` | profile `ovh-llama33-70b` |
+
+Before transmission, obvious PII (emails, phone numbers, IPs, URLs, ID-style
+tokens) is masked locally by `backend/services/ai/privacy.py` and restored only
+on the local machine after the response returns.
+
+> ⚠️ **Honesty note:** data-retention policies for Groq and OVHcloud are
+> **provider statements**, not properties verified by this project. We do not
+> audit or test them; only the local redaction above is enforced by our code.
 
 ---
 
@@ -436,7 +473,7 @@ VisSpec/
 │   ├── schemas/                      # Pydantic request/response schemas
 │   ├── services/                     # Business logic implementation
 │   │   ├── ai/                       # AI/ML services
-│   │   │   ├── semantic_analyzer.py  # LLaMA 3 + spaCy integration
+│   │   │   ├── semantic_analyzer.py  # LLM profile + spaCy integration
 │   │   │   ├── predictive_analyzer.py # Complexity/risk estimation
 │   │   │   └── prompts.py            # LLM prompt templates
 │   │   ├── validation/               # Validation pipeline
@@ -493,7 +530,7 @@ VisSpec/
 | Decision | Justification | Report Reference |
 |----------|---------------|------------------|
 | **Modular Monolith** | Avoids microservice complexity while maintaining clear service boundaries | Section 4.1, 5.2 |
-| **LLaMA 3 (70B)** | State-of-the-art open LLM for semantic validation via Groq's fast inference | Section 4.8.1 |
+| **openai/gpt-oss-120b** | Reasoning LLM for semantic validation via Groq's fast inference (LLaMA 3.3 70B via OVHcloud as secondary profile) | Section 4.8.1 |
 | **FastAPI** | Native async support for non-blocking LLM API calls, automatic OpenAPI docs | Section 5.4.2 |
 | **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | REQ_01 (Table 3.2) |
 | **0.70 Confidence Threshold** | Balances precision/recall for requirement validation (BR-10) | Section 2.3.3 |

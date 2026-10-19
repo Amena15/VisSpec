@@ -183,7 +183,11 @@ async def validate_document(
         triggered_by=current_user.user_id,
         status="running",
         total_requirements=len(requirements),
-        llm_model_used=settings.GROQ_MODEL,
+        llm_model_used=settings.llm_model_id,
+        # Privacy audit field (schema name retained for compatibility): value 1
+        # records that LOCAL PII masking (privacy.py / text_cleaner.py) was in
+        # effect before transmission — NOT a verified provider zero-retention
+        # guarantee, which is a Groq policy claim we do not enforce or test.
         zero_retention_confirmed=1,
         validation_date=now,
     )

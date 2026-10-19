@@ -429,8 +429,9 @@ async def upload_document(
         else:
             cleaned_reqs = raw_reqs  # Fallback if TextCleaner not available
         full_text = extracted_text
-        # Use LLM for enrichment when API key is present, otherwise rule-based
-        use_llm = bool(settings.GROQ_API_KEY)
+        # Use LLM for enrichment when the active profile is available (key set for
+        # key-required profiles; always for anonymous tiers), else rule-based
+        use_llm = settings.llm_available
         logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} auto-enrichment")
         enriched_reqs = requirement_organizer.organize_and_enrich(cleaned_reqs, full_text, use_llm=use_llm)
         
@@ -757,8 +758,9 @@ async def enrich_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_d
         else:
             cleaned_requirements = req_objects  # Fallback if TextCleaner not available
         full_text = doc.content or doc.extracted_text or ""
-        # Use LLM for enrichment when API key is present, otherwise rule-based
-        use_llm = bool(settings.GROQ_API_KEY)
+        # Use LLM for enrichment when the active profile is available (key set for
+        # key-required profiles; always for anonymous tiers), else rule-based
+        use_llm = settings.llm_available
         logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} enrichment")
         enriched_requirements = requirement_organizer.organize_and_enrich(
             requirements=cleaned_requirements,
@@ -876,8 +878,9 @@ async def fix_document_endpoint(doc_id: str, db: AsyncSession = Depends(get_db))
         
         cleaned_requirements = cleaner.clean_requirements_batch(req_objects) if cleaner else req_objects
         full_text = "\n\n".join(req["original_text"] for req in cleaned_requirements)
-        # Use LLM for enrichment when API key is present, otherwise rule-based
-        use_llm = bool(settings.GROQ_API_KEY)
+        # Use LLM for enrichment when the active profile is available (key set for
+        # key-required profiles; always for anonymous tiers), else rule-based
+        use_llm = settings.llm_available
         logger.info(f"Using {'LLM-based' if use_llm else 'rule-based'} fix enrichment")
         enriched_requirements = organizer.organize_and_enrich(
             requirements=cleaned_requirements,

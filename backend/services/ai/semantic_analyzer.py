@@ -23,8 +23,8 @@ class SemanticAnalyzer:
         Dual-path semantic analysis per FYP Report Section 4.8.1.
         
         Step 1: spaCy preprocessing (ALWAYS runs) - tokenization, entity extraction, modal detection
-        Step 2: Path selection based on GROQ_API_KEY availability
-          - Path A (Primary): LLaMA 3 (70B) via Groq API for deep semantic understanding
+        Step 2: Path selection based on active LLM profile availability
+          - Path A (Primary): configured LLM profile (Groq gpt-oss-120b default) for deep semantic understanding
           - Path B (Fallback): Rule-based heuristic when API unavailable
         Step 3: Confidence calculation with severity-weighted penalties
         Step 4: BR-10 threshold check (0.70) applied downstream
@@ -45,12 +45,12 @@ class SemanticAnalyzer:
         spacy_ambiguities = self._identify_ambiguities(text)
 
         # ──────────────────────────────────────────────────────────────
-        # Step 2: Path Selection (Based on GROQ_API_KEY)
+        # Step 2: Path Selection (Based on active LLM profile availability)
         # ──────────────────────────────────────────────────────────────
         from core.config import settings
 
-        if settings.GROQ_API_KEY:
-            # ── PATH A: PRIMARY (LLaMA 3 via Groq API) ────────────────
+        if settings.llm_available:
+            # ── PATH A: PRIMARY (configured LLM profile) ───────────────
             try:
                 llm_analysis = self._analyze_with_llama3(text)
                 
@@ -410,7 +410,7 @@ class SemanticAnalyzer:
         """
         from core.config import settings
 
-        if not settings.GROQ_API_KEY:
+        if not settings.llm_available:
             return {"entities": [], "ambiguities": [], "actors": [], "use_cases": [], "relationships": []}
 
         try:
@@ -449,18 +449,18 @@ class SemanticAnalyzer:
             user_prompt = f"Analyze: {text}"
 
             resp = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
+                f"{settings.llm_base_url}/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                    "Authorization": f"Bearer {settings.LLM_API_KEY}",
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": settings.GROQ_MODEL,
+                    "model": settings.llm_model_id,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    "temperature": settings.GROQ_TEMPERATURE,
+                    "temperature": settings.LLM_TEMPERATURE,
                 },
                 timeout=30,
             )

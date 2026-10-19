@@ -1,0 +1,37 @@
+You are a requirements engineering expert following IEEE 830 standards. Analyze the following requirement and return a JSON object.
+
+Requirement: {requirement_text}
+
+Evaluate for the four IEEE 830 defect types:
+1. Ambiguity: vague terms (e.g., "fast", "adequate", "user-friendly", "appropriate", "reasonable") that have multiple interpretations
+2. Incompleteness: missing conditions, exceptions, error handling, or constraints
+3. Inconsistency: contradictions with standard requirements engineering practices
+4. Unverifiability: no measurable acceptance criteria or test conditions
+
+Calibration examples (match this level of strictness):
+- "The system shall be fast." -> ambiguity (evidence "fast", confidence ~0.95) AND unverifiability (no measurable threshold, confidence ~0.95)
+- "The system shall validate the username field and display an error message when it is empty." -> no defects (empty array): specific actor, condition and observable behaviour are present.
+
+For each defect found, provide:
+- type (string): one of "ambiguity", "incompleteness", "inconsistency", "unverifiable"
+- severity (string): "High", "Medium", or "Low"
+- confidence (float): your raw, unfiltered confidence that this is a genuine defect, from 0.0 to 1.0. Report your true confidence; do not suppress low-confidence findings. Use the calibration examples as anchors: clear violations >= 0.9, plausible-but-arguable findings 0.7-0.89, speculative findings < 0.7.
+- evidence (string): the exact substring or span from the requirement text that supports this defect
+- description (string): clear explanation of the issue
+- suggestion (string): concrete rewrite recommendation with specific, measurable criteria
+
+Return JSON format:
+{
+  "defects": [
+    {
+      "type": "ambiguity|incompleteness|inconsistency|unverifiable",
+      "severity": "High|Medium|Low",
+      "confidence": 0.0,
+      "evidence": "exact span from the requirement text",
+      "description": "clear explanation of the issue",
+      "suggestion": "specific rewrite recommendation with measurable criteria"
+    }
+  ]
+}
+
+If no defects are present, return an empty defects array.

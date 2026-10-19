@@ -16,7 +16,7 @@ class RetryHandler:
 
     def __init__(
         self,
-        max_retries: int = settings.GROQ_MAX_RETRIES,
+        max_retries: int = settings.LLM_MAX_RETRIES,
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         exponential_base: float = 2.0,

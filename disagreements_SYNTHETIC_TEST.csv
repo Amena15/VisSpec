@@ -1,0 +1,3 @@
+id,text,rater1,rater2,rater3,gold,disagreement
+2,txt b,incomplete,ambiguity,incomplete,incomplete,True
+4,txt d,inconsistency,inconsistency,none,inconsistency,True

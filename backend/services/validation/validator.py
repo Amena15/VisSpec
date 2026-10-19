@@ -37,11 +37,26 @@ class Validator:
     # Categories that should use strong modal verbs
     STRONG_MODAL_CATEGORIES = {"functional", "constraint", "security"}
 
-    def __init__(self, use_llm: bool = True):
+    def __init__(self, use_llm: bool = True, mode: str = "llm_first"):
+        """
+        Args:
+            use_llm: enable the LLM-first path (False = rules only).
+            mode: hybrid combination strategy —
+                  "llm_first" = rules run ONLY when the LLM returns no
+                               usable defects (default; described in paper);
+                  "union"    = rule defects are always merged with LLM
+                               defects (deduplicated by type+confidence).
+                  Selected on the DEV set only (see experiments_dev.md /
+                  FREEZE.md); never re-chosen after the pre-test freeze.
+        """
+        if mode not in ("llm_first", "union"):
+            raise ValueError(f"Unknown hybrid mode: {mode!r} "
+                             "(expected 'llm_first' or 'union')")
         self.ambiguity_detector = AmbiguityDetector()
         self.consistency_checker = ConsistencyChecker()
         self.completeness_analyzer = CompletenessAnalyzer()
         self.use_llm = use_llm
+        self.mode = mode
         self.llm_validator = LLMValidator() if use_llm else None
         self.llm_service = llm_service if use_llm else None
 
@@ -56,36 +71,66 @@ class Validator:
         llm_result = None
 
         # 1. Try enhanced LLM validation first (if available)
+        llm_meta: Dict[str, Any] = {}
         if self.use_llm and self.llm_validator and self.llm_validator.is_available:
             try:
                 llm_result = self.llm_validator.validate_requirement(text)
-                llm_defects = llm_result.get("defects", [])
+                # Production pipeline uses the BR-10-filtered list (threshold is
+                # applied in llm_validator code, not the prompt). The raw list is
+                # kept on the result for evaluations that sweep the threshold.
+                llm_defects = llm_result.get("filtered_defects") or llm_result.get("defects", [])
                 all_defects.extend(llm_defects)
-                logger.info(f"Enhanced LLM validation found {len(llm_defects)} defects")
-                llm_result["llm_used"] = True
-                llm_result["zero_retention_confirmed"] = True
+                logger.info(f"Enhanced LLM validation found {len(llm_defects)} defects (BR-10 applied)")
+                # Trust the LLM validator's own llm_used flag. It is True only when the
+                # provider actually answered; it is False when the call failed or the
+                # model returned no usable response. Forcing it True here would mislabel
+                # a rule-based fallback as an LLM verdict (the exact issue flagged in
+                # review: headline numbers must reflect the path that produced them).
+                llm_result["llm_used"] = bool(llm_result.get("llm_used", False))
+                # Per-case provenance for the evaluation harness (step 2 of protocol):
+                llm_meta = {
+                    "llm_model_used": llm_result.get("model_used"),
+                    "llm_json_parse_ok": llm_result.get("json_parse_ok", False),
+                    "llm_error": llm_result.get("error"),
+                    "llm_raw_defects": llm_result.get("defects", []),
+                }
+                # Note: Zero-retention is a policy guarantee of the Groq API provider,
+                # not a locally enforced code feature. Local PII redaction is applied in
+                # privacy.py / text_cleaner.py before any text is sent to the provider.
             except Exception as e:
                 logger.warning(f"Enhanced LLM validation failed: {e}. Falling back to rule-based.")
                 llm_result = {"llm_used": False, "error": str(e)}
+                llm_meta = {"llm_model_used": None, "llm_json_parse_ok": False,
+                            "llm_error": str(e), "llm_raw_defects": []}
 
-        # 2. Fallback to rule-based validation (always runs as backup)
-        if not all_defects or not self.use_llm:
+        # 2. Rule-based validation. llm_first mode: runs only when the LLM
+        # produced nothing usable (the documented hybrid strategy). union
+        # mode: always runs and merges with the LLM verdicts.
+        rule_defects: List[Dict[str, Any]] = []
+        run_rules = (
+            not self.use_llm
+            or not all_defects
+            or self.mode == "union"
+        )
+        if run_rules:
             logger.info("Running rule-based validation")
             # Ambiguity detection (rule-based)
-            ambiguity_defects = self.ambiguity_detector.analyze(text)
-            all_defects.extend(ambiguity_defects)
-
+            rule_defects.extend(self.ambiguity_detector.analyze(text))
             # Completeness analysis
-            completeness_defects = self.completeness_analyzer.analyze(text)
-            all_defects.extend(completeness_defects)
-
+            rule_defects.extend(self.completeness_analyzer.analyze(text))
             # Consistency checking
-            consistency_defects = self.consistency_checker.check_single(text)
-            all_defects.extend(consistency_defects)
+            rule_defects.extend(self.consistency_checker.check_single(text))
+            all_defects.extend(rule_defects)
 
         processing_time_ms = int((time.time() - start_time) * 1000)
 
-        return self._build_result(all_defects, processing_time_ms, llm_result)
+        # Unfiltered view for threshold-sweep evaluations: raw LLM defects exactly
+        # as returned (pre BR-10) plus any rule defects that ran. This never feeds
+        # the application pipeline — it exists so the evaluation can report both
+        # no_threshold and br10_enforced settings from one run.
+        raw_defects = list(llm_meta.get("llm_raw_defects", [])) + rule_defects
+
+        return self._build_result(all_defects, processing_time_ms, llm_result, llm_meta, raw_defects)
 
     def validate_requirements_with_context(
         self,
@@ -258,6 +303,8 @@ class Validator:
         all_defects: List[Dict[str, Any]],
         processing_time_ms: int,
         llm_result: Optional[Dict[str, Any]],
+        llm_meta: Optional[Dict[str, Any]] = None,
+        raw_defects: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Build the final validation result dict."""
         total_defects = len(all_defects)
@@ -291,7 +338,16 @@ class Validator:
                 "low": low_severity,
             },
             "defects": all_defects,
-            "llm_used": self.use_llm and llm_result is not None,
+            # Report llm_used faithfully: True only when the LLM validator actually
+            # produced the result (llm_result["llm_used"] is True). A failed call leaves
+            # llm_result as a non-None dict with llm_used=False, so checking `is not None`
+            # alone would wrongly claim the LLM answered when rules supplied the defects.
+            "llm_used": bool(self.use_llm and llm_result and llm_result.get("llm_used", False)),
+            # Per-case LLM provenance for the evaluation harness. Empty dict for
+            # paths that never attempted an LLM call (rules-only / context path).
+            **(llm_meta or {}),
+            # Unfiltered defect view (pre BR-10) for threshold-sweep evaluations.
+            "raw_defects": raw_defects if raw_defects is not None else all_defects,
             "processing_time_ms": processing_time_ms,
         }
 

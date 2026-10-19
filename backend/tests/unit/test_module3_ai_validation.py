@@ -129,7 +129,7 @@ class TestModule3AIValidation:
 
     def test_llm_validator_unavailable_without_api_key(self, monkeypatch):
         """When API key is missing, LLM validator must fail safe without network calls."""
-        monkeypatch.setattr(settings, "GROQ_API_KEY", "")
+        monkeypatch.setattr(settings, "LLM_API_KEY", "")
         llm_validator = LLMValidator()
 
         assert llm_validator.is_available is False
