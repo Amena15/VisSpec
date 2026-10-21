@@ -1,5 +1,5 @@
 category,support,TP,FP,FN,precision,recall,recall_CI95,f1
-ambiguity,15,15,4,0,0.789,1.0,"[0.80, 1.00]",0.882
-incomplete,1,0,17,1,0.0,0.0,"[0.00, 0.79]",0.0
+ambiguity,15,15,5,0,0.75,1.0,"[0.80, 1.00]",0.857
+incomplete,1,0,10,1,0.0,0.0,"[0.00, 0.79]",0.0
 inconsistency,2,0,0,2,0.0,0.0,"[0.00, 0.66]",0.0
 unverifiable,1,0,0,1,0.0,0.0,"[0.00, 0.79]",0.0

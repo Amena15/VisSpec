@@ -34,7 +34,7 @@
 
 ## 📖 Overview
 
-**VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (openai/gpt-oss-120b via Groq by default; LLaMA 3.3 70B via OVHcloud as a second profile)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
+**VisSpec** (Visual Specification) is an AI-powered web application that validates software requirements documents (SRS, SDS, STS) using **Large Language Models (openai/gpt-oss-120b via Groq)** and automatically generates **UML behavioral diagrams** to visualize system behavior.
 
 The system performs:
 - 🔍 **Semantic Analysis** - Extracts entities, relationships, and detects ambiguities
@@ -61,7 +61,7 @@ The system performs:
 ### Analysis Pipeline
 
 ```
-Text Input → spaCy NLP → LLM (Groq / OVHcloud profile) → Structured Output
+Text Input → spaCy NLP → LLM (Groq) → Structured Output
                 ↓              ↓
          Entity/Actor      Ambiguity/
          Extraction        Inconsistency Detection
@@ -230,7 +230,7 @@ Create a `.env` file in the `backend/` directory (copy from `.env.example`):
 | `SECRET_KEY` | *(required)* | JWT signing key (min 32 chars) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT token expiration time |
 | `LLM_PROFILE` | `groq-gpt-oss-120b` | Named provider profile (see `LLM_PROFILES` in `backend/core/config.py`) |
-| `LLM_API_KEY` | *(required for Groq)* | API key for the LLM endpoint (never printed/committed; OVHcloud anonymous tier needs none) |
+| `LLM_API_KEY` | *(required for Groq)* | API key for the LLM endpoint (never printed/committed) |
 | `LLM_BASE_URL` | *(profile default)* | Override the OpenAI-compatible endpoint base URL |
 | `LLM_MODEL` | *(profile default)* | Override the model id |
 | `LLM_TEMPERATURE` | `0.1` | LLM creativity (lower = more deterministic) |
@@ -251,7 +251,6 @@ Two named profiles are defined in `backend/core/config.py` (`LLM_PROFILES`); sel
 | Profile | Endpoint host | Model id | Key |
 |---|---|---|---|
 | `groq-gpt-oss-120b` *(default)* | `api.groq.com` | `openai/gpt-oss-120b` | required (`LLM_API_KEY`) |
-| `ovh-llama33-70b` | `oai.endpoints.kepler.ai.cloud.ovh.net` | `Meta-Llama-3_3-70B-Instruct` | none (anonymous tier) |
 
 `openai/gpt-oss-120b` is a **reasoning model**: requests use `max_tokens=4096` and
 `reasoning_effort="low"` (verified accepted by the Groq API; if another provider
@@ -280,13 +279,12 @@ When an LLM profile is active, requirement text is transmitted to the configured
 | Provider | Endpoint | When |
 |---|---|---|
 | **Groq** | `https://api.groq.com/openai/v1` | profile `groq-gpt-oss-120b` (default) |
-| **OVHcloud AI Endpoints** (anonymous tier) | `https://oai.endpoints.kepler.ai.cloud.ovh.net/v1` | profile `ovh-llama33-70b` |
 
 Before transmission, obvious PII (emails, phone numbers, IPs, URLs, ID-style
 tokens) is masked locally by `backend/services/ai/privacy.py` and restored only
 on the local machine after the response returns.
 
-> ⚠️ **Honesty note:** data-retention policies for Groq and OVHcloud are
+> ⚠️ **Honesty note:** data-retention policies for Groq are
 > **provider statements**, not properties verified by this project. We do not
 > audit or test them; only the local redaction above is enforced by our code.
 
@@ -450,6 +448,34 @@ python -m pytest tests/unit/ -v
 python tests/integration/evaluate_analyzers.py
 ```
 
+### 🧪 Frozen Evaluation Driver (`scripts/run_frozen_eval.py`)
+Runs the pre-test-freeze evaluation (protocol step 5): RULES / LLM-only / HYBRID
+on the held-out test set for a single profile + run, with rate-limit pacing.
+
+**One LLM call per case.** A single `LLMValidator.validate_requirement(text)` call
+feeds both the LLM-only path and the HYBRID (`llm_first`) path, so the provider
+is hit once per case instead of twice. The HYBRID path uses LLM defects when the
+LLM returns usable defects, otherwise falls back to rules — exactly mirroring
+`Validator(use_llm=True, mode="llm_first")`. Verified on all 36 held-out cases
+against a recorded run: the single-call HYBRID output is identical to the old
+`Validator(use_llm=True)` output (0 mismatches).
+
+Usage (from repo root, backend venv, `GROQ_API_KEY` configured):
+```bash
+# Groq gpt-oss-120b (frozen default), pacing 2.5s between cases
+python scripts/run_frozen_eval.py --profile groq-gpt-oss-120b --run 1 \
+    --dataset backend/test_data/held_out_test_set.json --delay 2.5
+
+# Output: backend/evaluation_results_<profile>_run<N>.json
+```
+Each run writes `evaluation_results_<profile>_run<N>.json` with provenance
+(git commit/tag, date, model returned, temperature, prompt SHA-256, seed) and
+per-path detailed results. A run with any failed call exits `2` (INCOMPLETE);
+per-protocol it is not retried with different settings and is excluded from
+metrics.
+
+---
+
 ---
 
 ## 📁 Project Structure
@@ -530,7 +556,7 @@ VisSpec/
 | Decision | Justification | Report Reference |
 |----------|---------------|------------------|
 | **Modular Monolith** | Avoids microservice complexity while maintaining clear service boundaries | Section 4.1, 5.2 |
-| **openai/gpt-oss-120b** | Reasoning LLM for semantic validation via Groq's fast inference (LLaMA 3.3 70B via OVHcloud as secondary profile) | Section 4.8.1 |
+| **openai/gpt-oss-120b** | Reasoning LLM for semantic validation via Groq's fast inference | Section 4.8.1 |
 | **FastAPI** | Native async support for non-blocking LLM API calls, automatic OpenAPI docs | Section 5.4.2 |
 | **bcrypt Hashing** | Industry-standard adaptive hash with configurable work factor | REQ_01 (Table 3.2) |
 | **0.70 Confidence Threshold** | Balances precision/recall for requirement validation (BR-10) | Section 2.3.3 |

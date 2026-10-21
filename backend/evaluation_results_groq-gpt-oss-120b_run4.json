@@ -1,0 +1,4263 @@
+{
+ "status": "COMPLETE",
+ "status_note": "All required LLM calls answered.",
+ "provenance": {
+  "git_commit": "836f44307263d2c99ac1973028214365af7498c0",
+  "git_tag": "pre-test-freeze",
+  "timestamp_utc": "2026-10-21T13:11:08+00:00",
+  "profile": "groq-gpt-oss-120b",
+  "model_configured": "openai/gpt-oss-120b",
+  "model_returned_unique": [
+   "openai/gpt-oss-120b"
+  ],
+  "endpoint_host": "api.groq.com",
+  "temperature": 0.1,
+  "max_tokens": 4096,
+  "reasoning_effort": "low",
+  "prompt_file": "backend/services/ai/prompts_v3.txt",
+  "prompt_sha256": "071c2fcc9f5d1b8f53d98a509e475af3b4ac148e8dcd1d73f8a32a10f2ba1a47",
+  "hybrid_mode": "llm_first",
+  "split_seed": 42,
+  "dataset": "backend/test_data/held_out_test_set.json",
+  "dataset_size": 36,
+  "inter_case_delay_s": 25.0,
+  "run": 4,
+  "llm_answered": {
+   "llm": 36,
+   "hybrid": 36
+  },
+  "failure_classification": {
+   "http_429": 0,
+   "other": 0
+  },
+  "auth_aborted": false,
+  "cases_attempted": 36
+ },
+ "detailed_results_by_path": {
+  "rules": [
+   {
+    "id": "TC-002",
+    "text": "The system must respond within 200 milliseconds.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.4
+   },
+   {
+    "id": "TC-005",
+    "text": "The system shall lock user accounts after 5 failed login attempts with...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-007",
+    "text": "Passwords must be hashed using Argon2.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.4
+   },
+   {
+    "id": "TC-008",
+    "text": "The system should maybe implement captcha.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.8
+   },
+   {
+    "id": "TC-009",
+    "text": "Security features must be adequate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'Security' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'adequate' makes the requirement unverifiable."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.75,
+      "evidence": null,
+      "description": "Requirement is very short and may lack sufficient detail."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 3.5
+   },
+   {
+    "id": "TC-016",
+    "text": "The braking system shall engage within 50 milliseconds when the obstac...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.6
+   },
+   {
+    "id": "TC-018",
+    "text": "The REST API must support GET and POST methods. Endpoints shall return...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.8
+   },
+   {
+    "id": "TC-020",
+    "text": "Error messages must be descriptive enough.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'enough' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.3
+   },
+   {
+    "id": "TC-021",
+    "text": "The system shall provide adequate security for user data.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 2
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'adequate' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'security' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 4.0
+   },
+   {
+    "id": "TC-022",
+    "text": "The system must encrypt all passwords using bcrypt with a cost factor ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.9
+   },
+   {
+    "id": "TC-023",
+    "text": "The application should be user-friendly and easy to navigate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 3
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'user-friendly' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'easy' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 3.9
+   },
+   {
+    "id": "TC-025",
+    "text": "The system shall handle a large number of concurrent users efficiently...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.55,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.55,
+      "evidence": null,
+      "description": "Subjective term 'large' is open to interpretation."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.8
+   },
+   {
+    "id": "TC-028",
+    "text": "The system must recover from database failures within 30 seconds using...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.6
+   },
+   {
+    "id": "TC-032",
+    "text": "The system shall process international wire transfers within 5 seconds...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-034",
+    "text": "The dashboard must display real-time metrics updated every 10 seconds ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-037",
+    "text": "The search feature should be fast and accurate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 2
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'fast' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.5
+   },
+   {
+    "id": "TC-040",
+    "text": "The system must display a user-friendly error page with a support cont...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 2
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'user-friendly' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.55,
+      "evidence": null,
+      "description": "Subjective term 'all' is open to interpretation."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.1
+   },
+   {
+    "id": "TC-045",
+    "text": "The reporting module should generate comprehensive reports for managem...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 1.8
+   },
+   {
+    "id": "TC-046",
+    "text": "The reporting module must generate daily sales reports in PDF format i...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 5.1
+   },
+   {
+    "id": "TC-049",
+    "text": "The application must include proper input validation to prevent inject...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'proper' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.8
+   },
+   {
+    "id": "TC-052",
+    "text": "The system shall send email notifications to users within 5 seconds of...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.8
+   },
+   {
+    "id": "TC-055",
+    "text": "The system should allow users to cancel their orders, but once cancele...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.9,
+    "defect_type_counts": {
+     "inconsistency": 1,
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "inconsistency",
+      "confidence": 0.9,
+      "evidence": null,
+      "description": "Requirement contains contradictory statements."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 2.7
+   },
+   {
+    "id": "TC-057",
+    "text": "The authentication mechanism must be secure.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'secure' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.4
+   },
+   {
+    "id": "TC-067",
+    "text": "The system shall store user preferences, but should also respect GDPR ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-068",
+    "text": "The system shall store user preferences and provide a data export API ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.8
+   },
+   {
+    "id": "TC-069",
+    "text": "The payment gateway integration should be reliable.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.1
+   },
+   {
+    "id": "TC-071",
+    "text": "The system must enforce strong password policies, but not make it too ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.6,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.6,
+      "evidence": null,
+      "description": "Pronoun 'it' may lack a clear antecedent."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.7
+   },
+   {
+    "id": "TC-075",
+    "text": "The system shall generate invoices for customers when needed.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 3.1
+   },
+   {
+    "id": "TC-076",
+    "text": "The system must generate invoices within 2 seconds of order confirmati...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 1.4
+   },
+   {
+    "id": "TC-081",
+    "text": "The search functionality should be efficient for large datasets.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 3
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'should' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'efficient' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.55,
+      "evidence": null,
+      "description": "Subjective term 'large' is open to interpretation."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 1.9
+   },
+   {
+    "id": "TC-084",
+    "text": "The system must be deployable via Docker Compose with documented envir...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.4
+   },
+   {
+    "id": "TC-091",
+    "text": "The system shall support multiple languages for the interface.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.7
+   },
+   {
+    "id": "TC-092",
+    "text": "The system must support English, Malay, and Chinese with dynamic langu...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-096",
+    "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.5
+   },
+   {
+    "id": "TC-101",
+    "text": "The system shall handle all user inputs.",
+    "expert": "DEFECT",
+    "expert_defect_type": "incomplete",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.55,
+    "defect_type_counts": {
+     "ambiguity": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.55,
+      "evidence": null,
+      "description": "Subjective term 'all' is open to interpretation."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 1.8
+   },
+   {
+    "id": "TC-104",
+    "text": "The software must be secure for all users.",
+    "expert": "DEFECT",
+    "expert_defect_type": "unverifiable",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "ambiguity": 2
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.85,
+      "evidence": null,
+      "description": "Vague term 'secure' makes the requirement unverifiable."
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.55,
+      "evidence": null,
+      "description": "Subjective term 'all' is open to interpretation."
+     }
+    ],
+    "llm_used": false,
+    "llm_failed": false,
+    "model_returned": null,
+    "json_parse_ok": null,
+    "error": null,
+    "elapsed_ms": 0.4
+   }
+  ],
+  "llm": [
+   {
+    "id": "TC-002",
+    "text": "The system must respond within 200 milliseconds.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 684.5
+   },
+   {
+    "id": "TC-005",
+    "text": "The system shall lock user accounts after 5 failed login attempts with...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 723.0
+   },
+   {
+    "id": "TC-007",
+    "text": "Passwords must be hashed using Argon2.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 616.9
+   },
+   {
+    "id": "TC-008",
+    "text": "The system should maybe implement captcha.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "maybe",
+      "description": "The term \"maybe\" is vague and leaves the requirement open to multiple interpretations about whether the captcha must be "
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "implement captcha",
+      "description": "The requirement does not specify the conditions that trigger the CAPTCHA, the type of CAPTCHA to be used, or any fallbac"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "should maybe implement captcha",
+      "description": "There is no measurable acceptance criterion or test condition to verify whether the CAPTCHA implementation meets the req"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1527.3
+   },
+   {
+    "id": "TC-009",
+    "text": "Security features must be adequate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "adequate",
+      "description": "The term \"adequate\" is vague and can be interpreted differently by stakeholders (e.g., level of encryption, authenticati"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be adequate",
+      "description": "The requirement does not provide any measurable acceptance criteria or test conditions, making it impossible to verify w"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "Security features must be adequate.",
+      "description": "The requirement lacks context about which security features are required, applicable domains, and any constraints (e.g.,"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1511.7
+   },
+   {
+    "id": "TC-016",
+    "text": "The braking system shall engage within 50 milliseconds when the obstac...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 795.7
+   },
+   {
+    "id": "TC-018",
+    "text": "The REST API must support GET and POST methods. Endpoints shall return...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "Endpoints shall return JSON responses.",
+      "description": "The requirement does not specify how the API should handle error conditions, status codes, or non\u2011JSON responses, leavin"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1031.9
+   },
+   {
+    "id": "TC-020",
+    "text": "Error messages must be descriptive enough.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "descriptive enough",
+      "description": "The phrase \"descriptive enough\" is vague and can be interpreted in many ways (e.g., length, level of detail, technicalit"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "descriptive enough",
+      "description": "Because \"descriptive enough\" lacks concrete criteria, there is no way to objectively test whether an error message meets"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1240.5
+   },
+   {
+    "id": "TC-021",
+    "text": "The system shall provide adequate security for user data.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "adequate security",
+      "description": "The term \"adequate security\" is vague and can be interpreted in many ways (e.g., encryption strength, access controls, a"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "provide adequate security for user data",
+      "description": "The requirement does not specify measurable acceptance criteria or test conditions, making it impossible to verify wheth"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "provide adequate security for user data",
+      "description": "The requirement lacks details about which security controls are required, the threat model, and how security failures sh"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1889.8
+   },
+   {
+    "id": "TC-022",
+    "text": "The system must encrypt all passwords using bcrypt with a cost factor ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 788.6
+   },
+   {
+    "id": "TC-023",
+    "text": "The application should be user-friendly and easy to navigate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "user-friendly",
+      "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., learning curve, number of clicks, error rat"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "easy to navigate",
+      "description": "The phrase \"easy to navigate\" is subjective and lacks a clear definition, leading to multiple interpretations."
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.95,
+      "evidence": "user-friendly and easy to navigate",
+      "description": "The requirement provides no measurable acceptance criteria or test conditions, making verification impossible."
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1606.8
+   },
+   {
+    "id": "TC-025",
+    "text": "The system shall handle a large number of concurrent users efficiently...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "\"large number of concurrent users\"",
+      "description": "The phrase \"large number\" is vague and can be interpreted differently by stakeholders; it does not specify an exact user"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "\"efficiently\"",
+      "description": "The term \"efficiently\" is subjective and lacks a concrete performance metric, leading to multiple possible interpretatio"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.93,
+      "evidence": "\"handle a large number of concurrent users efficiently\"",
+      "description": "Without quantitative thresholds for \"large number\" and \"efficiently,\" there is no objective way to verify compliance thr"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "\"handle a large number of concurrent users efficiently\"",
+      "description": "The requirement does not state how the system should behave under overload, error conditions, or resource exhaustion, no"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1708.3
+   },
+   {
+    "id": "TC-028",
+    "text": "The system must recover from database failures within 30 seconds using...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "recover from database failures",
+      "description": "The requirement does not define what specific failure conditions trigger the recovery process (e.g., connection loss, tr"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1839.7
+   },
+   {
+    "id": "TC-032",
+    "text": "The system shall process international wire transfers within 5 seconds...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.86,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.86,
+      "evidence": "within 5 seconds of submission",
+      "description": "The requirement specifies a performance target but does not define the conditions under which the 5\u2011second limit must be"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1122.0
+   },
+   {
+    "id": "TC-034",
+    "text": "The dashboard must display real-time metrics updated every 10 seconds ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.93,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.93,
+      "evidence": "using WebSocket connections",
+      "description": "The requirement does not specify how the system should behave if the WebSocket connection fails, is delayed, or cannot b"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1139.5
+   },
+   {
+    "id": "TC-037",
+    "text": "The search feature should be fast and accurate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "fast",
+      "description": "The term \"fast\" is vague and can be interpreted differently by stakeholders (e.g., response time of 1\u202fs vs. 200\u202fms). Wit"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "accurate",
+      "description": "The term \"accurate\" is not defined; accuracy could refer to relevance ranking, precision/recall percentages, or error ra"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.95,
+      "evidence": "The search feature should be fast and accurate.",
+      "description": "The requirement lacks measurable acceptance criteria or test conditions for both speed and accuracy, making it impossibl"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1662.6
+   },
+   {
+    "id": "TC-040",
+    "text": "The system must display a user-friendly error page with a support cont...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "user-friendly",
+      "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., layout, wording, accessibility). IEEE 830 r"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "user-friendly error page",
+      "description": "The requirement does not define measurable acceptance criteria for the error page, making it impossible to verify throug"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1488.4
+   },
+   {
+    "id": "TC-045",
+    "text": "The reporting module should generate comprehensive reports for managem...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "comprehensive reports",
+      "description": "The term \"comprehensive\" is vague; it can be interpreted differently regarding content depth, scope, and level of detail"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.91,
+      "evidence": "management",
+      "description": "The word \"management\" does not define which managerial roles or levels the reports are intended for, leading to multiple"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "generate comprehensive reports for management",
+      "description": "The requirement lacks measurable acceptance criteria such as format, delivery schedule, performance metrics, or validati"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "The reporting module should generate comprehensive reports for management.",
+      "description": "The requirement does not specify error handling, data sources, or constraints such as security, access control, or frequ"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1773.5
+   },
+   {
+    "id": "TC-046",
+    "text": "The reporting module must generate daily sales reports in PDF format i...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 634.0
+   },
+   {
+    "id": "TC-049",
+    "text": "The application must include proper input validation to prevent inject...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "proper input validation",
+      "description": "The term \"proper\" is vague and can be interpreted in many ways, leaving uncertainty about the level or method of validat"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "prevent injection attacks",
+      "description": "The requirement does not define measurable acceptance criteria or test conditions for what constitutes successful preven"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "input validation to prevent injection attacks",
+      "description": "The requirement lacks details on which inputs, which types of injection attacks, and how errors should be handled or rep"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1546.1
+   },
+   {
+    "id": "TC-052",
+    "text": "The system shall send email notifications to users within 5 seconds of...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.88,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "send email notifications to users within 5 seconds of account creation, including a verification link",
+      "description": "The requirement does not specify how the system should behave if the email cannot be sent within the 5\u2011second window (e."
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 901.6
+   },
+   {
+    "id": "TC-055",
+    "text": "The system should allow users to cancel their orders, but once cancele...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "once canceled, orders cannot be restored",
+      "description": "The requirement does not specify the conditions under which cancellation is allowed (e.g., order status, time limits) no"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1405.3
+   },
+   {
+    "id": "TC-057",
+    "text": "The authentication mechanism must be secure.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "secure",
+      "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., encryption strength, resistance to attacks, compli"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be secure",
+      "description": "No measurable acceptance criteria or test conditions are provided, making it impossible to verify compliance."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The authentication mechanism must be secure.",
+      "description": "The requirement does not specify error handling, failure responses, or conditions under which security must be maintaine"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1335.5
+   },
+   {
+    "id": "TC-067",
+    "text": "The system shall store user preferences, but should also respect GDPR ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "store user preferences",
+      "description": "The phrase \"store user preferences\" does not define what data constitutes a \"preference\", the format, location, or durat"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.92,
+      "evidence": "respect GDPR regulations",
+      "description": "\"Respect GDPR regulations\" is vague because GDPR contains many distinct obligations (data minimisation, consent, right t"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "respect GDPR regulations",
+      "description": "There is no measurable acceptance criterion or test condition to verify that the system \"respects GDPR regulations\"."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.81,
+      "evidence": "The system shall store user preferences",
+      "description": "The requirement omits error handling, such as what happens if storage fails, and does not define constraints like perfor"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1589.2
+   },
+   {
+    "id": "TC-068",
+    "text": "The system shall store user preferences and provide a data export API ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "provide a data export API that returns all stored data in JSON format within 30 seconds",
+      "description": "The requirement does not specify how the API should behave under error conditions (e.g., when the export cannot be compl"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1263.5
+   },
+   {
+    "id": "TC-069",
+    "text": "The payment gateway integration should be reliable.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "reliable",
+      "description": "The term \"reliable\" is vague and can be interpreted in many ways (e.g., uptime percentage, error rate, transaction succe"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "should be reliable",
+      "description": "Without quantitative thresholds, the requirement cannot be objectively tested or verified."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The payment gateway integration should be reliable.",
+      "description": "The requirement does not define error handling, recovery procedures, or constraints such as maximum allowed downtime, re"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1345.8
+   },
+   {
+    "id": "TC-071",
+    "text": "The system must enforce strong password policies, but not make it too ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 2,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "strong password policies",
+      "description": "The phrase \"strong password policies\" is vague; it can be interpreted in many ways (e.g., length, character classes, exp"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "not make it too hard for users",
+      "description": "The expression \"not make it too hard for users\" is subjective and lacks a measurable definition, leading to multiple pos"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.93,
+      "evidence": "strong password policies",
+      "description": "Without quantitative criteria, the requirement cannot be objectively tested; there is no acceptance test or metric to ve"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "not make it too hard for users",
+      "description": "The notion of \"too hard\" lacks a testable threshold, making verification impossible."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "The system must enforce strong password policies, but not make it too hard for users.",
+      "description": "The requirement omits details such as error handling for invalid passwords, password change procedures, lockout policies"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1884.7
+   },
+   {
+    "id": "TC-075",
+    "text": "The system shall generate invoices for customers when needed.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "when needed",
+      "description": "The phrase \"when needed\" is vague and can be interpreted in many ways (e.g., after order placement, on a schedule, on re"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "generate invoices for customers when needed",
+      "description": "The requirement does not define measurable acceptance criteria (e.g., timing, format, content, or success indicators) th"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1202.7
+   },
+   {
+    "id": "TC-076",
+    "text": "The system must generate invoices within 2 seconds of order confirmati...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "generate invoices within 2 seconds of order confirmation and email them as PDF attachments",
+      "description": "The requirement does not specify how the system should behave if the invoice cannot be generated or emailed within the 2"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1431.6
+   },
+   {
+    "id": "TC-081",
+    "text": "The search functionality should be efficient for large datasets.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "efficient",
+      "description": "The term \"efficient\" is vague and can be interpreted differently (e.g., response time, resource usage, throughput). With"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "efficient for large datasets",
+      "description": "No measurable acceptance criteria are provided, making it impossible to verify whether the requirement is met."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "large datasets",
+      "description": "The requirement does not define what constitutes a \"large dataset\" nor the environment in which the performance must be "
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1359.4
+   },
+   {
+    "id": "TC-084",
+    "text": "The system must be deployable via Docker Compose with documented envir...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "with documented environment variables and health check endpoints",
+      "description": "The requirement does not specify where the documentation for environment variables must be provided, the format of that "
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.78,
+      "evidence": "must be deployable via Docker Compose with documented environment variables and health check endpoints",
+      "description": "The requirement lacks measurable acceptance criteria for what constitutes successful deployment and health\u2011check functio"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1387.7
+   },
+   {
+    "id": "TC-091",
+    "text": "The system shall support multiple languages for the interface.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.88,
+      "evidence": "multiple languages",
+      "description": "The phrase \"multiple languages\" is vague because it does not specify how many languages, which languages, or any limits,"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.81,
+      "evidence": "support multiple languages for the interface",
+      "description": "The requirement does not describe how language selection is performed, how missing translations are handled, or any cons"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "support multiple languages for the interface",
+      "description": "There is no measurable acceptance criterion (e.g., coverage percentage, UI element translation completeness) to verify t"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1346.8
+   },
+   {
+    "id": "TC-092",
+    "text": "The system must support English, Malay, and Chinese with dynamic langu...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "dynamic language switching without page reload",
+      "description": "The requirement states that language switching must be \"dynamic\" and occur \"without page reload\", but it does not define"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The system must support English, Malay, and Chinese",
+      "description": "The requirement lists the supported languages but does not address how the system should handle unsupported language sel"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1539.8
+   },
+   {
+    "id": "TC-096",
+    "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "integrate with Stripe, Twilio, and SendGrid",
+      "description": "The term \"integrate\" is vague; it does not specify what functionality, data exchange, or API operations are required, le"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.91,
+      "evidence": "with retry policies and circuit breakers for each",
+      "description": "The requirement mentions retry policies and circuit breakers but provides no details on retry count, back\u2011off strategy, "
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "with retry policies and circuit breakers for each",
+      "description": "Without quantitative criteria, it is impossible to verify whether the retry and circuit\u2011breaker mechanisms meet the requ"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1994.9
+   },
+   {
+    "id": "TC-101",
+    "text": "The system shall handle all user inputs.",
+    "expert": "DEFECT",
+    "expert_defect_type": "incomplete",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "handle all user inputs",
+      "description": "The term \"handle\" is vague; it can mean validate, sanitize, store, ignore, or process in any manner, leading to multiple"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "handle all user inputs",
+      "description": "The requirement does not specify how invalid inputs are to be treated, what error messages should be shown, or any const"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "handle all user inputs",
+      "description": "There is no measurable acceptance criterion (e.g., response time, validation success rate) to verify that the system han"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1514.6
+   },
+   {
+    "id": "TC-104",
+    "text": "The software must be secure for all users.",
+    "expert": "DEFECT",
+    "expert_defect_type": "unverifiable",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "secure",
+      "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., confidentiality, integrity, authentication, author"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be secure for all users",
+      "description": "The requirement provides no measurable acceptance criteria or test conditions to verify that the software is \"secure\"; t"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1278.8
+   }
+  ],
+  "hybrid": [
+   {
+    "id": "TC-002",
+    "text": "The system must respond within 200 milliseconds.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 684.5
+   },
+   {
+    "id": "TC-005",
+    "text": "The system shall lock user accounts after 5 failed login attempts with...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 723.0
+   },
+   {
+    "id": "TC-007",
+    "text": "Passwords must be hashed using Argon2.",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 616.9
+   },
+   {
+    "id": "TC-008",
+    "text": "The system should maybe implement captcha.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "maybe",
+      "description": "The term \"maybe\" is vague and leaves the requirement open to multiple interpretations about whether the captcha must be "
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "implement captcha",
+      "description": "The requirement does not specify the conditions that trigger the CAPTCHA, the type of CAPTCHA to be used, or any fallbac"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "should maybe implement captcha",
+      "description": "There is no measurable acceptance criterion or test condition to verify whether the CAPTCHA implementation meets the req"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1527.3
+   },
+   {
+    "id": "TC-009",
+    "text": "Security features must be adequate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "adequate",
+      "description": "The term \"adequate\" is vague and can be interpreted differently by stakeholders (e.g., level of encryption, authenticati"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be adequate",
+      "description": "The requirement does not provide any measurable acceptance criteria or test conditions, making it impossible to verify w"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "Security features must be adequate.",
+      "description": "The requirement lacks context about which security features are required, applicable domains, and any constraints (e.g.,"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1511.7
+   },
+   {
+    "id": "TC-016",
+    "text": "The braking system shall engage within 50 milliseconds when the obstac...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 795.7
+   },
+   {
+    "id": "TC-018",
+    "text": "The REST API must support GET and POST methods. Endpoints shall return...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "Endpoints shall return JSON responses.",
+      "description": "The requirement does not specify how the API should handle error conditions, status codes, or non\u2011JSON responses, leavin"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1031.9
+   },
+   {
+    "id": "TC-020",
+    "text": "Error messages must be descriptive enough.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "descriptive enough",
+      "description": "The phrase \"descriptive enough\" is vague and can be interpreted in many ways (e.g., length, level of detail, technicalit"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "descriptive enough",
+      "description": "Because \"descriptive enough\" lacks concrete criteria, there is no way to objectively test whether an error message meets"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1240.5
+   },
+   {
+    "id": "TC-021",
+    "text": "The system shall provide adequate security for user data.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "adequate security",
+      "description": "The term \"adequate security\" is vague and can be interpreted in many ways (e.g., encryption strength, access controls, a"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "provide adequate security for user data",
+      "description": "The requirement does not specify measurable acceptance criteria or test conditions, making it impossible to verify wheth"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "provide adequate security for user data",
+      "description": "The requirement lacks details about which security controls are required, the threat model, and how security failures sh"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1889.8
+   },
+   {
+    "id": "TC-022",
+    "text": "The system must encrypt all passwords using bcrypt with a cost factor ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 788.6
+   },
+   {
+    "id": "TC-023",
+    "text": "The application should be user-friendly and easy to navigate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "user-friendly",
+      "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., learning curve, number of clicks, error rat"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "easy to navigate",
+      "description": "The phrase \"easy to navigate\" is subjective and lacks a clear definition, leading to multiple interpretations."
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.95,
+      "evidence": "user-friendly and easy to navigate",
+      "description": "The requirement provides no measurable acceptance criteria or test conditions, making verification impossible."
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1606.8
+   },
+   {
+    "id": "TC-025",
+    "text": "The system shall handle a large number of concurrent users efficiently...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "\"large number of concurrent users\"",
+      "description": "The phrase \"large number\" is vague and can be interpreted differently by stakeholders; it does not specify an exact user"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "\"efficiently\"",
+      "description": "The term \"efficiently\" is subjective and lacks a concrete performance metric, leading to multiple possible interpretatio"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.93,
+      "evidence": "\"handle a large number of concurrent users efficiently\"",
+      "description": "Without quantitative thresholds for \"large number\" and \"efficiently,\" there is no objective way to verify compliance thr"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "\"handle a large number of concurrent users efficiently\"",
+      "description": "The requirement does not state how the system should behave under overload, error conditions, or resource exhaustion, no"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1708.3
+   },
+   {
+    "id": "TC-028",
+    "text": "The system must recover from database failures within 30 seconds using...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "recover from database failures",
+      "description": "The requirement does not define what specific failure conditions trigger the recovery process (e.g., connection loss, tr"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1839.7
+   },
+   {
+    "id": "TC-032",
+    "text": "The system shall process international wire transfers within 5 seconds...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.86,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.86,
+      "evidence": "within 5 seconds of submission",
+      "description": "The requirement specifies a performance target but does not define the conditions under which the 5\u2011second limit must be"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1122.0
+   },
+   {
+    "id": "TC-034",
+    "text": "The dashboard must display real-time metrics updated every 10 seconds ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.93,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.93,
+      "evidence": "using WebSocket connections",
+      "description": "The requirement does not specify how the system should behave if the WebSocket connection fails, is delayed, or cannot b"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1139.5
+   },
+   {
+    "id": "TC-037",
+    "text": "The search feature should be fast and accurate.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "fast",
+      "description": "The term \"fast\" is vague and can be interpreted differently by stakeholders (e.g., response time of 1\u202fs vs. 200\u202fms). Wit"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "accurate",
+      "description": "The term \"accurate\" is not defined; accuracy could refer to relevance ranking, precision/recall percentages, or error ra"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.95,
+      "evidence": "The search feature should be fast and accurate.",
+      "description": "The requirement lacks measurable acceptance criteria or test conditions for both speed and accuracy, making it impossibl"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1662.6
+   },
+   {
+    "id": "TC-040",
+    "text": "The system must display a user-friendly error page with a support cont...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "user-friendly",
+      "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., layout, wording, accessibility). IEEE 830 r"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "user-friendly error page",
+      "description": "The requirement does not define measurable acceptance criteria for the error page, making it impossible to verify throug"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1488.4
+   },
+   {
+    "id": "TC-045",
+    "text": "The reporting module should generate comprehensive reports for managem...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "comprehensive reports",
+      "description": "The term \"comprehensive\" is vague; it can be interpreted differently regarding content depth, scope, and level of detail"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.91,
+      "evidence": "management",
+      "description": "The word \"management\" does not define which managerial roles or levels the reports are intended for, leading to multiple"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "generate comprehensive reports for management",
+      "description": "The requirement lacks measurable acceptance criteria such as format, delivery schedule, performance metrics, or validati"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "The reporting module should generate comprehensive reports for management.",
+      "description": "The requirement does not specify error handling, data sources, or constraints such as security, access control, or frequ"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1773.5
+   },
+   {
+    "id": "TC-046",
+    "text": "The reporting module must generate daily sales reports in PDF format i...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "NO_DEFECT",
+    "confidence": 0.0,
+    "defect_type_counts": {},
+    "defects_raw": [],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 634.0
+   },
+   {
+    "id": "TC-049",
+    "text": "The application must include proper input validation to prevent inject...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "proper input validation",
+      "description": "The term \"proper\" is vague and can be interpreted in many ways, leaving uncertainty about the level or method of validat"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "prevent injection attacks",
+      "description": "The requirement does not define measurable acceptance criteria or test conditions for what constitutes successful preven"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "input validation to prevent injection attacks",
+      "description": "The requirement lacks details on which inputs, which types of injection attacks, and how errors should be handled or rep"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1546.1
+   },
+   {
+    "id": "TC-052",
+    "text": "The system shall send email notifications to users within 5 seconds of...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.88,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.88,
+      "evidence": "send email notifications to users within 5 seconds of account creation, including a verification link",
+      "description": "The requirement does not specify how the system should behave if the email cannot be sent within the 5\u2011second window (e."
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 901.6
+   },
+   {
+    "id": "TC-055",
+    "text": "The system should allow users to cancel their orders, but once cancele...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "once canceled, orders cannot be restored",
+      "description": "The requirement does not specify the conditions under which cancellation is allowed (e.g., order status, time limits) no"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1405.3
+   },
+   {
+    "id": "TC-057",
+    "text": "The authentication mechanism must be secure.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "secure",
+      "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., encryption strength, resistance to attacks, compli"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be secure",
+      "description": "No measurable acceptance criteria or test conditions are provided, making it impossible to verify compliance."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The authentication mechanism must be secure.",
+      "description": "The requirement does not specify error handling, failure responses, or conditions under which security must be maintaine"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1335.5
+   },
+   {
+    "id": "TC-067",
+    "text": "The system shall store user preferences, but should also respect GDPR ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "store user preferences",
+      "description": "The phrase \"store user preferences\" does not define what data constitutes a \"preference\", the format, location, or durat"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.92,
+      "evidence": "respect GDPR regulations",
+      "description": "\"Respect GDPR regulations\" is vague because GDPR contains many distinct obligations (data minimisation, consent, right t"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "respect GDPR regulations",
+      "description": "There is no measurable acceptance criterion or test condition to verify that the system \"respects GDPR regulations\"."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.81,
+      "evidence": "The system shall store user preferences",
+      "description": "The requirement omits error handling, such as what happens if storage fails, and does not define constraints like perfor"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1589.2
+   },
+   {
+    "id": "TC-068",
+    "text": "The system shall store user preferences and provide a data export API ...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "provide a data export API that returns all stored data in JSON format within 30 seconds",
+      "description": "The requirement does not specify how the API should behave under error conditions (e.g., when the export cannot be compl"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1263.5
+   },
+   {
+    "id": "TC-069",
+    "text": "The payment gateway integration should be reliable.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "reliable",
+      "description": "The term \"reliable\" is vague and can be interpreted in many ways (e.g., uptime percentage, error rate, transaction succe"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "should be reliable",
+      "description": "Without quantitative thresholds, the requirement cannot be objectively tested or verified."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The payment gateway integration should be reliable.",
+      "description": "The requirement does not define error handling, recovery procedures, or constraints such as maximum allowed downtime, re"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1345.8
+   },
+   {
+    "id": "TC-071",
+    "text": "The system must enforce strong password policies, but not make it too ...",
+    "expert": "DEFECT",
+    "expert_defect_type": "inconsistency",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 2,
+     "unverifiable": 2,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "strong password policies",
+      "description": "The phrase \"strong password policies\" is vague; it can be interpreted in many ways (e.g., length, character classes, exp"
+     },
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "not make it too hard for users",
+      "description": "The expression \"not make it too hard for users\" is subjective and lacks a measurable definition, leading to multiple pos"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.93,
+      "evidence": "strong password policies",
+      "description": "Without quantitative criteria, the requirement cannot be objectively tested; there is no acceptance test or metric to ve"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "not make it too hard for users",
+      "description": "The notion of \"too hard\" lacks a testable threshold, making verification impossible."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "The system must enforce strong password policies, but not make it too hard for users.",
+      "description": "The requirement omits details such as error handling for invalid passwords, password change procedures, lockout policies"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1884.7
+   },
+   {
+    "id": "TC-075",
+    "text": "The system shall generate invoices for customers when needed.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "when needed",
+      "description": "The phrase \"when needed\" is vague and can be interpreted in many ways (e.g., after order placement, on a schedule, on re"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "generate invoices for customers when needed",
+      "description": "The requirement does not define measurable acceptance criteria (e.g., timing, format, content, or success indicators) th"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1202.7
+   },
+   {
+    "id": "TC-076",
+    "text": "The system must generate invoices within 2 seconds of order confirmati...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.85,
+    "defect_type_counts": {
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.85,
+      "evidence": "generate invoices within 2 seconds of order confirmation and email them as PDF attachments",
+      "description": "The requirement does not specify how the system should behave if the invoice cannot be generated or emailed within the 2"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1431.6
+   },
+   {
+    "id": "TC-081",
+    "text": "The search functionality should be efficient for large datasets.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "efficient",
+      "description": "The term \"efficient\" is vague and can be interpreted differently (e.g., response time, resource usage, throughput). With"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "efficient for large datasets",
+      "description": "No measurable acceptance criteria are provided, making it impossible to verify whether the requirement is met."
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "large datasets",
+      "description": "The requirement does not define what constitutes a \"large dataset\" nor the environment in which the performance must be "
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1359.4
+   },
+   {
+    "id": "TC-084",
+    "text": "The system must be deployable via Docker Compose with documented envir...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "with documented environment variables and health check endpoints",
+      "description": "The requirement does not specify where the documentation for environment variables must be provided, the format of that "
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.78,
+      "evidence": "must be deployable via Docker Compose with documented environment variables and health check endpoints",
+      "description": "The requirement lacks measurable acceptance criteria for what constitutes successful deployment and health\u2011check functio"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1387.7
+   },
+   {
+    "id": "TC-091",
+    "text": "The system shall support multiple languages for the interface.",
+    "expert": "DEFECT",
+    "expert_defect_type": "ambiguity",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.88,
+      "evidence": "multiple languages",
+      "description": "The phrase \"multiple languages\" is vague because it does not specify how many languages, which languages, or any limits,"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.81,
+      "evidence": "support multiple languages for the interface",
+      "description": "The requirement does not describe how language selection is performed, how missing translations are handled, or any cons"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "support multiple languages for the interface",
+      "description": "There is no measurable acceptance criterion (e.g., coverage percentage, UI element translation completeness) to verify t"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1346.8
+   },
+   {
+    "id": "TC-092",
+    "text": "The system must support English, Malay, and Chinese with dynamic langu...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.92,
+    "defect_type_counts": {
+     "unverifiable": 1,
+     "incompleteness": 1
+    },
+    "defects_raw": [
+     {
+      "type": "unverifiable",
+      "confidence": 0.92,
+      "evidence": "dynamic language switching without page reload",
+      "description": "The requirement states that language switching must be \"dynamic\" and occur \"without page reload\", but it does not define"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.78,
+      "evidence": "The system must support English, Malay, and Chinese",
+      "description": "The requirement lists the supported languages but does not address how the system should handle unsupported language sel"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1539.8
+   },
+   {
+    "id": "TC-096",
+    "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry...",
+    "expert": "NO_DEFECT",
+    "expert_defect_type": null,
+    "vis_prediction": "DEFECT",
+    "confidence": 0.94,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.94,
+      "evidence": "integrate with Stripe, Twilio, and SendGrid",
+      "description": "The term \"integrate\" is vague; it does not specify what functionality, data exchange, or API operations are required, le"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.91,
+      "evidence": "with retry policies and circuit breakers for each",
+      "description": "The requirement mentions retry policies and circuit breakers but provides no details on retry count, back\u2011off strategy, "
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.88,
+      "evidence": "with retry policies and circuit breakers for each",
+      "description": "Without quantitative criteria, it is impossible to verify whether the retry and circuit\u2011breaker mechanisms meet the requ"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1994.9
+   },
+   {
+    "id": "TC-101",
+    "text": "The system shall handle all user inputs.",
+    "expert": "DEFECT",
+    "expert_defect_type": "incomplete",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "incompleteness": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "handle all user inputs",
+      "description": "The term \"handle\" is vague; it can mean validate, sanitize, store, ignore, or process in any manner, leading to multiple"
+     },
+     {
+      "type": "incompleteness",
+      "confidence": 0.92,
+      "evidence": "handle all user inputs",
+      "description": "The requirement does not specify how invalid inputs are to be treated, what error messages should be shown, or any const"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "handle all user inputs",
+      "description": "There is no measurable acceptance criterion (e.g., response time, validation success rate) to verify that the system han"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1514.6
+   },
+   {
+    "id": "TC-104",
+    "text": "The software must be secure for all users.",
+    "expert": "DEFECT",
+    "expert_defect_type": "unverifiable",
+    "vis_prediction": "DEFECT",
+    "confidence": 0.96,
+    "defect_type_counts": {
+     "ambiguity": 1,
+     "unverifiable": 1
+    },
+    "defects_raw": [
+     {
+      "type": "ambiguity",
+      "confidence": 0.96,
+      "evidence": "secure",
+      "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., confidentiality, integrity, authentication, author"
+     },
+     {
+      "type": "unverifiable",
+      "confidence": 0.94,
+      "evidence": "must be secure for all users",
+      "description": "The requirement provides no measurable acceptance criteria or test conditions to verify that the software is \"secure\"; t"
+     }
+    ],
+    "llm_used": true,
+    "llm_failed": false,
+    "model_returned": "openai/gpt-oss-120b",
+    "json_parse_ok": true,
+    "error": null,
+    "elapsed_ms": 1278.8
+   }
+  ]
+ },
+ "detailed_results": [
+  {
+   "id": "TC-002",
+   "text": "The system must respond within 200 milliseconds.",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 684.5
+  },
+  {
+   "id": "TC-005",
+   "text": "The system shall lock user accounts after 5 failed login attempts with...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 723.0
+  },
+  {
+   "id": "TC-007",
+   "text": "Passwords must be hashed using Argon2.",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 616.9
+  },
+  {
+   "id": "TC-008",
+   "text": "The system should maybe implement captcha.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "incompleteness": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "maybe",
+     "description": "The term \"maybe\" is vague and leaves the requirement open to multiple interpretations about whether the captcha must be "
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.88,
+     "evidence": "implement captcha",
+     "description": "The requirement does not specify the conditions that trigger the CAPTCHA, the type of CAPTCHA to be used, or any fallbac"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "should maybe implement captcha",
+     "description": "There is no measurable acceptance criterion or test condition to verify whether the CAPTCHA implementation meets the req"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1527.3
+  },
+  {
+   "id": "TC-009",
+   "text": "Security features must be adequate.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "adequate",
+     "description": "The term \"adequate\" is vague and can be interpreted differently by stakeholders (e.g., level of encryption, authenticati"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "must be adequate",
+     "description": "The requirement does not provide any measurable acceptance criteria or test conditions, making it impossible to verify w"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "Security features must be adequate.",
+     "description": "The requirement lacks context about which security features are required, applicable domains, and any constraints (e.g.,"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1511.7
+  },
+  {
+   "id": "TC-016",
+   "text": "The braking system shall engage within 50 milliseconds when the obstac...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 795.7
+  },
+  {
+   "id": "TC-018",
+   "text": "The REST API must support GET and POST methods. Endpoints shall return...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.92,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.92,
+     "evidence": "Endpoints shall return JSON responses.",
+     "description": "The requirement does not specify how the API should handle error conditions, status codes, or non\u2011JSON responses, leavin"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1031.9
+  },
+  {
+   "id": "TC-020",
+   "text": "Error messages must be descriptive enough.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "descriptive enough",
+     "description": "The phrase \"descriptive enough\" is vague and can be interpreted in many ways (e.g., length, level of detail, technicalit"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "descriptive enough",
+     "description": "Because \"descriptive enough\" lacks concrete criteria, there is no way to objectively test whether an error message meets"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1240.5
+  },
+  {
+   "id": "TC-021",
+   "text": "The system shall provide adequate security for user data.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "adequate security",
+     "description": "The term \"adequate security\" is vague and can be interpreted in many ways (e.g., encryption strength, access controls, a"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "provide adequate security for user data",
+     "description": "The requirement does not specify measurable acceptance criteria or test conditions, making it impossible to verify wheth"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "provide adequate security for user data",
+     "description": "The requirement lacks details about which security controls are required, the threat model, and how security failures sh"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1889.8
+  },
+  {
+   "id": "TC-022",
+   "text": "The system must encrypt all passwords using bcrypt with a cost factor ...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 788.6
+  },
+  {
+   "id": "TC-023",
+   "text": "The application should be user-friendly and easy to navigate.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "user-friendly",
+     "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., learning curve, number of clicks, error rat"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "easy to navigate",
+     "description": "The phrase \"easy to navigate\" is subjective and lacks a clear definition, leading to multiple interpretations."
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.95,
+     "evidence": "user-friendly and easy to navigate",
+     "description": "The requirement provides no measurable acceptance criteria or test conditions, making verification impossible."
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1606.8
+  },
+  {
+   "id": "TC-025",
+   "text": "The system shall handle a large number of concurrent users efficiently...",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "\"large number of concurrent users\"",
+     "description": "The phrase \"large number\" is vague and can be interpreted differently by stakeholders; it does not specify an exact user"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "\"efficiently\"",
+     "description": "The term \"efficiently\" is subjective and lacks a concrete performance metric, leading to multiple possible interpretatio"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.93,
+     "evidence": "\"handle a large number of concurrent users efficiently\"",
+     "description": "Without quantitative thresholds for \"large number\" and \"efficiently,\" there is no objective way to verify compliance thr"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "\"handle a large number of concurrent users efficiently\"",
+     "description": "The requirement does not state how the system should behave under overload, error conditions, or resource exhaustion, no"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1708.3
+  },
+  {
+   "id": "TC-028",
+   "text": "The system must recover from database failures within 30 seconds using...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.85,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.85,
+     "evidence": "recover from database failures",
+     "description": "The requirement does not define what specific failure conditions trigger the recovery process (e.g., connection loss, tr"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1839.7
+  },
+  {
+   "id": "TC-032",
+   "text": "The system shall process international wire transfers within 5 seconds...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.86,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.86,
+     "evidence": "within 5 seconds of submission",
+     "description": "The requirement specifies a performance target but does not define the conditions under which the 5\u2011second limit must be"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1122.0
+  },
+  {
+   "id": "TC-034",
+   "text": "The dashboard must display real-time metrics updated every 10 seconds ...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.93,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.93,
+     "evidence": "using WebSocket connections",
+     "description": "The requirement does not specify how the system should behave if the WebSocket connection fails, is delayed, or cannot b"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1139.5
+  },
+  {
+   "id": "TC-037",
+   "text": "The search feature should be fast and accurate.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "fast",
+     "description": "The term \"fast\" is vague and can be interpreted differently by stakeholders (e.g., response time of 1\u202fs vs. 200\u202fms). Wit"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "accurate",
+     "description": "The term \"accurate\" is not defined; accuracy could refer to relevance ranking, precision/recall percentages, or error ra"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.95,
+     "evidence": "The search feature should be fast and accurate.",
+     "description": "The requirement lacks measurable acceptance criteria or test conditions for both speed and accuracy, making it impossibl"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1662.6
+  },
+  {
+   "id": "TC-040",
+   "text": "The system must display a user-friendly error page with a support cont...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "user-friendly",
+     "description": "The term \"user-friendly\" is vague and can be interpreted in many ways (e.g., layout, wording, accessibility). IEEE 830 r"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "user-friendly error page",
+     "description": "The requirement does not define measurable acceptance criteria for the error page, making it impossible to verify throug"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1488.4
+  },
+  {
+   "id": "TC-045",
+   "text": "The reporting module should generate comprehensive reports for managem...",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "comprehensive reports",
+     "description": "The term \"comprehensive\" is vague; it can be interpreted differently regarding content depth, scope, and level of detail"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.91,
+     "evidence": "management",
+     "description": "The word \"management\" does not define which managerial roles or levels the reports are intended for, leading to multiple"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "generate comprehensive reports for management",
+     "description": "The requirement lacks measurable acceptance criteria such as format, delivery schedule, performance metrics, or validati"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.88,
+     "evidence": "The reporting module should generate comprehensive reports for management.",
+     "description": "The requirement does not specify error handling, data sources, or constraints such as security, access control, or frequ"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1773.5
+  },
+  {
+   "id": "TC-046",
+   "text": "The reporting module must generate daily sales reports in PDF format i...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "NO_DEFECT",
+   "confidence": 0.0,
+   "defect_type_counts": {},
+   "defects_raw": [],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 634.0
+  },
+  {
+   "id": "TC-049",
+   "text": "The application must include proper input validation to prevent inject...",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "proper input validation",
+     "description": "The term \"proper\" is vague and can be interpreted in many ways, leaving uncertainty about the level or method of validat"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "prevent injection attacks",
+     "description": "The requirement does not define measurable acceptance criteria or test conditions for what constitutes successful preven"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.85,
+     "evidence": "input validation to prevent injection attacks",
+     "description": "The requirement lacks details on which inputs, which types of injection attacks, and how errors should be handled or rep"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1546.1
+  },
+  {
+   "id": "TC-052",
+   "text": "The system shall send email notifications to users within 5 seconds of...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.88,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.88,
+     "evidence": "send email notifications to users within 5 seconds of account creation, including a verification link",
+     "description": "The requirement does not specify how the system should behave if the email cannot be sent within the 5\u2011second window (e."
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 901.6
+  },
+  {
+   "id": "TC-055",
+   "text": "The system should allow users to cancel their orders, but once cancele...",
+   "expert": "DEFECT",
+   "expert_defect_type": "inconsistency",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.92,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.92,
+     "evidence": "once canceled, orders cannot be restored",
+     "description": "The requirement does not specify the conditions under which cancellation is allowed (e.g., order status, time limits) no"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1405.3
+  },
+  {
+   "id": "TC-057",
+   "text": "The authentication mechanism must be secure.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "secure",
+     "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., encryption strength, resistance to attacks, compli"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "must be secure",
+     "description": "No measurable acceptance criteria or test conditions are provided, making it impossible to verify compliance."
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "The authentication mechanism must be secure.",
+     "description": "The requirement does not specify error handling, failure responses, or conditions under which security must be maintaine"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1335.5
+  },
+  {
+   "id": "TC-067",
+   "text": "The system shall store user preferences, but should also respect GDPR ...",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.94,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "store user preferences",
+     "description": "The phrase \"store user preferences\" does not define what data constitutes a \"preference\", the format, location, or durat"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.92,
+     "evidence": "respect GDPR regulations",
+     "description": "\"Respect GDPR regulations\" is vague because GDPR contains many distinct obligations (data minimisation, consent, right t"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.88,
+     "evidence": "respect GDPR regulations",
+     "description": "There is no measurable acceptance criterion or test condition to verify that the system \"respects GDPR regulations\"."
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.81,
+     "evidence": "The system shall store user preferences",
+     "description": "The requirement omits error handling, such as what happens if storage fails, and does not define constraints like perfor"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1589.2
+  },
+  {
+   "id": "TC-068",
+   "text": "The system shall store user preferences and provide a data export API ...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.85,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.85,
+     "evidence": "provide a data export API that returns all stored data in JSON format within 30 seconds",
+     "description": "The requirement does not specify how the API should behave under error conditions (e.g., when the export cannot be compl"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1263.5
+  },
+  {
+   "id": "TC-069",
+   "text": "The payment gateway integration should be reliable.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "reliable",
+     "description": "The term \"reliable\" is vague and can be interpreted in many ways (e.g., uptime percentage, error rate, transaction succe"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "should be reliable",
+     "description": "Without quantitative thresholds, the requirement cannot be objectively tested or verified."
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "The payment gateway integration should be reliable.",
+     "description": "The requirement does not define error handling, recovery procedures, or constraints such as maximum allowed downtime, re"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1345.8
+  },
+  {
+   "id": "TC-071",
+   "text": "The system must enforce strong password policies, but not make it too ...",
+   "expert": "DEFECT",
+   "expert_defect_type": "inconsistency",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 2,
+    "unverifiable": 2,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "strong password policies",
+     "description": "The phrase \"strong password policies\" is vague; it can be interpreted in many ways (e.g., length, character classes, exp"
+    },
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "not make it too hard for users",
+     "description": "The expression \"not make it too hard for users\" is subjective and lacks a measurable definition, leading to multiple pos"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.93,
+     "evidence": "strong password policies",
+     "description": "Without quantitative criteria, the requirement cannot be objectively tested; there is no acceptance test or metric to ve"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.88,
+     "evidence": "not make it too hard for users",
+     "description": "The notion of \"too hard\" lacks a testable threshold, making verification impossible."
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.85,
+     "evidence": "The system must enforce strong password policies, but not make it too hard for users.",
+     "description": "The requirement omits details such as error handling for invalid passwords, password change procedures, lockout policies"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1884.7
+  },
+  {
+   "id": "TC-075",
+   "text": "The system shall generate invoices for customers when needed.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "when needed",
+     "description": "The phrase \"when needed\" is vague and can be interpreted in many ways (e.g., after order placement, on a schedule, on re"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "generate invoices for customers when needed",
+     "description": "The requirement does not define measurable acceptance criteria (e.g., timing, format, content, or success indicators) th"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1202.7
+  },
+  {
+   "id": "TC-076",
+   "text": "The system must generate invoices within 2 seconds of order confirmati...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.85,
+   "defect_type_counts": {
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.85,
+     "evidence": "generate invoices within 2 seconds of order confirmation and email them as PDF attachments",
+     "description": "The requirement does not specify how the system should behave if the invoice cannot be generated or emailed within the 2"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1431.6
+  },
+  {
+   "id": "TC-081",
+   "text": "The search functionality should be efficient for large datasets.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.94,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "efficient",
+     "description": "The term \"efficient\" is vague and can be interpreted differently (e.g., response time, resource usage, throughput). With"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.92,
+     "evidence": "efficient for large datasets",
+     "description": "No measurable acceptance criteria are provided, making it impossible to verify whether the requirement is met."
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "large datasets",
+     "description": "The requirement does not define what constitutes a \"large dataset\" nor the environment in which the performance must be "
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1359.4
+  },
+  {
+   "id": "TC-084",
+   "text": "The system must be deployable via Docker Compose with documented envir...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.92,
+   "defect_type_counts": {
+    "incompleteness": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "incompleteness",
+     "confidence": 0.92,
+     "evidence": "with documented environment variables and health check endpoints",
+     "description": "The requirement does not specify where the documentation for environment variables must be provided, the format of that "
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.78,
+     "evidence": "must be deployable via Docker Compose with documented environment variables and health check endpoints",
+     "description": "The requirement lacks measurable acceptance criteria for what constitutes successful deployment and health\u2011check functio"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1387.7
+  },
+  {
+   "id": "TC-091",
+   "text": "The system shall support multiple languages for the interface.",
+   "expert": "DEFECT",
+   "expert_defect_type": "ambiguity",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.92,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "incompleteness": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.88,
+     "evidence": "multiple languages",
+     "description": "The phrase \"multiple languages\" is vague because it does not specify how many languages, which languages, or any limits,"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.81,
+     "evidence": "support multiple languages for the interface",
+     "description": "The requirement does not describe how language selection is performed, how missing translations are handled, or any cons"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.92,
+     "evidence": "support multiple languages for the interface",
+     "description": "There is no measurable acceptance criterion (e.g., coverage percentage, UI element translation completeness) to verify t"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1346.8
+  },
+  {
+   "id": "TC-092",
+   "text": "The system must support English, Malay, and Chinese with dynamic langu...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.92,
+   "defect_type_counts": {
+    "unverifiable": 1,
+    "incompleteness": 1
+   },
+   "defects_raw": [
+    {
+     "type": "unverifiable",
+     "confidence": 0.92,
+     "evidence": "dynamic language switching without page reload",
+     "description": "The requirement states that language switching must be \"dynamic\" and occur \"without page reload\", but it does not define"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.78,
+     "evidence": "The system must support English, Malay, and Chinese",
+     "description": "The requirement lists the supported languages but does not address how the system should handle unsupported language sel"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1539.8
+  },
+  {
+   "id": "TC-096",
+   "text": "The system must integrate with Stripe, Twilio, and SendGrid with retry...",
+   "expert": "NO_DEFECT",
+   "expert_defect_type": null,
+   "vis_prediction": "DEFECT",
+   "confidence": 0.94,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "incompleteness": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.94,
+     "evidence": "integrate with Stripe, Twilio, and SendGrid",
+     "description": "The term \"integrate\" is vague; it does not specify what functionality, data exchange, or API operations are required, le"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.91,
+     "evidence": "with retry policies and circuit breakers for each",
+     "description": "The requirement mentions retry policies and circuit breakers but provides no details on retry count, back\u2011off strategy, "
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.88,
+     "evidence": "with retry policies and circuit breakers for each",
+     "description": "Without quantitative criteria, it is impossible to verify whether the retry and circuit\u2011breaker mechanisms meet the requ"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1994.9
+  },
+  {
+   "id": "TC-101",
+   "text": "The system shall handle all user inputs.",
+   "expert": "DEFECT",
+   "expert_defect_type": "incomplete",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "incompleteness": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "handle all user inputs",
+     "description": "The term \"handle\" is vague; it can mean validate, sanitize, store, ignore, or process in any manner, leading to multiple"
+    },
+    {
+     "type": "incompleteness",
+     "confidence": 0.92,
+     "evidence": "handle all user inputs",
+     "description": "The requirement does not specify how invalid inputs are to be treated, what error messages should be shown, or any const"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "handle all user inputs",
+     "description": "There is no measurable acceptance criterion (e.g., response time, validation success rate) to verify that the system han"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1514.6
+  },
+  {
+   "id": "TC-104",
+   "text": "The software must be secure for all users.",
+   "expert": "DEFECT",
+   "expert_defect_type": "unverifiable",
+   "vis_prediction": "DEFECT",
+   "confidence": 0.96,
+   "defect_type_counts": {
+    "ambiguity": 1,
+    "unverifiable": 1
+   },
+   "defects_raw": [
+    {
+     "type": "ambiguity",
+     "confidence": 0.96,
+     "evidence": "secure",
+     "description": "The term \"secure\" is vague and can be interpreted in many ways (e.g., confidentiality, integrity, authentication, author"
+    },
+    {
+     "type": "unverifiable",
+     "confidence": 0.94,
+     "evidence": "must be secure for all users",
+     "description": "The requirement provides no measurable acceptance criteria or test conditions to verify that the software is \"secure\"; t"
+    }
+   ],
+   "llm_used": true,
+   "llm_failed": false,
+   "model_returned": "openai/gpt-oss-120b",
+   "json_parse_ok": true,
+   "error": null,
+   "elapsed_ms": 1278.8
+  }
+ ]
+}

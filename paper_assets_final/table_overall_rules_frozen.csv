@@ -1,0 +1,2 @@
+path,threshold,TP,FP,FN,TN,precision,p_lo,p_hi,recall,r_lo,r_hi,f1,f_lo,f_hi
+rules,0.9,1,0,18,17,1.0,0.0,1.0,0.05263157894736842,0.0,0.17391304347826086,0.1,0.0,0.29629629629629634
