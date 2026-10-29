@@ -44,7 +44,7 @@ def restore(text: str, mapping: dict) -> str:
 
 if __name__ == "__main__":
     s = ("Contact ali@acme.com or +60 12-345 6789; the ACME-1234 portal at "
-         "https://acme.internal shall log users from 10.0.0.1.")
+         "https://acme.internal should log users from 10.0.0.1.")
     masked, mp = redact(s, extra_terms=["ACME"])
     print("masked:", masked)
     print("round-trip ok:", restore(masked, mp) == s)

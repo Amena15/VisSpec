@@ -32,7 +32,7 @@ PROMPT = (
     "You are a strict data extraction API. Output ONLY valid JSON, no markdown.\n"
     "Analyze this requirement and return "
     '{"defects": [{"type", "severity", "confidence", "description", "evidence", "suggestion"}]}.\n'
-    "Requirement: The system shall be fast and user-friendly."
+    "Requirement: The system must be fast and user-friendly."
 )
 
 for effort in ("low", None):
