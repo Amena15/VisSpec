@@ -1,0 +1,1585 @@
+[
+  {
+    "case": "TC-002",
+    "condition": "A",
+    "req_text": "The system must respond within 200 milliseconds.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  respond within 200 milliseconds.",
+        "req_id": "TC-002"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-002",
+    "condition": "B",
+    "req_text": "The system must respond within 200 milliseconds.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-005",
+    "condition": "A",
+    "req_text": "The system shall lock user accounts after 5 failed login attempts within 15 minutes.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  lock user accounts  5 failed login atte...",
+        "req_id": "TC-005"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-005",
+    "condition": "B",
+    "req_text": "The system shall lock user accounts after 5 failed login attempts within 15 minutes.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-007",
+    "condition": "A",
+    "req_text": "Passwords must be hashed using Argon2.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "Passwords  be hashed using Argon2.",
+        "req_id": "TC-007"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-007",
+    "condition": "B",
+    "req_text": "Passwords must be hashed using Argon2.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-008",
+    "condition": "A",
+    "req_text": "The system should maybe implement captcha.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  maybe implement captcha.",
+        "req_id": "TC-008"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-008",
+    "condition": "B",
+    "req_text": "The system should maybe implement captcha.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-009",
+    "condition": "A",
+    "req_text": "Security features must be adequate.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "Security features  be adequate.",
+        "req_id": "TC-009"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-009",
+    "condition": "B",
+    "req_text": "Security features must be adequate.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-016",
+    "condition": "A",
+    "req_text": "The braking system shall engage within 50 milliseconds when the obstacle is detected at 10 meters.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "braking system  engage within 50 milliseconds w...",
+        "req_id": "TC-016"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-016",
+    "condition": "B",
+    "req_text": "The braking system shall engage within 50 milliseconds when the obstacle is detected at 10 meters.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-018",
+    "condition": "A",
+    "req_text": "The REST API must support GET and POST methods. Endpoints shall return JSON responses.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "REST API  support GET and POST methods. Endpoin...",
+        "req_id": "TC-018"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-018",
+    "condition": "B",
+    "req_text": "The REST API must support GET and POST methods. Endpoints shall return JSON responses.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-020",
+    "condition": "A",
+    "req_text": "Error messages must be descriptive enough.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "Error messages  be descriptive enough.",
+        "req_id": "TC-020"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-020",
+    "condition": "B",
+    "req_text": "Error messages must be descriptive enough.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-021",
+    "condition": "A",
+    "req_text": "The system shall provide adequate security for user data.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  provide adequate security for user data.",
+        "req_id": "TC-021"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-021",
+    "condition": "B",
+    "req_text": "The system shall provide adequate security for user data.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-022",
+    "condition": "A",
+    "req_text": "The system must encrypt all passwords using bcrypt with a cost factor of 12.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  encrypt all passwords using bcrypt with...",
+        "req_id": "TC-022"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-022",
+    "condition": "B",
+    "req_text": "The system must encrypt all passwords using bcrypt with a cost factor of 12.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-023",
+    "condition": "A",
+    "req_text": "The application should be user-friendly and easy to navigate.",
+    "actors": [
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "System",
+        "text": "application  be user-friendly and easy to navig...",
+        "req_id": "TC-023"
+      }
+    ],
+    "support_ruleA": [
+      true,
+      true
+    ],
+    "support_ruleB": [
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-023",
+    "condition": "B",
+    "req_text": "The application should be user-friendly and easy to navigate.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-025",
+    "condition": "A",
+    "req_text": "The system shall handle a large number of concurrent users efficiently.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  handle  large number of concurrent user...",
+        "req_id": "TC-025"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-025",
+    "condition": "B",
+    "req_text": "The system shall handle a large number of concurrent users efficiently.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-028",
+    "condition": "A",
+    "req_text": "The system must recover from database failures within 30 seconds using automatic failover.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  recover from database failures within 3...",
+        "req_id": "TC-028"
+      }
+    ],
+    "support_ruleA": [
+      true,
+      true
+    ],
+    "support_ruleB": [
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-028",
+    "condition": "B",
+    "req_text": "The system must recover from database failures within 30 seconds using automatic failover.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-032",
+    "condition": "A",
+    "req_text": "The system shall process international wire transfers within 5 seconds of submission.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  process international wire transfers wi...",
+        "req_id": "TC-032"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-032",
+    "condition": "B",
+    "req_text": "The system shall process international wire transfers within 5 seconds of submission.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-034",
+    "condition": "A",
+    "req_text": "The dashboard must display real-time metrics updated every 10 seconds using WebSocket connections.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "dashboard  display real-time metrics updated ev...",
+        "req_id": "TC-034"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-034",
+    "condition": "B",
+    "req_text": "The dashboard must display real-time metrics updated every 10 seconds using WebSocket connections.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-037",
+    "condition": "A",
+    "req_text": "The search feature should be fast and accurate.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "search feature  be fast and accurate.",
+        "req_id": "TC-037"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-037",
+    "condition": "B",
+    "req_text": "The search feature should be fast and accurate.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-040",
+    "condition": "A",
+    "req_text": "The system must display a user-friendly error page with a support contact link for all unhandled exceptions.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  display  user-friendly error page with ...",
+        "req_id": "TC-040"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-040",
+    "condition": "B",
+    "req_text": "The system must display a user-friendly error page with a support contact link for all unhandled exceptions.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-045",
+    "condition": "A",
+    "req_text": "The reporting module should generate comprehensive reports for management.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "reporting module  generate comprehensive report...",
+        "req_id": "TC-045"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-045",
+    "condition": "B",
+    "req_text": "The reporting module should generate comprehensive reports for management.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-046",
+    "condition": "A",
+    "req_text": "The reporting module must generate daily sales reports in PDF format including total revenue, top products, and regional breakdowns.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "reporting module  generate daily sales reports ...",
+        "req_id": "TC-046"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-046",
+    "condition": "B",
+    "req_text": "The reporting module must generate daily sales reports in PDF format including total revenue, top products, and regional breakdowns.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-049",
+    "condition": "A",
+    "req_text": "The application must include proper input validation to prevent injection attacks.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "application  include proper input validation to...",
+        "req_id": "TC-049"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-049",
+    "condition": "B",
+    "req_text": "The application must include proper input validation to prevent injection attacks.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-052",
+    "condition": "A",
+    "req_text": "The system shall send email notifications to users within 5 seconds of account creation, including a verification link.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  send email notifications to users withi...",
+        "req_id": "TC-052"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-052",
+    "condition": "B",
+    "req_text": "The system shall send email notifications to users within 5 seconds of account creation, including a verification link.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-055",
+    "condition": "A",
+    "req_text": "The system should allow users to cancel their orders, but once canceled, orders cannot be restored.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  allow users to cancel their orders, but...",
+        "req_id": "TC-055"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-055",
+    "condition": "B",
+    "req_text": "The system should allow users to cancel their orders, but once canceled, orders cannot be restored.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-057",
+    "condition": "A",
+    "req_text": "The authentication mechanism must be secure.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "authentication mechanism  be secure.",
+        "req_id": "TC-057"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-057",
+    "condition": "B",
+    "req_text": "The authentication mechanism must be secure.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-067",
+    "condition": "A",
+    "req_text": "The system shall store user preferences, but should also respect GDPR regulations.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  store user preferences, but  also respe...",
+        "req_id": "TC-067"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-067",
+    "condition": "B",
+    "req_text": "The system shall store user preferences, but should also respect GDPR regulations.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-068",
+    "condition": "A",
+    "req_text": "The system shall store user preferences and provide a data export API that returns all stored data in JSON format within 30 seconds.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  store user preferences and provide  dat...",
+        "req_id": "TC-068"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-068",
+    "condition": "B",
+    "req_text": "The system shall store user preferences and provide a data export API that returns all stored data in JSON format within 30 seconds.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-069",
+    "condition": "A",
+    "req_text": "The payment gateway integration should be reliable.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "payment gateway integration  be reliable.",
+        "req_id": "TC-069"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-069",
+    "condition": "B",
+    "req_text": "The payment gateway integration should be reliable.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-071",
+    "condition": "A",
+    "req_text": "The system must enforce strong password policies, but not make it too hard for users.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  enforce strong password policies, but n...",
+        "req_id": "TC-071"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-071",
+    "condition": "B",
+    "req_text": "The system must enforce strong password policies, but not make it too hard for users.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-075",
+    "condition": "A",
+    "req_text": "The system shall generate invoices for customers when needed.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  generate invoices for customers when ne...",
+        "req_id": "TC-075"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-075",
+    "condition": "B",
+    "req_text": "The system shall generate invoices for customers when needed.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-076",
+    "condition": "A",
+    "req_text": "The system must generate invoices within 2 seconds of order confirmation and email them as PDF attachments.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  generate invoices within 2 seconds of o...",
+        "req_id": "TC-076"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-076",
+    "condition": "B",
+    "req_text": "The system must generate invoices within 2 seconds of order confirmation and email them as PDF attachments.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-081",
+    "condition": "A",
+    "req_text": "The search functionality should be efficient for large datasets.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "search functionality  be efficient for large da...",
+        "req_id": "TC-081"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-081",
+    "condition": "B",
+    "req_text": "The search functionality should be efficient for large datasets.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-084",
+    "condition": "A",
+    "req_text": "The system must be deployable via Docker Compose with documented environment variables and health check endpoints.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  be deployable via Docker Compose with d...",
+        "req_id": "TC-084"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-084",
+    "condition": "B",
+    "req_text": "The system must be deployable via Docker Compose with documented environment variables and health check endpoints.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-091",
+    "condition": "A",
+    "req_text": "The system shall support multiple languages for the interface.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  support multiple languages for  interface.",
+        "req_id": "TC-091"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-091",
+    "condition": "B",
+    "req_text": "The system shall support multiple languages for the interface.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-092",
+    "condition": "A",
+    "req_text": "The system must support English, Malay, and Chinese with dynamic language switching without page reload.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  support English, Malay, and Chinese wit...",
+        "req_id": "TC-092"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-092",
+    "condition": "B",
+    "req_text": "The system must support English, Malay, and Chinese with dynamic language switching without page reload.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-096",
+    "condition": "A",
+    "req_text": "The system must integrate with Stripe, Twilio, and SendGrid with retry policies and circuit breakers for each.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [
+      {
+        "from": "Database",
+        "to": "User",
+        "text": "system  integrate with Stripe, Twilio, and Send...",
+        "req_id": "TC-096"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true
+    ],
+    "grounding_note": [
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-096",
+    "condition": "B",
+    "req_text": "The system must integrate with Stripe, Twilio, and SendGrid with retry policies and circuit breakers for each.",
+    "actors": [
+      "Database"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      false
+    ],
+    "support_ruleB": [
+      false
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-101",
+    "condition": "A",
+    "req_text": "The system shall handle all user inputs.",
+    "actors": [
+      "Database",
+      "User"
+    ],
+    "messages": [
+      {
+        "from": "User",
+        "to": "Database",
+        "text": "system  handle all user inputs.",
+        "req_id": "TC-101"
+      }
+    ],
+    "support_ruleA": [
+      false,
+      true,
+      true
+    ],
+    "support_ruleB": [
+      false,
+      true,
+      true
+    ],
+    "grounding_note": [
+      "",
+      "",
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-101",
+    "condition": "B",
+    "req_text": "The system shall handle all user inputs.",
+    "actors": [
+      "User"
+    ],
+    "messages": [],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-104",
+    "condition": "A",
+    "req_text": "The software must be secure for all users.",
+    "actors": [],
+    "messages": [
+      {
+        "from": "User",
+        "to": "User",
+        "text": "software  be secure for all users.",
+        "req_id": "TC-104"
+      }
+    ],
+    "support_ruleA": [
+      true
+    ],
+    "support_ruleB": [
+      true
+    ],
+    "grounding_note": [
+      ""
+    ],
+    "rater": "automated_lexical_ruleA"
+  },
+  {
+    "case": "TC-104",
+    "condition": "B",
+    "req_text": "The software must be secure for all users.",
+    "actors": [],
+    "messages": [],
+    "support_ruleA": [],
+    "support_ruleB": [],
+    "grounding_note": [],
+    "rater": "automated_lexical_ruleA"
+  }
+]
